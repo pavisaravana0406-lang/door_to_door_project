@@ -4,6 +4,7 @@ dist/
 coverage/
 .DS_Store
 *.log
+
 .env*
 !.env.example
 
@@ -11,4 +12,7 @@ __pycache__/
 *.pyc
 *.db
 .venv/
+
 backend_fastapi/photos/
+
+.vercel/
