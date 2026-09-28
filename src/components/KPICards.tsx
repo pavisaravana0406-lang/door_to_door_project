@@ -57,7 +57,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                 {lang === 'ta' ? 'அனைத்தும்' : 'All'}
               </span>
             </div>
-            <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight my-1.5 font-num">
+            <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalCollectedToday} />
             </div>
             <div className="text-sm sm:text-[15px] font-bold text-slate-700 flex items-center justify-between gap-2">
@@ -91,7 +91,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                 <CheckCircle2 className="w-3 h-3" /> {typeof coveredPercent === 'string' && coveredPercent.includes('%') ? coveredPercent : `${coveredPercent}%`}
               </span>
             </div>
-            <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight my-1.5 font-num">
+            <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalCoveredCount} />
             </div>
             <div className="text-sm sm:text-[15px] font-bold text-slate-700 flex items-center justify-between gap-2">
@@ -122,7 +122,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                 <AlertTriangle className="w-3 h-3" /> {typeof notCoveredPercent === 'string' && notCoveredPercent.includes('%') ? notCoveredPercent : `${notCoveredPercent}%`}
               </span>
             </div>
-            <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight my-1.5 font-num">
+            <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalNotCoveredCount} />
             </div>
             <div className="text-sm sm:text-[15px] font-bold text-slate-700 flex items-center justify-between gap-2">
@@ -163,7 +163,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
                 <AlertOctagon className="w-3 h-3" /> {typeof frequentlyPercent === 'string' && frequentlyPercent.includes('%') ? frequentlyPercent : `${frequentlyPercent}%`}
               </span>
             </div>
-            <div className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight my-1.5 font-num flex items-baseline gap-1.5">
+            <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none flex items-baseline gap-1.5">
               <AnimatedCounter value={frequentlyCount} />
             </div>
             <div className="text-sm sm:text-[15px] font-bold text-slate-700 flex items-center justify-between gap-2">

@@ -115,13 +115,14 @@ html, body, #root {
 .dash-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  font-size: 0.8125rem;
+  gap: 0.3rem;
+  font-size: 0.9375rem;
   font-weight: 800;
-  padding: 0.28rem 0.7rem;
+  padding: 0.35rem 0.85rem;
   border-radius: 9999px;
   border: 1px solid transparent;
   white-space: nowrap;
+  line-height: 1.4;
 }
 .dash-badge-green { background: #e9f5ed; color: #166534; border-color: #bfe0c9; }
 .dash-badge-blue { background: #e8f0fe; color: #174ea6; border-color: #c2d7f8; }
@@ -215,6 +216,30 @@ button, input, optgroup, select, textarea {
   font-size: var(--swms-fs-label) !important;
   line-height: 1.4 !important;
 }
+
+/* ────────────────────────────────────────────────────────────────────
+   DASHBOARD READABILITY BOOST (scoped — worker/login pages untouched)
+   The legacy scale above keeps tiny badges at 11–13px; inside the
+   admin dashboard we lift everything so data is clearly visible.
+   ──────────────────────────────────────────────────────────────────── */
+.dash-page { font-size: 16px; }
+.dash-page .text-\[8px\], .dash-page .text-\[8\.5px\], .dash-page .text-\[9px\],
+.dash-page .text-\[9\.5px\], .dash-page .text-\[10px\], .dash-page .text-\[10\.5px\],
+.dash-page .text-\[11px\], .dash-page .text-\[11\.5px\] {
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+.dash-page .text-\[12px\], .dash-page .text-\[12\.5px\], .dash-page .text-\[13px\],
+.dash-page .text-\[14px\] {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+}
+.dash-page .text-xs { font-size: 14px !important; line-height: 1.5 !important; }
+.dash-page .text-sm { font-size: 16px !important; line-height: 1.55 !important; }
+.dash-page .text-base { font-size: 17px !important; line-height: 1.6 !important; }
+.dash-page table { font-size: 16px; }
+.dash-page th { font-size: 16px; font-weight: 800; }
+.dash-page td { font-size: 16px; font-weight: 600; }
 
 /* ════════════════════════════════════════════════════════════════════
    SWMS QR SCANNER SUPPRESSION RULES
