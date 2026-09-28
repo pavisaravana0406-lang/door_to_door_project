@@ -37,7 +37,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="Coimbatore Solid Waste Management System (SWMS) API",
-    description="FastAPI Backend with local SQLite database support and optional Neon PostgreSQL connectivity",
+    description="FastAPI Backend backed by Neon cloud PostgreSQL",
     version="2.1.0"
 )
 
@@ -842,12 +842,16 @@ seed_demo_data()
 # ---------------------------------------------------------------------------------------
 
 
+def _db_label() -> str:
+    host = SQLALCHEMY_DATABASE_URL.split("@")[-1].split("/")[0]
+    return f"PostgreSQL (Neon) — {host}"
+
+
 @app.get("/")
 def read_root():
-    db_type = "Neon PostgreSQL (Remote Cloud)" if "neon.tech" in SQLALCHEMY_DATABASE_URL else "Local SQLite Database"
     return {
         "service": "CCMC Solid Waste Management System (SWMS) FastAPI Backend",
-        "database": db_type,
+        "database": _db_label(),
         "status": "online",
         "version": "2.1.0"
     }
@@ -858,10 +862,9 @@ def health_check(db: Session = Depends(get_db)):
     """Health check verifying database availability."""
     try:
         db.execute(text("SELECT 1"))
-        db_type = "Neon PostgreSQL (Remote Cloud)" if "neon.tech" in SQLALCHEMY_DATABASE_URL else "Local SQLite Database"
         return {
             "status": "healthy",
-            "database": db_type,
+            "database": _db_label(),
             "connected": True,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
