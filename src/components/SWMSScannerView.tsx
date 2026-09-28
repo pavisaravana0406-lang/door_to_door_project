@@ -118,10 +118,10 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     return text || 'HID100101';
   };
 
-  // Our created checkpoint QRs encode ONLY the id, e.g. "E-SCAN1" or "CCMC-QR6" (with optional "-P3" suffix).
+  // Our created checkpoint QRs encode ONLY the id, e.g. "E-SCAN1".
   // Anything else (random QRs, URLs, barcodes) must NOT scan.
   const isOwnCheckpointQr = (raw: string): boolean =>
-    /^[A-Z]-SCAN\d+$/i.test(raw.trim()) || /^CCMC-QR\d+(-P\d+)?$/i.test(raw.trim());
+    /^[A-Z]-SCAN\d+$/i.test(raw.trim());
 
   const flashInvalidQr = (raw: string) => {
     const shown = raw.trim().slice(0, 24) || '???';
@@ -146,7 +146,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     }
     doneRef.current = true; // stop the decode loop immediately
     setIsSuccessFlash(true);
-    const houseId = /^CCMC-QR\d+(-P\d+)?$/i.test(decodedText.trim()) ? decodedText.trim() : parseHouseId(decodedText);
+    const houseId = parseHouseId(decodedText);
     setScannedResult(houseId);
 
     // Audio & Haptic feedback (PhonePe / GPay vibe)
