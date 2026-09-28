@@ -613,9 +613,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       
       {/* ── TOP GREEN CCMC HEADER (Image 1 Exact Layout) ── */}
       <div className="bg-[#044D29] px-2.5 sm:px-4 py-2 border-b border-[#033A1F] sticky top-0 z-30 shadow-md text-white max-w-full overflow-hidden">
-        <div className="flex items-center justify-between gap-1.5 sm:gap-2">
-          {/* Left: Back button + CM Stalin + CCMC Emblem + Titles */}
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2">
+          {/* Left: Back button + CCMC Emblem + Smart City + Titles */}
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 sm:flex-none">
             <button
               type="button"
               onClick={onBackToScanner}
@@ -661,8 +661,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             </div>
           </div>
 
-          {/* Right: Language Pill */}
-          <div className="bg-[#02381C] border border-emerald-600/40 rounded-full p-0.5 flex items-center shadow-xs flex-shrink-0 ml-auto">
+          {/* Right: Language Pill — wraps to its own line on very narrow screens
+              so it never squeezes the CCMC title out of alignment. */}
+          <div className="bg-[#02381C] border border-emerald-600/40 rounded-full p-0.5 flex items-center shadow-xs flex-shrink-0 self-end sm:self-auto">
             <button
               type="button"
               onClick={() => {
@@ -735,27 +736,28 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
 
         {/* FIRST CARD: Location & Resident Summary */}
         <div className="bg-white p-3 sm:p-4 rounded-3xl border-2 border-emerald-300 shadow-sm space-y-3 max-w-full overflow-hidden">
-          {/* Header row with badges & action buttons */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5 min-w-0">
-            <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+          {/* Header row: badges + Details. Stacks cleanly on narrow screens
+              instead of relying on flex-wrap, which pushed the button around. */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5 min-w-0">
+            <div className="flex items-center gap-1.5 min-w-0 w-full sm:w-auto">
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-50 border border-emerald-200 text-[#00875A] flex items-center justify-center font-black text-xs sm:text-sm flex-shrink-0">
                 <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00875A]" />
               </div>
-              <div className="flex items-center gap-1 flex-wrap">
-                <span className="bg-[#00875A] text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full shadow-2xs uppercase">
+              <div className="flex items-center gap-1 flex-wrap min-w-0">
+                <span className="bg-[#00875A] text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded-full shadow-2xs uppercase whitespace-nowrap">
                   {formData.vehicleType || 'TATA ACE'}
                 </span>
-                <span className="bg-[#8B5CF6] text-white text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                <span className="bg-[#8B5CF6] text-white text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap">
                   {formData.zone || 'East Zone'}
                 </span>
-                <span className="bg-[#FEF08A] text-slate-900 border border-amber-300 text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                <span className="bg-[#FEF08A] text-slate-900 border border-amber-300 text-[10px] sm:text-[11px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap">
                   {formData.ward || 'Ward 12'}
                 </span>
               </div>
             </div>
 
             {/* Action button: Details */}
-            <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0 ml-auto">
+            <div className="flex items-center flex-shrink-0 self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => setShowMoreDetails(true)}
@@ -990,22 +992,23 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
               </div>
             )}
 
-            {/* 5 Checkpoints Grid */}
-            <div className="grid grid-cols-5 gap-1 sm:gap-2.5 w-full">
+            {/* 5 Checkpoints Grid — stays 5-up (it's the design) but tightens
+                gutters and text below the xs breakpoint so nothing clips. */}
+            <div className="grid grid-cols-5 gap-0.5 xs:gap-1 sm:gap-2.5 w-full">
               {streetScans.map((scan) => {
                 const isDone = scan.isScanned;
                 return (
                   <div
                     key={scan.id}
                     onClick={() => handleScanCardClick(scan)}
-                    className={`flex flex-col items-center justify-center py-2 sm:py-3 px-0.5 rounded-xl sm:rounded-2xl border sm:border-2 text-center select-none cursor-pointer transition active:scale-95 min-w-0 ${
+                    className={`flex flex-col items-center justify-center py-1.5 xs:py-2 sm:py-3 px-0 rounded-xl sm:rounded-2xl border sm:border-2 text-center select-none cursor-pointer transition active:scale-95 min-w-0 ${
                       isDone
                         ? 'bg-[#E6F4EA] border-[#00D084] text-slate-900 shadow-2xs'
                         : 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
                     }`}
                     title={isDone ? `Scan ${scan.id} Scanned ✓` : `Scan ${scan.id}: QR Camera scan required`}
                   >
-                    <div className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-black mb-0.5 sm:mb-1 shadow-2xs flex-shrink-0 ${
+                    <div className={`w-5 h-5 xs:w-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-black mb-0.5 sm:mb-1 shadow-2xs flex-shrink-0 ${
                       isDone
                         ? 'bg-[#00A86B] text-white'
                         : 'bg-[#EF4444] text-white'
@@ -1016,10 +1019,10 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                         <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
                       )}
                     </div>
-                    <span className="text-[10px] sm:text-xs font-black truncate w-full leading-tight text-slate-900">
+                    <span className="text-[9px] xs:text-[10px] sm:text-xs font-black truncate w-full leading-tight text-slate-900">
                       Scan {scan.id}
                     </span>
-                    <span className={`text-[9px] sm:text-[11px] font-bold mt-0.5 leading-tight truncate w-full ${
+                    <span className={`text-[8px] xs:text-[9px] sm:text-[11px] font-bold mt-0.5 leading-tight truncate w-full ${
                       isDone ? 'text-[#00A86B] font-mono' : 'text-[#DC2626]'
                     }`}>
                       {isDone ? (scan.scannedAt || 'Done ✓') : 'Pending X'}
@@ -1047,18 +1050,18 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                 }`}>
                   {completedScansCount === 5 ? '✓' : '!'}
                 </div>
-                <div className="min-w-0">
-                  <h5 className="text-xs sm:text-sm font-black leading-tight text-[#C53030] truncate">
+                <div className="min-w-0 flex-1">
+                  <h5 className="text-xs sm:text-sm font-black leading-tight text-[#C53030] break-words sm:truncate">
                     {completedScansCount === 5
                       ? 'STREET COVERED (5/5 CHECKPOINTS)'
                       : completedScansCount === 4
                       ? 'PARTIALLY COVERED (4/5 CHECKPOINTS)'
                       : `NOT COVERED (${completedScansCount}/5 CHECKPOINTS)`}
                   </h5>
-                  <p className="text-[11px] sm:text-xs font-semibold text-[#991B1B] mt-0.5 truncate">
+                  <p className="text-[11px] sm:text-xs font-semibold text-[#991B1B] mt-0.5 break-words sm:truncate">
                     {completedScansCount === 5
                       ? 'All 5 checkpoints scanned • 100% Covered ✓'
-                      : `${5 - completedScansCount} or fewer checkpoints scanned • Not Covered ⚠️ (${5 - completedScansCount} checkpoint(s) pending)`}
+                      : `${5 - completedScansCount} or fewer checkpoints scanned • Not Covered ⚠️ (${5 - completedScansCount} pending)`}
                   </p>
                 </div>
               </div>

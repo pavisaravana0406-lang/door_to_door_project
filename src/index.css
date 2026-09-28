@@ -7,6 +7,10 @@
    Professional, high-contrast, readable. No gradients, no flashy motion.
    ════════════════════════════════════════════════════════════════════ */
 @theme {
+  /* Extra-small breakpoint for narrow phones (320–380px) so header rows and
+     card headers stop squeezing instead of truncating mid-word. */
+  --breakpoint-xs: 26rem;
+
   /* Poppins first (loaded in index.html), Tamil fallback preserved */
   --font-sans: 'Poppins', 'Noto Sans', 'Noto Sans Tamil', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
