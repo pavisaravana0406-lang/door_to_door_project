@@ -11,8 +11,6 @@ import {
   Sparkles, 
   Volume2, 
   VolumeX,
-  Navigation,
-  MapPin,
   Globe,
   Play,
   Route
@@ -520,11 +518,6 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Location & GPS Pill */}
-        <div className="flex items-center gap-1.5 bg-[#060D1E] border border-emerald-500/40 text-emerald-300 px-3.5 py-1 rounded-full text-[11px] font-mono font-bold shadow-inner">
-          <Navigation className="w-3 h-3 text-emerald-400 rotate-45" />
-          <span>11.0168° N, 76.9558° E • Gandhipuram, Ward 12</span>
-        </div>
       </div>
 
       {/* ── 2. CAMERA VIEWPORT & VIEWFINDER ── */}
@@ -624,37 +617,12 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
             <SwitchCamera className="w-4 h-4 text-emerald-600" />
             <span>{cameraFacing === 'environment' ? 'Rear' : 'Front'}</span>
           </button>
-          <button
-            type="button"
-            onClick={toggleFlashlight}
-            className={`flex items-center gap-1.5 font-extrabold text-xs px-4 py-2.5 rounded-full transition active:scale-95 cursor-pointer shadow-xl border ${
-              flashlightOn ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-white/10 text-white hover:bg-white/20 border-white/20'
-            }`}
-          >
-            {flashlightOn ? <Zap className="w-4 h-4" /> : <ZapOff className="w-4 h-4" />}
-            <span>{lang === 'ta' ? 'டார்ச்' : 'Torch'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 bg-white/10 text-white hover:bg-white/20 font-extrabold text-xs px-4 py-2.5 rounded-full transition active:scale-95 cursor-pointer shadow-xl border border-white/20"
-          >
-            <Camera className="w-4 h-4 text-emerald-300" />
-            <span>{lang === 'ta' ? 'புகைப்படம்' : 'Gallery'}</span>
-          </button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleGalleryFile}
-            className="hidden"
-          />
         </div>
 
         <p className="text-center text-[11px] font-semibold text-white/60 leading-snug">
           {lang === 'ta'
-            ? 'QR-ஐ சட்டகத்தில் நிறுத்தி 10–15 செ.மீ தூரத்தில் பிடிக்கவும் • மங்கலாக இருந்தால் டார்ச் போடவும்'
-            : 'Hold the QR steady inside the frame, 10–15 cm away • Turn on torch if blurry'}
+            ? 'QR-ஐ சட்டகத்தில் நிறுத்தி 10–15 செ.மீ தூரத்தில் பிடிக்கவும்'
+            : 'Hold the QR steady inside the frame, 10–15 cm away'}
         </p>
 
         {/* Manual QR-ID entry — works even when the lens can't focus */}
