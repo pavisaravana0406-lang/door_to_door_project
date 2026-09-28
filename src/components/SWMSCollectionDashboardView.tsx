@@ -452,7 +452,7 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
               <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-3 sm:gap-4">
                 <button
                   onClick={() => setViewFilter('collected')}
-                  className="dash-card dash-card-accent-green animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group"
+                  className="dash-card dash-card-accent-green animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#f4faf5]"
                 >
                   <div className="flex items-center gap-3">
                     <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#e9f5ed] border border-emerald-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-emerald-100 group-hover:border-emerald-500">
@@ -467,7 +467,7 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
                 </button>
                 <button
                   onClick={() => setViewFilter('notcollected')}
-                  className="dash-card dash-card-accent-red animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group"
+                  className="dash-card dash-card-accent-red animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#fef5f4]"
                   style={{ animationDelay: '60ms' }}
                 >
                   <div className="flex items-center gap-3">
@@ -483,7 +483,7 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
                 </button>
                 <button
                   onClick={() => setViewFilter('frequent')}
-                  className="dash-card dash-card-accent-amber animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group"
+                  className="dash-card dash-card-accent-amber animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#fffaef]"
                   style={{ animationDelay: '120ms' }}
                 >
                   <div className="flex items-center gap-3">
@@ -501,7 +501,7 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
                 </button>
                 <button
                   onClick={() => setViewFilter('total')}
-                  className="dash-card dash-card-accent-blue animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group"
+                  className="dash-card dash-card-accent-blue animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#f5f9ff]"
                   style={{ animationDelay: '180ms' }}
                 >
                   <div className="flex items-center gap-3">

@@ -106,15 +106,17 @@ export const ZoneSummaryTable: React.FC<ZoneSummaryTableProps> = ({
                   <span className="dash-badge dash-badge-amber">{row.notCollectedCount.toLocaleString()}</span>
                 </td>
 
-                {/* Coverage % */}
-                <td className="px-5 sm:px-6 py-3.5 text-center font-extrabold text-emerald-800 font-num">
-                  {row.coveragePercentage.toFixed(2)}%
+                {/* Coverage % — color coded */}
+                <td className="px-5 sm:px-6 py-3.5 text-center font-extrabold font-num">
+                  <span className={`dash-badge ${row.coveragePercentage >= 80 ? 'dash-badge-green' : row.coveragePercentage >= 50 ? 'dash-badge-amber' : row.coveragePercentage > 0 ? 'dash-badge-blue' : 'dash-badge-red'}`}>
+                    {row.coveragePercentage.toFixed(2)}%
+                  </span>
                 </td>
               </tr>
             ))}
 
-            {/* Total Summary Row */}
-            <tr className="bg-gray-50/90 font-bold border-t-2 border-gray-200 text-gray-900 divide-x divide-gray-200/60">
+            {/* Total Summary Row — soft tinted */}
+            <tr className="bg-[#eef6f0] font-bold border-t-2 border-emerald-200 text-gray-900 divide-x divide-gray-200/60">
               <td className="px-6 py-4">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded-full bg-[#1E7A38] flex items-center justify-center text-white flex-shrink-0">

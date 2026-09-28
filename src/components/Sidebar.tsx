@@ -82,7 +82,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'frequently-not-covered-area' as NavigationTab,
-      label: lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Not Collected Household',
+      label: lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed Houses',
       shortLabel: lang === 'ta' ? 'விடுபட்ட வீடுகள்' : 'Uncollected Houses',
       type: 'image',
       image: frequentlyNotCollectedIcon,
@@ -216,20 +216,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </button>
 
-          {/* 5. Frequently Not Collected Household Tab */}
+          {/* 5. Frequently Missed Houses Tab */}
           <button
             onClick={() => handleTabClick('frequently-not-covered-area')}
+            data-active={activeTab === 'frequently-not-covered-area'}
+            title={lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Not Collected Household'}
             className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
               activeTab === 'frequently-not-covered-area'
-                ? 'bg-rose-50 text-rose-800 shadow-xs border border-rose-300'
-                : 'text-gray-700 hover:bg-rose-50/50 hover:text-rose-800'
+                ? 'bg-white text-rose-900 shadow-sm border-rose-400'
+                : 'text-slate-700 border-transparent hover:bg-[#fdecea] hover:text-rose-900 hover:border-rose-300'
             }`}
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-rose-500/50 bg-rose-50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="dash-sidebar-icon w-12 h-12 rounded-2xl overflow-hidden border-2 border-rose-400 bg-rose-50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
                 <img
                   src={frequentlyNotCollectedIcon}
-                  alt="Frequently Not Collected Household"
+                  alt="Frequently Missed Houses"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
                     if (e.currentTarget.src !== householdNotCoveredFallbackIcon) {
@@ -239,8 +241,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
-              <span className="text-sm font-bold">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Not Collected Household'}</span>
+              <span className="text-[17px] font-extrabold text-slate-900 truncate">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed'}</span>
             </div>
+            <span className="dash-badge dash-badge-red flex-shrink-0 ml-2">!</span>
           </button>
 
           {/* 6. Municipal Reports Tab */}

@@ -40,18 +40,18 @@ export const KPICards: React.FC<KPICardsProps> = ({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
       
-      {/* 1. BLUE accent — Total Households (white card, soft blue) */}
+      {/* 1. BLUE accent — Total Households (soft blue tinted card) */}
       <div 
         onClick={onNavigateToCollected || onNavigateToLiveTracking}
         title={lang === 'ta' ? 'மொத்த குப்பை சேகரிப்பு விவரங்கள் மற்றும் ஜிபிஎஸ் வரைபடம் காண்க' : 'Click to view Total Waste Collection Details & GPS Map'}
-        className="dash-card dash-card-accent-blue animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none"
+        className="dash-card dash-card-accent-blue animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none bg-[#f5f9ff]"
       >
         <div className="flex items-center gap-3.5">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-blue-200 bg-[#e8f0fe] p-1.5 flex-shrink-0 flex items-center justify-center transition-colors duration-250 group-hover:border-blue-400 group-hover:bg-blue-100">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-blue-300 bg-white p-1.5 flex-shrink-0 flex items-center justify-center transition-colors duration-250 group-hover:border-blue-500 group-hover:bg-blue-100">
             <TotalHouseholdsLogo className="w-full h-full object-contain" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[15px] sm:text-base font-extrabold text-slate-900 flex items-center justify-between gap-2">
+            <div className="text-[15px] sm:text-base font-extrabold text-blue-950 flex items-center justify-between gap-2">
               <span className="truncate">{lang === 'ta' ? 'மொத்த வீடுகள்' : 'Total Households'}</span>
               <span className="dash-badge dash-badge-blue flex-shrink-0">
                 {lang === 'ta' ? 'அனைத்தும்' : 'All'}
@@ -60,13 +60,13 @@ export const KPICards: React.FC<KPICardsProps> = ({
             <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalCollectedToday} />
             </div>
-            <div className="text-sm sm:text-[15px] font-bold text-slate-700 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1 font-semibold min-w-0">
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <div className="flex items-center gap-1 text-sm font-bold text-slate-700 min-w-0">
                 <TrendingUp className="w-3.5 h-3.5 text-blue-700 flex-shrink-0 transition-colors duration-250 group-hover:text-blue-800" />
-                <span className="truncate">{lang === 'ta' ? 'பதிவு செய்யப்பட்டவை' : 'Registered in ward'}</span>
+                <span className="truncate">{lang === 'ta' ? 'பதிவு செய்யப்பட்டவை' : 'Registered'}</span>
               </div>
               <span className="text-xs text-blue-800 font-bold flex items-center gap-0.5 flex-shrink-0">
-                {lang === 'ta' ? 'விவரங்கள்' : 'Details'} <ArrowRight className="w-3 h-3" />
+                {lang === 'ta' ? 'விவரங்கள்' : 'View details'} <ArrowRight className="w-3 h-3" />
               </span>
             </div>
           </div>
@@ -77,7 +77,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
       <div 
         onClick={onNavigateToCovered || onNavigateToCollected}
         title={lang === 'ta' ? 'சேகரிக்கப்பட்ட வீடுகளின் விவரங்கள் காண்க' : 'Click to view Total Household Collected Details & Cleared Locations'}
-        className="dash-card dash-card-accent-green animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none"
+        className="dash-card dash-card-accent-green animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none bg-[#f4faf5]"
         style={{ animationDelay: '60ms' }}
       >
         <div className="flex items-center gap-3.5">
@@ -94,10 +94,10 @@ export const KPICards: React.FC<KPICardsProps> = ({
             <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalCoveredCount} />
             </div>
-            <div className="text-sm sm:text-[15px] font-bold text-slate-700 flex items-center justify-between gap-2">
-              <span className="font-semibold truncate">{lang === 'ta' ? 'சேகரிப்பு முடிவு' : 'Serviced doors'}</span>
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-sm font-bold text-slate-700 truncate">{lang === 'ta' ? 'சேகரிப்பு முடிவு' : 'Serviced doors'}</span>
               <span className="text-xs text-emerald-800 font-bold flex items-center gap-0.5 flex-shrink-0">
-                {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'} <ArrowRight className="w-3 h-3" />
+                {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'View collected'} <ArrowRight className="w-3 h-3" />
               </span>
             </div>
           </div>
@@ -108,7 +108,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
       <div 
         onClick={onNavigateToNotCovered}
         title={lang === 'ta' ? 'விடுபட்ட வீடுகளின் அறிக்கைகள் காண்க' : 'Click to view Total Household Not Collected Reports & Missed Locations'}
-        className="dash-card dash-card-accent-amber animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none"
+        className="dash-card dash-card-accent-amber animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none bg-[#fffaef]"
         style={{ animationDelay: '120ms' }}
       >
         <div className="flex items-center gap-3.5">
@@ -125,10 +125,10 @@ export const KPICards: React.FC<KPICardsProps> = ({
             <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalNotCoveredCount} />
             </div>
-            <div className="text-sm sm:text-[15px] font-bold text-slate-700 flex items-center justify-between gap-2">
-              <span className="font-semibold truncate">{lang === 'ta' ? 'மீண்டும் செல்ல வேண்டும்' : 'Requires re-visit'}</span>
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-sm font-bold text-slate-700 truncate">{lang === 'ta' ? 'மீண்டும் செல்ல வேண்டும்' : 'Requires re-visit'}</span>
               <span className="text-xs text-amber-800 font-bold flex items-center gap-0.5 flex-shrink-0">
-                {lang === 'ta' ? 'அறிக்கைகள்' : 'Reports'} <ArrowRight className="w-3 h-3" />
+                {lang === 'ta' ? 'அறிக்கைகள்' : 'View reports'} <ArrowRight className="w-3 h-3" />
               </span>
             </div>
           </div>
@@ -139,7 +139,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
       <div 
         onClick={onNavigateToFrequentlyNotCovered}
         title={lang === 'ta' ? 'அடிக்கடி சேகரிக்கப்படாத வீடுகள் விவரங்கள் காண்க' : 'Click to view Frequently Not Collected Household Intelligence'}
-        className="dash-card dash-card-accent-red animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none"
+        className="dash-card dash-card-accent-red animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none bg-[#fef5f4]"
         style={{ animationDelay: '180ms' }}
       >
         <div className="flex items-center gap-3.5">
@@ -166,10 +166,10 @@ export const KPICards: React.FC<KPICardsProps> = ({
             <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none flex items-baseline gap-1.5">
               <AnimatedCounter value={frequentlyCount} />
             </div>
-            <div className="text-sm sm:text-[15px] font-bold text-slate-700 flex items-center justify-between gap-2">
-              <span className="font-semibold truncate">{lang === 'ta' ? 'பூட்டப்பட்டது & விடுபட்டவை' : 'Locked & Skipped'}</span>
+            <div className="flex flex-col gap-0.5 min-w-0">
+              <span className="text-sm font-bold text-slate-700 truncate">{lang === 'ta' ? 'பூட்டப்பட்டது & விடுபட்டவை' : 'Locked houses'}</span>
               <span className="text-xs text-red-800 font-bold flex items-center gap-0.5 flex-shrink-0">
-                {lang === 'ta' ? 'வீட்டு வாரியான பார்வை' : 'Household View'} <ArrowRight className="w-3 h-3" />
+                {lang === 'ta' ? 'வீட்டு வாரியான பார்வை' : 'Household view'} <ArrowRight className="w-3 h-3" />
               </span>
             </div>
           </div>

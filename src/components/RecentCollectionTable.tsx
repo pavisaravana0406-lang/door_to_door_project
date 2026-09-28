@@ -93,18 +93,18 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
 
       {/* Table Content */}
       <div className="dash-table-wrap">
-        <table className="w-full text-left border-collapse min-w-[720px]">
+        <table className="w-full text-left border-collapse min-w-[820px]">
           <thead>
             <tr className="bg-[#e9f5ed] text-emerald-900 text-sm sm:text-[15px] font-extrabold border-b border-slate-200">
-              <th className="px-4 py-3.5 text-center w-[6%] font-bold">{lang === 'ta' ? 'வரிசை' : 'S. No.'}</th>
-              <th className="px-4 py-3.5 w-[12%] font-bold">{lang === 'ta' ? 'தேதி' : 'Date'}</th>
-              <th className="px-4 py-3.5 w-[14%] font-bold">{lang === 'ta' ? 'மண்டலம்' : 'Zone'}</th>
-              <th className="px-4 py-3.5 w-[10%] font-bold">{lang === 'ta' ? 'வார்டு' : 'Ward'}</th>
-              <th className="px-4 py-3.5 w-[18%] font-bold">{lang === 'ta' ? 'தெரு' : 'Street'}</th>
-              <th className="px-4 py-3.5 w-[18%] font-bold">{lang === 'ta' ? 'வாகன எண் & 5-ஸ்கேன்' : 'Vehicle No. & 5-Scans'}</th>
-              <th className="px-4 py-3.5 w-[14%] font-bold">{lang === 'ta' ? 'பணியாளர்' : 'Worker'}</th>
-              <th className="px-3 py-3.5 text-center w-[12%] font-bold">{lang === 'ta' ? 'நிலை' : 'Status'}</th>
-              <th className="px-3 py-3.5 text-center w-[6%] font-bold">{lang === 'ta' ? 'செயல்' : 'Action'}</th>
+              <th className="px-4 py-3.5 text-center w-[7%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வரிசை' : 'S. No.'}</th>
+              <th className="px-4 py-3.5 w-[11%] font-bold whitespace-nowrap">{lang === 'ta' ? 'தேதி' : 'Date'}</th>
+              <th className="px-4 py-3.5 w-[13%] font-bold whitespace-nowrap">{lang === 'ta' ? 'மண்டலம்' : 'Zone'}</th>
+              <th className="px-4 py-3.5 w-[9%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வார்டு' : 'Ward'}</th>
+              <th className="px-4 py-3.5 w-[17%] font-bold whitespace-nowrap">{lang === 'ta' ? 'தெரு' : 'Street'}</th>
+              <th className="px-4 py-3.5 w-[19%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வாகன எண் & 5-ஸ்கேன்' : 'Vehicle No. & 5-Scans'}</th>
+              <th className="px-4 py-3.5 w-[12%] font-bold whitespace-nowrap">{lang === 'ta' ? 'பணியாளர்' : 'Worker'}</th>
+              <th className="px-3 py-3.5 text-center w-[12%] font-bold whitespace-nowrap">{lang === 'ta' ? 'நிலை' : 'Status'}</th>
+              <th className="px-3 py-3.5 text-center w-[6%] font-bold whitespace-nowrap">{lang === 'ta' ? 'செயல்' : 'Action'}</th>
             </tr>
           </thead>
 
@@ -204,8 +204,12 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                     )}
                   </td>
 
-                  <td className="px-4 py-3.5 font-bold text-gray-900 text-xs">
-                    {getZoneDisplayName(item.zone || 'Central Zone', lang)}
+                  <td className="px-4 py-3.5 font-bold text-xs">
+                    {(() => {
+                      const z = item.zone || 'Central Zone';
+                      const badge = z.includes('East') ? 'dash-badge-blue' : z.includes('Central') ? 'dash-badge-green' : z.includes('West') ? 'dash-badge-amber' : z.includes('North') ? 'dash-badge-gray' : 'dash-badge-red';
+                      return <span className={`dash-badge ${badge}`}>{getZoneDisplayName(z, lang)}</span>;
+                    })()}
                   </td>
 
                   <td className="px-4 py-3.5 font-semibold text-gray-700 text-xs">
