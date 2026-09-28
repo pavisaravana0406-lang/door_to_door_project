@@ -61,6 +61,9 @@ export interface ScannedCheckpointInfo {
   cssContact?: string;
 }
 
+/** Which of the two mandatory proof photos the camera is capturing. */
+type PhotoSlot = 'before' | 'after';
+
 interface SWMSHouseholdFormViewProps {
   scannedHouseId?: string;
   scannedCheckpoint?: ScannedCheckpointInfo | null;
@@ -364,7 +367,11 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   }, [streetScans, formData.streetName]);
 
   const [scanWarnMsg, setScanWarnMsg] = useState<string | null>(null);
-  const [proofPhoto, setProofPhoto] = useState<string | null>(null);
+  // Two mandatory proof photos: the bin before collection and after collection.
+  const [beforePhoto, setBeforePhoto] = useState<string | null>(null);
+  const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
+  // Which slot the live camera is currently filling.
+  const [cameraSlot, setCameraSlot] = useState<PhotoSlot>('before');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // Live WebCam / Camera Viewfinder State & Refs
@@ -373,6 +380,16 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const [cameraError, setCameraError] = useState<string | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const streamRef = React.useRef<MediaStream | null>(null);
+
+  const setPhotoForSlot = (slot: PhotoSlot, dataUrl: string) => {
+    if (slot === 'before') setBeforePhoto(dataUrl);
+    else setAfterPhoto(dataUrl);
+  };
+
+  const openCameraFor = (slot: PhotoSlot) => {
+    setCameraSlot(slot);
+    handleStartCamera('environment');
+  };
 
   const handleStartCamera = async (mode: 'environment' | 'user' = cameraFacingMode) => {
     setCameraError(null);
@@ -430,7 +447,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     if (ctx) {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      setProofPhoto(dataUrl);
+      setPhotoForSlot(cameraSlot, dataUrl);
       playChimeTone('success');
     }
     handleStopCamera();
@@ -444,19 +461,21 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const slot = cameraSlot;
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
       if (dataUrl) {
-        setProofPhoto(dataUrl);
+        setPhotoForSlot(slot, dataUrl);
         playChimeTone('success');
       }
     };
     reader.readAsDataURL(file);
   };
 
-  const handleRemovePhoto = () => {
-    setProofPhoto(null);
+  const handleRemovePhoto = (slot: PhotoSlot) => {
+    if (slot === 'before') setBeforePhoto(null);
+    else setAfterPhoto(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -501,13 +520,17 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     }
     if (isSubmitting) return;
 
-    // A proof photo is mandatory — never submit the record without one.
-    if (!proofPhoto) {
-      setScanWarnMsg(
-        lang === 'ta'
-          ? '⚠️ சேகரிப்பு உறுதிப்படுத்த ஒரு புகைப்படம் கட்டாயம். கேமரா படம் எடுக்கவும்!'
-          : '⚠️ A proof photo is required. Please take a photo before submitting.'
-      );
+    // Both proof photos (before + after) are mandatory.
+    if (!beforePhoto || !afterPhoto) {
+      const missing = !beforePhoto && !afterPhoto
+        ? (lang === 'ta' ? 'குப்பை எடுக்கும் முன் & பிறகு படங்கள் இரண்டும் கட்டாயம்.'
+                          : 'Both the BEFORE and AFTER photos are required.')
+        : !beforePhoto
+        ? (lang === 'ta' ? 'குப்பை எடுக்கும் முன் படம் கட்டாயம்.'
+                          : 'The BEFORE photo is required.')
+        : (lang === 'ta' ? 'குப்பை எடுக்கும் பிறகு படம் கட்டாயம்.'
+                          : 'The AFTER photo is required.');
+      setScanWarnMsg(`⚠️ ${missing}`);
       setTimeout(() => setScanWarnMsg(null), 5000);
       return;
     }
@@ -574,7 +597,10 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       vehicleType: formData.vehicleType || 'TATA ACE',
       completedScansCount: completedScansCount,
       streetScans: streetScans,
-      proofPhoto: proofPhoto || undefined,
+      proofPhoto: afterPhoto || undefined,
+      beforePhoto: beforePhoto || undefined,
+      afterPhoto: afterPhoto || undefined,
+      photos: [beforePhoto, afterPhoto].filter(Boolean) as string[],
       submittedAt: timestampStr
     };
 
@@ -1064,69 +1090,91 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
               </h4>
             </div>
             <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
-              proofPhoto
+              beforePhoto && afterPhoto
                 ? 'bg-emerald-100 text-[#00875A] border border-emerald-300'
                 : 'bg-rose-100 text-rose-800 border border-rose-300'
             }`}>
-              {proofPhoto
-                ? (lang === 'ta' ? 'புகைப்படம் இணைக்கப்பட்டது ✓' : 'Photo Attached ✓')
+              {beforePhoto && afterPhoto
+                ? (lang === 'ta' ? '2/2 படங்கள் ✓' : '2/2 Photos ✓')
                 : (lang === 'ta' ? 'கட்டாயம் / Mandatory' : 'Mandatory')}
             </span>
           </div>
 
           <div className="border-t border-slate-100 pt-2.5 space-y-3">
-            {proofPhoto && (
-              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 bg-slate-900 shadow-sm">
-                <img
-                  src={proofPhoto}
-                  alt="Waste Collection Proof"
-                  className="w-full h-48 sm:h-56 object-cover"
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/50 to-transparent p-3 text-white flex items-center justify-between">
-                  <div className="text-xs font-semibold">
-                    <div className="font-bold flex items-center gap-1 text-emerald-300">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>{lang === 'ta' ? 'குப்பை சேகரிப்பு சான்றளிப்பு படம்' : 'Collection Proof Photo'}</span>
-                    </div>
-                    <div className="text-[10px] text-slate-300 font-mono mt-0.5">
-                      {formData.streetName || 'Coimbatore'}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleRemovePhoto}
-                    className="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 shadow-sm active:scale-95 cursor-pointer"
-                    title={lang === 'ta' ? 'புகைப்படத்தை நீக்கு' : 'Remove Photo'}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>{lang === 'ta' ? 'நீக்கு' : 'Remove'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {!proofPhoto && (
+            {(!beforePhoto || !afterPhoto) && (
               <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2 text-xs font-bold text-rose-800">
                 <AlertTriangle className="w-4 h-4 text-rose-600 mt-0.5 flex-shrink-0" />
-                <span>{lang === 'ta'
-                  ? 'சேகரிப்பு உறுதிப்படுத்த ஒரு புகைப்படம் கட்டாயம்.'
-                  : 'A proof photo is required to submit this collection record.'}</span>
+                <span>
+                  {lang === 'ta'
+                    ? 'குப்பை எடுக்கும் முன் & பிறகு படங்கள் இரண்டும் கட்டாயம்.'
+                    : 'Both the BEFORE and AFTER photos are required to submit.'}
+                </span>
               </div>
             )}
 
-            {/* Camera capture stays available before and after a photo is taken */}
-            <button
-              type="button"
-              onClick={() => handleStartCamera('environment')}
-              className="w-full flex items-center justify-center gap-2 bg-[#00875A] hover:bg-[#00704A] text-white font-black py-3 px-4 rounded-2xl shadow-xs cursor-pointer transition active:scale-95 text-xs sm:text-sm border border-emerald-600/40 select-none"
-            >
-              <Camera className="w-5 h-5 text-emerald-100" />
-              <span>
-                {proofPhoto
-                  ? (lang === 'ta' ? 'மீண்டும் படம் எடுக்கவும்' : 'Retake Photo (Camera)')
-                  : (lang === 'ta' ? 'கேமரா படம் எடுக்கவும்' : 'Take Photo (Camera)')}
-              </span>
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {([['before', beforePhoto, 'BEFORE', lang === 'ta' ? 'சேகரிப்புக்கு முன்' : 'Before Collection'],
+                 ['after', afterPhoto, 'AFTER', lang === 'ta' ? 'சேகரிப்புக்கு பிறகு' : 'After Collection']] as const).map(
+                ([slot, photo, tag, caption]) => (
+                  <div key={slot} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${
+                        photo ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {tag}
+                      </span>
+                      <span className="text-[10px] font-bold text-slate-500">{caption}</span>
+                    </div>
+
+                    {photo ? (
+                      <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 bg-slate-900 shadow-sm">
+                        <img
+                          src={photo}
+                          alt={tag}
+                          className="w-full h-40 sm:h-48 object-cover"
+                        />
+                        <div className="absolute top-1.5 left-1.5 bg-black/60 text-white text-[10px] font-black px-2 py-0.5 rounded flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                          {tag} ✓
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(slot)}
+                          className="absolute top-1.5 right-1.5 bg-rose-600 hover:bg-rose-700 text-white px-2 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 active:scale-95 cursor-pointer"
+                          title={lang === 'ta' ? 'புகைப்படத்தை நீக்கு' : 'Remove Photo'}
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-full h-40 sm:h-48 rounded-2xl border-2 border-dashed border-rose-300 bg-rose-50/40 flex flex-col items-center justify-center gap-1.5 text-rose-400">
+                        <ImageIcon className="w-7 h-7" />
+                        <span className="text-[10px] font-bold">
+                          {lang === 'ta' ? 'படம் இல்லை' : 'No photo'}
+                        </span>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => openCameraFor(slot)}
+                      className={`w-full flex items-center justify-center gap-2 font-black py-2.5 px-3 rounded-2xl text-xs transition active:scale-95 cursor-pointer border select-none ${
+                        photo
+                          ? 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                          : 'bg-[#00875A] text-white border-emerald-600/40 hover:bg-[#00704A]'
+                      }`}
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>
+                        {photo
+                          ? (lang === 'ta' ? 'மீண்டும் எடு' : 'Retake')
+                          : (lang === 'ta' ? 'படம் எடு' : 'Take Photo')}
+                      </span>
+                    </button>
+                  </div>
+                )
+              )}
+            </div>
           </div>
         </div>
 
@@ -1153,8 +1201,12 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             <span className="font-black text-white text-base">
               {isSubmitting
                 ? (lang === 'ta' ? 'சமர்ப்பிக்கப்படுகிறது...' : 'Submitting Status...')
-                : !proofPhoto
-                ? (lang === 'ta' ? '📷 புகைப்படம் எடுக்கவும் (கட்டாயம்)' : '📷 Take Proof Photo First (Required)')
+                : (!beforePhoto || !afterPhoto)
+                ? (!beforePhoto && !afterPhoto
+                  ? (lang === 'ta' ? '📷 முன் & பிறகு படங்கள் எடுக்கவும்' : '📷 Take BEFORE & AFTER Photos')
+                  : !beforePhoto
+                    ? (lang === 'ta' ? '📷 முன் படம் எடுக்கவும்' : '📷 Take BEFORE Photo')
+                    : (lang === 'ta' ? '📷 பிறகு படம் எடுக்கவும்' : '📷 Take AFTER Photo'))
                 : isPushCart
                 ? formData.coverageStatus === 'Covered'
                   ? (lang === 'ta' ? 'சேகரிக்கப்பட்டது நிலை சமர்ப்பி (Submit Covered)' : 'Submit Covered Status (Pushcart)')

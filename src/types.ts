@@ -54,6 +54,9 @@ export interface SWMSHouseholdRecord {
   completedScansCount?: number;
   streetScans?: StreetScanPoint[];
   proofPhoto?: string;
+  /** Mandatory proof photos: bin before collection and after collection. */
+  beforePhoto?: string;
+  afterPhoto?: string;
   photos?: string[];
 }
 
