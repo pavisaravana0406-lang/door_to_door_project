@@ -79,8 +79,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
   const transitionLock = useRef<Promise<void>>(Promise.resolve());
   const busyRef = useRef(false);
   const startGenRef = useRef(0);
-  const [manualQrId, setManualQrId] = useState('');
-  const [entryError, setEntryError] = useState<string | null>(null);
+
   // Transient "not our QR" notice — camera keeps scanning underneath.
   const [invalidQrNotice, setInvalidQrNotice] = useState<string | null>(null);
   const invalidNoticeTimer = useRef<number | null>(null);
@@ -506,8 +505,8 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
       } else {
         setCameraError(
           ta
-            ? `நேரடி கேமரா தொடங்கவில்லை (${stageMsg || errMsg}). Retry அழுத்தவும் அல்லது கீழே QR ID தட்டச்சு செய்யவும்.`
-            : `Live camera did not start (${stageMsg || errMsg}). Press Retry or type the QR ID below.`
+            ? `நேரடி கேமரா தொடங்கவில்லை (${stageMsg || errMsg}). Retry அழுத்தவும்.`
+            : `Live camera did not start (${stageMsg || errMsg}). Press Retry camera.`
         );
       }
       setIsCameraActive(false);
@@ -574,25 +573,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     setCameraFacing(nextFacing);
   };
 
-  // Manual QR-ID entry (e.g. E-SCAN1 when the lens can't focus) — direct
-  // submit only, no photo upload. Own checkpoint QRs only.
-  const handleManualSubmit = () => {
-    const clean = manualQrId.trim().toUpperCase().replace(/\s+/g, '');
-    if (!clean) {
-      setEntryError(lang === 'ta' ? 'QR ID-ஐ தட்டச்சு செய்யவும் (எ.கா. E-SCAN1).' : 'Type the QR ID first (e.g. E-SCAN1).');
-      return;
-    }
-    if (!isOwnCheckpointQr(clean)) {
-      setEntryError(
-        lang === 'ta'
-          ? 'இது நமது QR இல்லை — SWMS checkpoint QR ID-ஐ மட்டும் தட்டச்சு செய்யவும் (எ.கா. E-SCAN1).'
-          : 'Not our QR — type only SWMS checkpoint QR IDs (e.g. E-SCAN1).'
-      );
-      return;
-    }
-    setEntryError(null);
-    handleDecodedCode(clean);
-  };
+
 
   return (
     <div className="flex flex-col h-full min-h-screen w-full max-w-full bg-[#0B132B] text-white overflow-hidden relative select-none font-sans">
@@ -781,30 +762,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
             : 'Scans only our SWMS QR codes • Hold 10–15 cm inside the frame • Tap the frame if blurry'}
         </p>
 
-        {/* Manual QR-ID entry — direct submit only, no photo upload */}
-        <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-2xl p-2">
-          <QrCode className="w-4 h-4 text-emerald-300 flex-shrink-0 ml-1" />
-          <input
-            value={manualQrId}
-            onChange={(e) => setManualQrId(e.target.value.toUpperCase())}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleManualSubmit(); }}
-            placeholder="E-SCAN1"
-            autoCapitalize="characters"
-            autoCorrect="off"
-            spellCheck={false}
-            className="flex-1 min-w-0 bg-transparent text-white text-sm font-bold font-mono placeholder:text-white/30 focus:outline-none px-1"
-          />
-          <button
-            type="button"
-            onClick={handleManualSubmit}
-            className="bg-emerald-500 hover:bg-emerald-400 text-[#0B132B] text-xs font-black px-4 py-2 rounded-xl transition active:scale-95 flex-shrink-0"
-          >
-            {lang === 'ta' ? 'சமர்ப்பி' : 'Submit'}
-          </button>
-        </div>
-        {entryError && (
-          <p className="text-center text-[11px] font-bold text-rose-300 leading-snug">{entryError}</p>
-        )}
+
       </div>
 
     </div>
