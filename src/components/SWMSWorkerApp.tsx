@@ -209,7 +209,8 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
         return;
       }
       setScannedRouteData(parsed);
-      setActiveTab('routedetails');
+      setScannedHouseId(cleanQr);
+      setActiveTab('form');
       return;
     }
 
