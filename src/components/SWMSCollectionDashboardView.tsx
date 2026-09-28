@@ -448,8 +448,8 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
                 </button>
               )}
 
-              {/* ── KPI CARDS — white enterprise cards with soft accents ── */}
-              <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-3 sm:gap-4">
+              {/* ── KPI CARDS — 4 boxes in one line on desktop ── */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <button
                   onClick={() => setViewFilter('collected')}
                   className="dash-card dash-card-accent-green animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#f4faf5]"
