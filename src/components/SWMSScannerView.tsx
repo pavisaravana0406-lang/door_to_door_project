@@ -1,8 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Camera, 
-  Zap, 
-  ZapOff, 
   QrCode, 
   ArrowLeft, 
   CheckCircle2, 
@@ -69,7 +66,6 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
   onScanComplete,
   onBackToDashboard
 }) => {
-  const [flashlightOn, setFlashlightOn] = useState(false);
   const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
@@ -83,9 +79,11 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
   const transitionLock = useRef<Promise<void>>(Promise.resolve());
   const busyRef = useRef(false);
   const startGenRef = useRef(0);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [manualQrId, setManualQrId] = useState('');
-  const [galleryError, setGalleryError] = useState<string | null>(null);
+  const [entryError, setEntryError] = useState<string | null>(null);
+  // Transient "not our QR" notice — camera keeps scanning underneath.
+  const [invalidQrNotice, setInvalidQrNotice] = useState<string | null>(null);
+  const invalidNoticeTimer = useRef<number | null>(null);
   const readerElementId = 'gpay-style-qr-reader';
 
   // Helper to extract clean House ID from QR payload
@@ -117,9 +115,32 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     return text || 'HID100101';
   };
 
-  // Trigger successful scan action
+  // Our created checkpoint QRs encode ONLY the id, e.g. "E-SCAN1".
+  // Anything else (random QRs, URLs, barcodes) must NOT scan.
+  const isOwnCheckpointQr = (raw: string): boolean =>
+    /^[A-Z]-SCAN\d+$/i.test(raw.trim());
+
+  const flashInvalidQr = (raw: string) => {
+    const shown = raw.trim().slice(0, 24) || '???';
+    setInvalidQrNotice(
+      lang === 'ta'
+        ? `இது நமது QR இல்லை (${shown}) — SWMS checkpoint QR-ஐ மட்டும் ஸ்கேன் செய்யவும்.`
+        : `Not our QR (${shown}) — scan only SWMS checkpoint QR codes.`
+    );
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(120); } catch { /* ignore */ }
+    }
+    if (invalidNoticeTimer.current) window.clearTimeout(invalidNoticeTimer.current);
+    invalidNoticeTimer.current = window.setTimeout(() => setInvalidQrNotice(null), 2800);
+  };
+
+  // Trigger successful scan action — own checkpoint QRs only.
   const handleDecodedCode = (decodedText: string) => {
     if (isSuccessFlash) return; // avoid duplicate triggers
+    if (!isOwnCheckpointQr(decodedText)) {
+      flashInvalidQr(decodedText);
+      return; // keep the camera running for the correct QR
+    }
     setIsSuccessFlash(true);
     const houseId = parseHouseId(decodedText);
     setScannedResult(houseId);
@@ -502,34 +523,10 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
 
     return () => {
       clearTimeout(timer);
+      if (invalidNoticeTimer.current) window.clearTimeout(invalidNoticeTimer.current);
       void stopCamera();
     };
   }, [cameraFacing]);
-
-  // Toggle Torch/Flashlight
-  const toggleFlashlight = async () => {
-    if (!scannerRef.current || !isCameraActive) return;
-    try {
-      const videoElem = document.querySelector(`#${readerElementId} video`) as HTMLVideoElement | null;
-      if (videoElem && videoElem.srcObject) {
-        const stream = videoElem.srcObject as MediaStream;
-        const track = stream.getVideoTracks()[0];
-        const capabilities = track.getCapabilities?.() as { torch?: boolean } | undefined;
-        if (capabilities && 'torch' in capabilities) {
-          const nextState = !flashlightOn;
-          await track.applyConstraints({
-            advanced: [{ torch: nextState } as unknown as MediaTrackConstraintSet]
-          });
-          setFlashlightOn(nextState);
-          return;
-        }
-      }
-      setFlashlightOn(!flashlightOn);
-    } catch (e) {
-      console.warn('Torch not supported on this device:', e);
-      setFlashlightOn(!flashlightOn);
-    }
-  };
 
   // Flip Camera
   const handleFlipCamera = () => {
@@ -537,46 +534,24 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     setCameraFacing(nextFacing);
   };
 
-  // Manual QR-ID entry fallback (e.g. E-SCAN1 when the lens can't focus)
+  // Manual QR-ID entry (e.g. E-SCAN1 when the lens can't focus) — direct
+  // submit only, no photo upload. Own checkpoint QRs only.
   const handleManualSubmit = () => {
     const clean = manualQrId.trim().toUpperCase().replace(/\s+/g, '');
     if (!clean) {
-      setGalleryError(lang === 'ta' ? 'QR ID-ஐ தட்டச்சு செய்யவும் (எ.கா. E-SCAN1).' : 'Type the QR ID first (e.g. E-SCAN1).');
+      setEntryError(lang === 'ta' ? 'QR ID-ஐ தட்டச்சு செய்யவும் (எ.கா. E-SCAN1).' : 'Type the QR ID first (e.g. E-SCAN1).');
       return;
     }
-    setGalleryError(null);
-    handleDecodedCode(clean);
-  };
-
-  // Gallery upload fallback — decode a photo of the QR from the phone gallery
-  const handleGalleryFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setGalleryError(null);
-    try {
-      let scanner = scannerRef.current;
-      if (!scanner) {
-        scanner = new Html5Qrcode(readerElementId, {
-          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-          useBarCodeDetectorIfSupported: true,
-        } as unknown as ConstructorParameters<typeof Html5Qrcode>[1]);
-        scannerRef.current = scanner;
-      }
-      const decoded = await scanner.scanFile(file, false);
-      if (decoded) {
-        handleDecodedCode(decoded);
-        return;
-      }
-      throw new Error('empty');
-    } catch {
-      setGalleryError(
+    if (!isOwnCheckpointQr(clean)) {
+      setEntryError(
         lang === 'ta'
-          ? 'புகைப்படத்தில் QR கண்டுபிடிக்க முடியவில்லை. தெளிவான புகைப்படம் எடுக்கவும்.'
-          : 'No QR found in that photo. Try a clearer, well-lit photo.'
+          ? 'இது நமது QR இல்லை — SWMS checkpoint QR ID-ஐ மட்டும் தட்டச்சு செய்யவும் (எ.கா. E-SCAN1).'
+          : 'Not our QR — type only SWMS checkpoint QR IDs (e.g. E-SCAN1).'
       );
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
     }
+    setEntryError(null);
+    handleDecodedCode(clean);
   };
 
   return (
@@ -737,6 +712,13 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
               </div>
             </div>
           )}
+
+          {/* Not-our-QR notice — camera keeps running underneath */}
+          {invalidQrNotice && !isSuccessFlash && (
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-2 z-30 w-[92%] max-w-[300px] bg-amber-950/90 border border-amber-400/70 rounded-xl px-3 py-2 shadow-2xl">
+              <p className="text-[11px] font-bold text-amber-200 leading-snug text-center">{invalidQrNotice}</p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -755,11 +737,11 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
 
         <p className="text-center text-[11px] font-semibold text-white/60 leading-snug">
           {lang === 'ta'
-            ? 'QR-ஐ சட்டகத்தில் நிறுத்தி 10–15 செ.மீ தூரத்தில் பிடிக்கவும் • Blur-ஆ இருந்தால் frame-ஐ தட்டவும்'
-            : 'Hold the QR steady inside the frame, 10–15 cm away • Tap the frame if blurry'}
+            ? 'நமது SWMS QR-ஐ மட்டும் ஸ்கேன் செய்யும் • சட்டகத்தில் 10–15 செ.மீ • Blur-ஆ இருந்தால் frame-ஐ தட்டவும்'
+            : 'Scans only our SWMS QR codes • Hold 10–15 cm inside the frame • Tap the frame if blurry'}
         </p>
 
-        {/* Manual QR-ID entry — works even when the lens can't focus */}
+        {/* Manual QR-ID entry — direct submit only, no photo upload */}
         <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-2xl p-2">
           <QrCode className="w-4 h-4 text-emerald-300 flex-shrink-0 ml-1" />
           <input
@@ -780,8 +762,8 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
             {lang === 'ta' ? 'சமர்ப்பி' : 'Submit'}
           </button>
         </div>
-        {galleryError && (
-          <p className="text-center text-[11px] font-bold text-rose-300 leading-snug">{galleryError}</p>
+        {entryError && (
+          <p className="text-center text-[11px] font-bold text-rose-300 leading-snug">{entryError}</p>
         )}
       </div>
 
