@@ -217,11 +217,18 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
               </div>
             </div>
 
-            {/* Municipal Titles — big main headings */}
+            {/* Municipal Titles — compact 2-line stack on mobile, full text from sm up */}
             <div className="min-w-0 flex flex-col justify-center">
-              <div className="sm:hidden flex flex-col leading-tight">
-                <div className="text-[16px] font-black tracking-tight text-white leading-snug drop-shadow">Coimbatore City Municipal Corporation</div>
-                <div className="text-[11px] font-black tracking-wide text-amber-300 uppercase leading-snug mt-1 drop-shadow">Integrated Command and Control Center</div>
+              <div className="sm:hidden flex flex-col leading-none">
+                <div className="text-[12.5px] font-black tracking-tight text-white leading-[1.15] drop-shadow">
+                  Coimbatore City Municipal
+                </div>
+                <div className="text-[12.5px] font-black tracking-tight text-white leading-[1.15] drop-shadow">
+                  Corporation
+                </div>
+                <div className="text-[9px] font-black tracking-wide text-amber-300 uppercase leading-none mt-1 drop-shadow">
+                  Integrated Command &amp; Control Center
+                </div>
               </div>
               <div className="hidden sm:flex sm:flex-col sm:justify-center leading-tight">
                 <span className="text-lg lg:text-[24px] font-black tracking-tight text-white drop-shadow leading-tight">Coimbatore City Municipal Corporation</span>
@@ -307,9 +314,9 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
         </div>
 
         {/* Line 2 (Mobile only): Full-width vehicle/worker pill */}
-        <div className="sm:hidden flex items-center justify-between gap-1 px-2.5 pb-1.5 pt-1 border-t border-[#166534] bg-[#166534]/50">
+        <div className="sm:hidden flex items-center justify-between gap-2 px-2.5 pb-1.5 pt-1 border-t border-[#166534] bg-[#166534]/50">
           <div
-            className="flex items-center gap-1.5 bg-[#166534] border border-emerald-400/40 rounded-full pl-1 pr-2 py-0.5 shadow-sm flex-shrink-0 max-w-[65%]"
+            className="flex items-center gap-1.5 bg-[#166534] border border-emerald-400/40 rounded-full pl-1 pr-2 py-1 shadow-sm flex-shrink-0 min-w-0 max-w-[58%]"
             title={`${vehicleNo}`}
           >
             <div className="w-5 h-5 rounded-md bg-white shadow-xs flex items-center justify-center border border-emerald-200 flex-shrink-0 overflow-hidden" title="Assigned Vehicle">
@@ -320,16 +327,16 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
               <div className="text-[8.5px] font-semibold text-emerald-200 tracking-wider truncate mt-0.5">{vehicleType}</div>
             </div>
           </div>
-          <div className="flex items-center gap-1 min-w-0 flex-shrink-0">
-            <span className="text-[9.5px] font-bold text-emerald-100 truncate">East Zone</span>
+          <div className="flex items-center gap-1.5 min-w-0 flex-shrink-0">
+            <span className="text-[9.5px] font-bold text-emerald-100 whitespace-nowrap">East Zone</span>
             <span className="w-1 h-1 rounded-full bg-amber-300 flex-shrink-0"></span>
-            <span className="text-[9.5px] font-bold text-amber-300 truncate">Ward 24</span>
+            <span className="text-[9.5px] font-bold text-amber-300 whitespace-nowrap">Ward 24</span>
           </div>
         </div>
       </header>
 
-      {/* ── BODY — full screen width ── */}
-      <div className="px-3 sm:px-5 lg:px-8 pt-4 sm:pt-6 space-y-4 sm:space-y-5 w-full max-w-none mx-0">
+      {/* ── BODY — full screen width. Extra bottom padding clears the fixed SCAN pill. ── */}
+      <div className="px-3 sm:px-5 lg:px-8 pt-4 sm:pt-6 pb-28 sm:pb-24 space-y-4 sm:space-y-5 w-full max-w-none mx-0">
         {loading && !dashboard && (
           <div className="dash-card animate-dash-enter flex flex-col items-center justify-center py-16 gap-3">
             <RefreshCw className="w-8 h-8 text-emerald-700 animate-spin" />
@@ -418,89 +425,89 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
 
           return (
             <>
-              {/* ── KPI CARDS — 4 boxes in one line on desktop ── */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {/* ── KPI CARDS — icon above text on mobile so labels are never clipped ── */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 <button
                   onClick={() => setViewFilter('collected')}
-                  className="dash-card dash-card-accent-green animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#f4faf5]"
+                  className="dash-card dash-card-accent-green animate-dash-enter p-3 sm:p-5 text-left cursor-pointer group bg-[#f4faf5]"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#e9f5ed] border border-emerald-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-emerald-100 group-hover:border-emerald-500">
-                      <CheckCircle2 className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-700" />
+                  <div className="flex flex-col xs:flex-row items-start gap-2 sm:items-center sm:gap-3">
+                    <span className="w-9 h-9 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-[#e9f5ed] border border-emerald-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-emerald-100 group-hover:border-emerald-500">
+                      <CheckCircle2 className="w-5 h-5 sm:w-7 sm:h-7 text-emerald-700" />
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] sm:text-sm font-extrabold uppercase tracking-wider text-emerald-900 truncate">{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Total Collected'}</div>
-                      <div className="text-4xl sm:text-5xl font-black text-slate-900 font-num leading-none mt-1"><AnimatedCounter value={liveCollected} /></div>
-                      <div className="text-[13px] sm:text-sm text-slate-600 font-bold mt-1 truncate">{liveCollected}/{liveTotalCheckpoints} {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'collected'} • {liveCoveragePercent}%</div>
+                    <div className="min-w-0 w-full flex-1">
+                      <div className="text-[10px] sm:text-sm font-extrabold uppercase tracking-wide sm:tracking-wider text-emerald-900 leading-tight break-words">{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Total Collected'}</div>
+                      <div className="text-3xl sm:text-5xl font-black text-slate-900 font-num leading-none mt-0.5 sm:mt-1"><AnimatedCounter value={liveCollected} /></div>
+                      <div className="text-[10px] sm:text-sm text-slate-600 font-bold mt-0.5 sm:mt-1 leading-tight break-words">{liveCollected}/{liveTotalCheckpoints} {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'collected'} • {liveCoveragePercent}%</div>
                     </div>
                   </div>
                 </button>
                 <button
                   onClick={() => setViewFilter('notcollected')}
-                  className="dash-card dash-card-accent-red animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#fef5f4]"
+                  className="dash-card dash-card-accent-red animate-dash-enter p-3 sm:p-5 text-left cursor-pointer group bg-[#fef5f4]"
                   style={{ animationDelay: '60ms' }}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#fdecea] border border-red-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-red-100 group-hover:border-red-400">
-                      <XCircle className="w-6 h-6 sm:w-7 sm:h-7 text-red-700" />
+                  <div className="flex flex-col xs:flex-row items-start gap-2 sm:items-center sm:gap-3">
+                    <span className="w-9 h-9 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-[#fdecea] border border-red-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-red-100 group-hover:border-red-400">
+                      <XCircle className="w-5 h-5 sm:w-7 sm:h-7 text-red-700" />
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] sm:text-sm font-extrabold uppercase tracking-wider text-red-900 truncate">{lang === 'ta' ? 'சேகரிக்கவில்லை' : 'Not Collected'}</div>
-                      <div className="text-4xl sm:text-5xl font-black text-slate-900 font-num leading-none mt-1"><AnimatedCounter value={liveNotCollected} /></div>
-                      <div className="text-[13px] sm:text-sm text-slate-600 font-bold mt-1 truncate">{liveNotCollected}/{liveTotalCheckpoints} {lang === 'ta' ? 'நிலுவையில்' : 'pending'}</div>
+                    <div className="min-w-0 w-full flex-1">
+                      <div className="text-[10px] sm:text-sm font-extrabold uppercase tracking-wide sm:tracking-wider text-red-900 leading-tight break-words">{lang === 'ta' ? 'சேகரிக்கவில்லை' : 'Not Collected'}</div>
+                      <div className="text-3xl sm:text-5xl font-black text-slate-900 font-num leading-none mt-0.5 sm:mt-1"><AnimatedCounter value={liveNotCollected} /></div>
+                      <div className="text-[10px] sm:text-sm text-slate-600 font-bold mt-0.5 sm:mt-1 leading-tight break-words">{liveNotCollected}/{liveTotalCheckpoints} {lang === 'ta' ? 'நிலுவையில்' : 'pending'}</div>
                     </div>
                   </div>
                 </button>
                 <button
                   onClick={() => setViewFilter('frequent')}
-                  className="dash-card dash-card-accent-amber animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#fffaef]"
+                  className="dash-card dash-card-accent-amber animate-dash-enter p-3 sm:p-5 text-left cursor-pointer group bg-[#fffaef]"
                   style={{ animationDelay: '120ms' }}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#fef3e2] border border-amber-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-amber-100 group-hover:border-amber-500">
-                      <AlertTriangle className="w-6 h-6 sm:w-7 sm:h-7 text-amber-700" />
+                  <div className="flex flex-col xs:flex-row items-start gap-2 sm:items-center sm:gap-3">
+                    <span className="w-9 h-9 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-[#fef3e2] border border-amber-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-amber-100 group-hover:border-amber-500">
+                      <AlertTriangle className="w-5 h-5 sm:w-7 sm:h-7 text-amber-700" />
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] sm:text-sm font-extrabold uppercase tracking-wider text-amber-900 truncate">{lang === 'ta' ? 'அடிக்கடி சேகரிக்கவில்லை' : 'Frequently Missed'}</div>
-                      <div className="text-4xl sm:text-5xl font-black text-slate-900 font-num leading-none mt-1">
+                    <div className="min-w-0 w-full flex-1">
+                      <div className="text-[10px] sm:text-sm font-extrabold uppercase tracking-wide sm:tracking-wider text-amber-900 leading-tight break-words">{lang === 'ta' ? 'அடிக்கடி சேகரிக்கவில்லை' : 'Frequently Missed'}</div>
+                      <div className="text-3xl sm:text-5xl font-black text-slate-900 font-num leading-none mt-0.5 sm:mt-1">
                         <AnimatedCounter value={liveMissedStreets} />
                       </div>
-                      <div className="text-[13px] sm:text-sm text-slate-600 font-bold mt-1 truncate">{lang === 'ta' ? 'சேகரிக்காத தெருக்கள்' : liveMissedStreets === 1 ? 'street missed' : 'streets missed'}</div>
+                      <div className="text-[10px] sm:text-sm text-slate-600 font-bold mt-0.5 sm:mt-1 leading-tight break-words">{lang === 'ta' ? 'சேகரிக்காத தெருக்கள்' : liveMissedStreets === 1 ? 'street missed' : 'streets missed'}</div>
                     </div>
                   </div>
                 </button>
                 <button
                   onClick={() => setViewFilter('total')}
-                  className="dash-card dash-card-accent-blue animate-dash-enter p-4 sm:p-5 text-left cursor-pointer group bg-[#f5f9ff]"
+                  className="dash-card dash-card-accent-blue animate-dash-enter p-3 sm:p-5 text-left cursor-pointer group bg-[#f5f9ff]"
                   style={{ animationDelay: '180ms' }}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#e8f0fe] border border-blue-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-blue-100 group-hover:border-blue-400">
-                      <QrCode className="w-6 h-6 sm:w-7 sm:h-7 text-blue-700" />
+                  <div className="flex flex-col xs:flex-row items-start gap-2 sm:items-center sm:gap-3">
+                    <span className="w-9 h-9 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-[#e8f0fe] border border-blue-200 flex items-center justify-center flex-shrink-0 transition-colors duration-250 group-hover:bg-blue-100 group-hover:border-blue-400">
+                      <QrCode className="w-5 h-5 sm:w-7 sm:h-7 text-blue-700" />
                     </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13px] sm:text-sm font-extrabold uppercase tracking-wider text-blue-900 truncate">{lang === 'ta' ? 'மொத்த QR' : 'Total QR'}</div>
-                      <div className="text-4xl sm:text-5xl font-black text-slate-900 font-num leading-none mt-1"><AnimatedCounter value={liveTotalCheckpoints} /></div>
-                      <div className="text-[13px] sm:text-sm text-slate-600 font-bold mt-1 truncate">{latestScansCount}/5 {lang === 'ta' ? 'ஸ்கேன் செய்யப்பட்டது' : 'scanned'}</div>
+                    <div className="min-w-0 w-full flex-1">
+                      <div className="text-[10px] sm:text-sm font-extrabold uppercase tracking-wide sm:tracking-wider text-blue-900 leading-tight break-words">{lang === 'ta' ? 'மொத்த QR' : 'Total QR'}</div>
+                      <div className="text-3xl sm:text-5xl font-black text-slate-900 font-num leading-none mt-0.5 sm:mt-1"><AnimatedCounter value={liveTotalCheckpoints} /></div>
+                      <div className="text-[10px] sm:text-sm text-slate-600 font-bold mt-0.5 sm:mt-1 leading-tight break-words">{latestScansCount}/5 {lang === 'ta' ? 'ஸ்கேன் செய்யப்பட்டது' : 'scanned'}</div>
                     </div>
                   </div>
                 </button>
               </div>
 
               {/* ── OVERALL COVERAGE — clean status card ── */}
-              <div className="dash-card animate-dash-enter p-4 sm:p-5 flex items-center justify-between gap-3" style={{ animationDelay: '240ms' }}>
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white font-black text-base sm:text-lg shadow flex-shrink-0 ${
+              <div className="dash-card animate-dash-enter p-3 sm:p-5 flex items-center justify-between gap-2 sm:gap-3" style={{ animationDelay: '240ms' }}>
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+                  <span className={`w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-white font-black text-sm sm:text-lg shadow flex-shrink-0 ${
                     liveCoveragePercent === 100 ? 'bg-emerald-600' : liveCoveragePercent > 0 ? 'bg-amber-500' : 'bg-rose-600'
                   }`}>
                     {liveCoveragePercent}%
                   </span>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <div className="dash-badge dash-badge-green mb-1">{lang === 'ta' ? 'மொத்த சேகரிப்பு நிலை' : 'Overall Collection Status'}</div>
-                    <div className="text-base sm:text-xl font-black text-slate-900 leading-tight break-words">
+                    <div className="text-sm sm:text-xl font-black text-slate-900 leading-tight break-words">
                       {liveOverallStatus}
                     </div>
-                    <div className="mt-2 h-2.5 w-40 sm:w-56 rounded-full bg-slate-200 overflow-hidden">
+                    <div className="mt-2 h-2.5 w-full max-w-[9rem] sm:max-w-[14rem] rounded-full bg-slate-200 overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all duration-300 ${liveCoveragePercent === 100 ? 'bg-emerald-600' : liveCoveragePercent > 0 ? 'bg-amber-500' : 'bg-rose-600'}`}
                         style={{ width: `${liveCoveragePercent}%` }}
@@ -509,8 +516,8 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <div className="text-[12px] sm:text-[13px] font-extrabold uppercase tracking-wider text-slate-500">{lang === 'ta' ? 'தெருக்கள்' : 'Streets'}</div>
-                  <div className="text-3xl sm:text-4xl font-black text-slate-900 font-num">{totalStreets}</div>
+                  <div className="text-[10px] sm:text-[13px] font-extrabold uppercase tracking-wide sm:tracking-wider text-slate-500 whitespace-nowrap">{lang === 'ta' ? 'தெருக்கள்' : 'Streets'}</div>
+                  <div className="text-2xl sm:text-4xl font-black text-slate-900 font-num">{totalStreets}</div>
                 </div>
               </div>
             </>
@@ -519,18 +526,18 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
       </div>
 
       {/* ── FLOATING SCAN BUTTON — solid professional pill ── */}
-      <div className="fixed bottom-5 left-0 right-0 z-40 flex items-center justify-center pointer-events-none px-4">
+      <div className="fixed bottom-4 sm:bottom-5 left-0 right-0 z-40 flex items-center justify-center pointer-events-none px-4">
         <button
           onClick={onOpenScanner}
-          className="dash-btn pointer-events-auto flex items-center gap-3 pl-2.5 pr-7 py-2.5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-black shadow-lg border border-emerald-600 cursor-pointer"
+          className="dash-btn pointer-events-auto flex items-center gap-2.5 sm:gap-3 pl-2 pr-5 sm:pr-7 py-2 sm:py-2.5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white font-black shadow-lg border border-emerald-600 cursor-pointer"
           title="Scan QR Code / க்யூஆர் ஸ்கேன் செய்யவும்"
         >
-          <span className="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow border border-emerald-200 flex-shrink-0">
-            <QrCode className="w-5 h-5 text-emerald-700" />
+          <span className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white flex items-center justify-center shadow border border-emerald-200 flex-shrink-0">
+            <QrCode className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-700" />
           </span>
           <span className="flex flex-col items-start leading-tight">
-            <span className="text-sm font-black tracking-[0.25em] uppercase">{lang === 'ta' ? 'ஸ்கேன்' : 'SCAN'}</span>
-            <span className="text-[13px] text-emerald-100 font-bold mt-0.5">{lang === 'ta' ? 'க்யூஆர் குறியீடு' : 'QR Code'}</span>
+            <span className="text-xs sm:text-sm font-black tracking-[0.25em] uppercase">{lang === 'ta' ? 'ஸ்கேன்' : 'SCAN'}</span>
+            <span className="text-[11px] sm:text-[13px] text-emerald-100 font-bold mt-0.5">{lang === 'ta' ? 'க்யூஆர் குறியீடு' : 'QR Code'}</span>
           </span>
         </button>
       </div>
