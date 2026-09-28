@@ -102,6 +102,11 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     }
     // If format is like HID100101 or ST1HOU10
     if (text.startsWith('HID') || text.startsWith('ST')) return text;
+    // If format is like CCMC-QR6 or CCMC-QR21-P3
+    const ccmcMatch = text.match(/^CCMC-QR(\d+)(?:-P\d+)?$/i);
+    if (ccmcMatch) {
+      return `HID100${String(ccmcMatch[1]).padStart(3, '0')}`;
+    }
     // If format is like SBM:Z1:W01:str-01:45:SBM-Z1-W01-STR01-D045
     const parts = text.split(':');
     if (parts.length >= 5) {
@@ -118,10 +123,10 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     return text || 'HID100101';
   };
 
-  // Our created checkpoint QRs encode ONLY the id, e.g. "E-SCAN1".
+  // Our created checkpoint QRs encode ONLY the id, e.g. "E-SCAN1" or "CCMC-QR6" (with optional "-P3" suffix).
   // Anything else (random QRs, URLs, barcodes) must NOT scan.
   const isOwnCheckpointQr = (raw: string): boolean =>
-    /^[A-Z]-SCAN\d+$/i.test(raw.trim());
+    /^[A-Z]-SCAN\d+$/i.test(raw.trim()) || /^CCMC-QR\d+(-P\d+)?$/i.test(raw.trim());
 
   const flashInvalidQr = (raw: string) => {
     const shown = raw.trim().slice(0, 24) || '???';
