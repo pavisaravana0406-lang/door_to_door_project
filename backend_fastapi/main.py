@@ -43,22 +43,49 @@ app = FastAPI(
 
 # CORS Middleware — explicit whitelist (never "*" + credentials).
 # Set ALLOWED_ORIGINS env as comma-separated list, e.g.
-# "https://your-app.vercel.app,http://localhost:5173"
+# "https://swms.coimbatoreiccc.com,https://your-app.vercel.app,http://localhost:5173"
+PRODUCTION_ORIGINS = [
+    "https://swms.coimbatoreiccc.com",
+    "https://www.swms.coimbatoreiccc.com",
+    "http://swms.coimbatoreiccc.com",
+    "http://www.swms.coimbatoreiccc.com",
+]
+
+# Regex for preview deployments (Vercel / Cloudflare / Render subdomains).
+# Tight enough to avoid "*" + credentials, loose enough for previews.
+CORS_ORIGIN_REGEX = os.getenv(
+    "CORS_ORIGIN_REGEX",
+    r"https://.*\.vercel\.app|https://.*\.coimbatoreiccc\.com|https://.*\.onrender\.com",
+)
+
+
 def _allowed_origins() -> List[str]:
     raw = os.getenv("ALLOWED_ORIGINS", "").strip()
-    if raw:
-        return [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
-    # Safe defaults for local dev + common deploy targets
-    return [
+    extra = [o.strip().rstrip("/") for o in raw.split(",") if o.strip()] if raw else []
+    # Safe defaults for local dev + production frontend
+    base = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
         "http://localhost:8001",
         "http://127.0.0.1:8001",
+        *PRODUCTION_ORIGINS,
     ]
+    # De-dupe while preserving order
+    seen = set()
+    out: List[str] = []
+    for o in [*base, *extra]:
+        if o not in seen:
+            seen.add(o)
+            out.append(o)
+    return out
+
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins(),
+    allow_origin_regex=CORS_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],

@@ -11,3 +11,9 @@ services:
         sync: false
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: ALLOWED_ORIGINS
+        value: https://swms.coimbatoreiccc.com,https://www.swms.coimbatoreiccc.com
+      - key: CORS_ORIGIN_REGEX
+        value: https://.*\.vercel\.app|https://.*\.coimbatoreiccc\.com|https://.*\.onrender\.com
+      - key: SESSION_EXPIRE_HOURS
+        value: 12
