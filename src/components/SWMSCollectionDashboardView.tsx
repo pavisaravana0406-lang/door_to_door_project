@@ -418,36 +418,6 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
 
           return (
             <>
-              {/* ── OFFICER SCAN BANNER — clean professional card ── */}
-              {onOpenStreetCoverageView && (
-                <button
-                  type="button"
-                  onClick={onOpenStreetCoverageView}
-                  className="dash-card animate-dash-enter w-full p-4 sm:p-5 flex items-center justify-between gap-3 text-left cursor-pointer max-w-full overflow-hidden border-emerald-200"
-                >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <span className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#e9f5ed] border border-emerald-200 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-6 h-6 sm:w-7 sm:h-7 text-emerald-700" />
-                    </span>
-                    <div className="text-left min-w-0 flex-1">
-                      <div className="dash-badge dash-badge-amber mb-1">
-                        {lang === 'ta' ? 'அதிகாரி ஸ்கேன் பக்கம்' : 'Field Officer Scan Page'}
-                      </div>
-                      <div className="text-lg sm:text-2xl font-black text-slate-900 leading-tight uppercase truncate">
-                        {latestStreetName}
-                      </div>
-                      <div className="text-[13px] sm:text-sm font-bold text-slate-600 truncate mt-1">
-                        {latestVehicleType} • {latestScansCount}/5 {lang === 'ta' ? 'ஸ்கேன்' : 'scanned'}
-                      </div>
-                    </div>
-                  </div>
-                  <span className="dash-btn bg-emerald-700 hover:bg-emerald-800 text-white font-extrabold text-sm sm:text-base px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl flex items-center gap-1.5 flex-shrink-0">
-                    <span>{lang === 'ta' ? 'திற' : 'Open'}</span>
-                    <span aria-hidden>→</span>
-                  </span>
-                </button>
-              )}
-
               {/* ── KPI CARDS — 4 boxes in one line on desktop ── */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <button
