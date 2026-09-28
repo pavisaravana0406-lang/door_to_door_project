@@ -40,15 +40,8 @@ export const LanguageSelectionModal: React.FC<LanguageSelectionModalProps> = ({
             <span>Select Portal Language / மொழியைத் தேர்ந்தெடுக்கவும்</span>
           </span>
 
-          <h2 className="text-xl font-black text-slate-900 tracking-tight">
-            Choose Your Language
-          </h2>
-          <p className="text-xs font-bold text-slate-500 mt-1 mb-6">
-            உங்களுக்கு விருப்பமான மொழியைத் தேர்ந்தெடுக்கவும்
-          </p>
-
           {/* LANGUAGE CHOICE CARDS */}
-          <div className="w-full space-y-3 mb-6">
+          <div className="w-full space-y-3 mb-6 mt-4">
             
             {/* ENGLISH OPTION CARD */}
             <button
