@@ -102,11 +102,6 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     }
     // If format is like HID100101 or ST1HOU10
     if (text.startsWith('HID') || text.startsWith('ST')) return text;
-    // If format is like CCMC-QR6 or CCMC-QR21-P3
-    const ccmcMatch = text.match(/^CCMC-QR(\d+)(?:-P\d+)?$/i);
-    if (ccmcMatch) {
-      return `HID100${String(ccmcMatch[1]).padStart(3, '0')}`;
-    }
     // If format is like SBM:Z1:W01:str-01:45:SBM-Z1-W01-STR01-D045
     const parts = text.split(':');
     if (parts.length >= 5) {
@@ -151,7 +146,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     }
     doneRef.current = true; // stop the decode loop immediately
     setIsSuccessFlash(true);
-    const houseId = parseHouseId(decodedText);
+    const houseId = /^CCMC-QR\d+(-P\d+)?$/i.test(decodedText.trim()) ? decodedText.trim() : parseHouseId(decodedText);
     setScannedResult(houseId);
 
     // Audio & Haptic feedback (PhonePe / GPay vibe)

@@ -503,6 +503,59 @@ export const NAGAMMA_NAYAGAR_VEEDHI_QR_PAYLOAD = 'CCMC-QR23';
 export const ALAGAACHI_THOTTAM_QR_PAYLOAD = 'CCMC-QR24';
 export const MUTHUSAMY_SERKAI_VEEDHI_QR_PAYLOAD = 'CCMC-QR25';
 
+export interface StreetScanRoute {
+  routeId: string;
+  zone: string;
+  wardNo: string;
+  streetName: string;
+  households: number;
+  vehicleType: string;
+  vehicleNo: string;
+  workerName: string;
+  workerContact: string;
+  siName: string;
+  siContact: string;
+  ssName: string;
+  ssContact: string;
+  cssName: string;
+  cssContact: string;
+  type: string;
+}
+
+export const CCMC_QR_ROUTES: Record<string, StreetScanRoute> = {
+  'CCMC-QR1': SREE_NAGAR_SCAN_ROUTE,
+  'CCMC-QR2': MAGESHWARI_NAGAR_SCAN_ROUTE,
+  'CCMC-QR3': THIYAGIKUMAR_STREET_SCAN_ROUTE,
+  'CCMC-QR4': MGR_VEEDHI_SCAN_ROUTE,
+  'CCMC-QR5': KALYANAM_SUNDHARAM_STREET_SCAN_ROUTE,
+  'CCMC-QR6': PONNI_NAGAR_SCAN_ROUTE,
+  'CCMC-QR7': PONNI_NAGAR_2_SCAN_ROUTE,
+  'CCMC-QR8': KANDHASAMY_LAYOUT_SCAN_ROUTE,
+  'CCMC-QR9': LAKSHMI_MILLS_SIGNAL_SCAN_ROUTE,
+  'CCMC-QR10': MARIYAMMAN_KOVIL_STREET_SCAN_ROUTE,
+  'CCMC-QR11': KK_NAGAR_SCAN_ROUTE,
+  'CCMC-QR12': RANGANATHAN_KOVIL_STREET_SCAN_ROUTE,
+  'CCMC-QR13': BAJANA_KOVIL_VEEDHI_SCAN_ROUTE,
+  'CCMC-QR14': BAARI_NAGAR_VEEDHI_CUT_ROAD_SCAN_ROUTE,
+  'CCMC-QR15': RAMASAMY_KOONARCUT_ROAD_SCAN_ROUTE,
+  'CCMC-QR16': MADHURA_ENCLAVE_SCAN_ROUTE,
+  'CCMC-QR17': SENTHOORA_PURAM_SCAN_ROUTE,
+  'CCMC-QR18': MEENAKSHI_NAGAR_SCAN_ROUTE,
+  'CCMC-QR19': VISAGA_GARDEN_SCAN_ROUTE,
+  'CCMC-QR20': MARUTHI_ENVUE_SCAN_ROUTE,
+  'CCMC-QR21': PALANI_AANDAVAR_KOVIL_VEEDHI_SCAN_ROUTE,
+  'CCMC-QR22': KGK_MAIN_ROAD_SCAN_ROUTE,
+  'CCMC-QR23': NAGAMMA_NAYAGAR_VEEDHI_SCAN_ROUTE,
+  'CCMC-QR24': ALAGAACHI_THOTTAM_SCAN_ROUTE,
+  'CCMC-QR25': MUTHUSAMY_SERKAI_VEEDHI_SCAN_ROUTE,
+};
+
+export function getStreetScanRoute(qrText: string): StreetScanRoute | null {
+  const match = qrText.trim().match(/^CCMC-QR(\d+)(?:-P\d+)?$/i);
+  if (!match) return null;
+  return CCMC_QR_ROUTES[`CCMC-QR${match[1].toUpperCase()}`] || null;
+}
+
 export const SWMSStreetScanQRCard: React.FC<{ lang?: 'en' | 'ta' }> = ({ lang = 'en' }) => {
   const [selectedQR, setSelectedQR] = useState<'qr1' | 'qr2' | 'qr3' | 'qr4' | 'qr5' | 'qr6' | 'qr7' | 'qr8' | 'qr9' | 'qr10' | 'qr11' | 'qr12' | 'qr13' | 'qr14' | 'qr15' | 'qr16' | 'qr17' | 'qr18' | 'qr19' | 'qr20' | 'qr21' | 'qr22' | 'qr23' | 'qr24' | 'qr25'>('qr25');
   const [selectedPoint, setSelectedPoint] = useState<number>(1);
