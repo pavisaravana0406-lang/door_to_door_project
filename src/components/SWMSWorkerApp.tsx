@@ -7,6 +7,7 @@ import {
   CheckpointResolveResponse,
 } from '../types';
 import { SWMSHouseholdFormView } from './SWMSHouseholdFormView';
+import type { ScannedCheckpointInfo } from './SWMSHouseholdFormView';
 import { SWMSScannerView } from './SWMSScannerView';
 import { DustbinAnimationModal } from './DustbinAnimationModal';
 import { SWMSStreetScanQRCard, getStreetScanRoute, StreetScanRoute } from './SWMSStreetScanQRCard';
@@ -71,6 +72,8 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<WorkerTab>('history');
   const [scannedHouseId, setScannedHouseId] = useState('HID100101');
+  // Authoritative checkpoint details resolved from the backend (Neon).
+  const [scannedCheckpoint, setScannedCheckpoint] = useState<ScannedCheckpointInfo | null>(null);
   const [scannedRouteData, setScannedRouteData] = useState<Record<string, string> | StreetScanRoute | null>(null);
   const [resolution, setResolution] = useState<CheckpointResolveResponse | null>(null);
 
@@ -171,31 +174,15 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
 
     const cleanQr = (scannedText || '').trim();
 
-    // Resolve locally first so a printed card never 404s against the backend,
-    // and the worker always sees the street data that matches the QR.
-    const streetRoute = getStreetScanRoute(cleanQr);
-    if (streetRoute) {
-      const assignedKey = assignment?.vehicleNumber || assignedVehicleId || userName || 'YOGARAJ';
-      const cleanAssignedVeh = (assignedKey || '').replace(/[\s\-_]/g, '').toUpperCase();
-      const cleanScannedVeh = (streetRoute.vehicleNo || '').replace(/[\s\-_]/g, '').toUpperCase();
-      const isMatch = !cleanAssignedVeh || !cleanScannedVeh || cleanAssignedVeh.includes(cleanScannedVeh) || cleanScannedVeh.includes(cleanAssignedVeh);
-      if (!isMatch) {
-        const assignedRouteInfo = getVehicleRouteDetails(assignedKey);
-        const errorMsg = lang === 'ta'
-          ? `🚫 வாகன முரண்பாடு எச்சரிக்கை (QR Mismatch Alert)!\n\n• நீங்கள் ஒதுக்கப்பட்டுள்ள வாகனம்: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• நீங்கள் ஸ்கேன் செய்த QR: ${streetRoute.streetName} (${streetRoute.vehicleNo})\n\nதயவுசெய்து உங்கள் வாகனத்திற்குரிய (${assignedRouteInfo.vehicleNo}) QR குறியீட்டை மட்டும் ஸ்கேன் செய்யவும்!`
-          : `🚫 Vehicle QR Mismatch Alert!\n\n• Your Assigned Vehicle: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• Scanned QR: ${streetRoute.streetName} (${streetRoute.vehicleNo})\n\nPlease scan your assigned vehicle's (${assignedRouteInfo.vehicleNo}) QR code only!`;
-        setScanError(errorMsg);
-        return;
-      }
-      setScannedRouteData(streetRoute);
-      setScannedHouseId(cleanQr);
-      setActiveTab('form');
-      return;
-    }
+    // Legacy printed street cards ("CCMC-QR5") are not in the database, so they
+    // resolve from the built-in street table and work fully offline.
+    const legacyCard = /^CCMC-QR\d+(-P\d+)?$/i.test(cleanQr)
+      ? getStreetScanRoute(cleanQr)
+      : null;
 
-    // Unknown checkpoint id — let the backend resolve it from the database.
-    if (/^[A-Z]+-SCAN\d+$/i.test(cleanQr)) {
-      const qrId = cleanQr.toUpperCase().replace(/\s+/g, '');
+    // QR-management ids ("E-SCAN3") are resolved against the backend (Neon),
+    // which is the source of truth for street / zone / ward / worker.
+    if (/^[A-Z]+-SCAN\d+$/i.test(cleanQr) && !legacyCard) {
       if (!token) {
         setResolveError(
           lang === 'ta'
@@ -207,15 +194,58 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
       setResolveError(null);
       setResolvingCheckpoint(true);
       try {
-        const res = await resolveCheckpoint(token, qrId);
-        setResolution(res);
-        setActiveTab('collectform');
+        const res = await resolveCheckpoint(token, cleanQr.toUpperCase().replace(/\s+/g, ''));
+        const cp = res?.checkpoint;
+        if (cp) {
+          setScannedCheckpoint({
+            qrId: cp.qrId,
+            position: cp.position,
+            checkpointNumber: cp.checkpointNumber ?? undefined,
+            streetName: cp.streetName,
+            zone: cp.zone,
+            ward: cp.ward,
+            households: cp.households,
+            workerName: cp.workerName ?? undefined,
+            workerContact: cp.workerContact ?? undefined,
+            siName: cp.siName ?? undefined,
+            siContact: cp.siContact ?? undefined,
+            ssName: cp.ssName ?? undefined,
+            ssContact: cp.ssContact ?? undefined,
+            cssName: cp.cssName ?? undefined,
+            cssContact: cp.cssContact ?? undefined,
+          });
+          setScannedHouseId(cleanQr);
+          setActiveTab('form');
+        } else {
+          setActiveTab('collectform');
+          setResolution(res);
+        }
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
         setResolveError(msg || 'Unable to resolve this QR checkpoint.');
       } finally {
         setResolvingCheckpoint(false);
       }
+      return;
+    }
+
+    if (legacyCard) {
+      const assignedKey = assignment?.vehicleNumber || assignedVehicleId || userName || 'YOGARAJ';
+      const cleanAssignedVeh = (assignedKey || '').replace(/[\s\-_]/g, '').toUpperCase();
+      const cleanScannedVeh = (legacyCard.vehicleNo || '').replace(/[\s\-_]/g, '').toUpperCase();
+      const isMatch = !cleanAssignedVeh || !cleanScannedVeh || cleanAssignedVeh.includes(cleanScannedVeh) || cleanScannedVeh.includes(cleanAssignedVeh);
+      if (!isMatch) {
+        const assignedRouteInfo = getVehicleRouteDetails(assignedKey);
+        const errorMsg = lang === 'ta'
+          ? `🚫 வாகன முரண்பாடு எச்சரிக்கை (QR Mismatch Alert)!\n\n• நீங்கள் ஒதுக்கப்பட்டுள்ள வாகனம்: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• நீங்கள் ஸ்கேன் செய்த QR: ${legacyCard.streetName} (${legacyCard.vehicleNo})\n\nதயவுசெய்து உங்கள் வாகனத்திற்குரிய (${assignedRouteInfo.vehicleNo}) QR குறியீட்டை மட்டும் ஸ்கேன் செய்யவும்!`
+          : `🚫 Vehicle QR Mismatch Alert!\n\n• Your Assigned Vehicle: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• Scanned QR: ${legacyCard.streetName} (${legacyCard.vehicleNo})\n\nPlease scan your assigned vehicle's (${assignedRouteInfo.vehicleNo}) QR code only!`;
+        setScanError(errorMsg);
+        return;
+      }
+      setScannedRouteData(legacyCard);
+      setScannedCheckpoint(null);
+      setScannedHouseId(cleanQr);
+      setActiveTab('form');
       return;
     }
 
@@ -457,6 +487,7 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
           <div className="flex-1 flex flex-col w-full h-full min-h-0">
             <SWMSHouseholdFormView
               scannedHouseId={scannedHouseId}
+              scannedCheckpoint={scannedCheckpoint}
               lang={lang}
               onSetLanguage={onSetLanguage}
               onToggleLang={toggleLanguage}

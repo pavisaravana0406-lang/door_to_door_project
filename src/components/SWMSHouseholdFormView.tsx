@@ -39,8 +39,32 @@ import {
 import { ccmcLogo, ccmcFallbackLogo, smartCityLogo, smartCityFallbackLogo } from '../constants/branding';
 import { getStreetScanRoute } from './SWMSStreetScanQRCard';
 
+/**
+ * Authoritative checkpoint details resolved from the SWMS backend (Neon).
+ * Supplied after a scan so the form shows the exact street, zone, ward and
+ * worker recorded for that QR id rather than a guess.
+ */
+export interface ScannedCheckpointInfo {
+  qrId?: string;
+  position?: number;
+  checkpointNumber?: number;
+  streetName?: string;
+  zone?: string;
+  ward?: string;
+  households?: number;
+  workerName?: string;
+  workerContact?: string;
+  siName?: string;
+  siContact?: string;
+  ssName?: string;
+  ssContact?: string;
+  cssName?: string;
+  cssContact?: string;
+}
+
 interface SWMSHouseholdFormViewProps {
   scannedHouseId?: string;
+  scannedCheckpoint?: ScannedCheckpointInfo | null;
   lang?: 'en' | 'ta';
   onSetLanguage?: (lang: 'en' | 'ta') => void;
   onToggleLang?: () => void;
@@ -65,6 +89,7 @@ const cleanHouseId = (rawId?: string): string => {
 
 export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   scannedHouseId = 'HID100101',
+  scannedCheckpoint = null,
   lang = 'ta',
   onSetLanguage,
   onToggleLang,
@@ -152,21 +177,38 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     return t.includes('01:24') || t.includes('01:27') || t.includes('01:28') || t.includes('1:24') || t.includes('1:27') || t.includes('1:28');
   };
 
-  // Automatically fetch & parse scanned QR code details (e.g. QR 1: Sree Nagar or QR 2: Mageshwari Nagar)
+  // Resolve the scanned QR into street/officer details.
+  // Preference order:
+  //   1. scannedCheckpoint — authoritative data fetched from the backend (Neon)
+  //   2. JSON payload embedded in the QR
+  //   3. Static street-card table (offline fallback for legacy CCMC-QR cards)
   useEffect(() => {
     if (!scannedHouseId) return;
     let parsed: any = null;
-    try {
-      parsed = JSON.parse(scannedHouseId);
-    } catch {
-      // Shared resolver handles both "E-SCAN5" and "CCMC-QR5" so the details
-      // always match the QR the worker actually scanned.
-      parsed = getStreetScanRoute(scannedHouseId);
+    if (scannedCheckpoint) {
+      parsed = scannedCheckpoint;
+    } else {
+      try {
+        parsed = JSON.parse(scannedHouseId);
+      } catch {
+        parsed = getStreetScanRoute(scannedHouseId);
+      }
     }
 
     if (parsed && typeof parsed === 'object') {
-      const zoneName = parsed.zone ? (parsed.zone.toString().toUpperCase().includes('EAST') ? 'East Zone' : parsed.zone.toString().toUpperCase().includes('CENTRAL') ? 'Central Zone' : parsed.zone) : 'East Zone';
-      const wardName = parsed.wardNo ? (parsed.wardNo.toString().startsWith('Ward') ? parsed.wardNo : `Ward ${parsed.wardNo}`) : 'Ward 24';
+      const rawZone = parsed.zone ? parsed.zone.toString() : '';
+      const zoneName = rawZone
+        ? (rawZone.toUpperCase().includes('EAST') ? 'East Zone'
+          : rawZone.toUpperCase().includes('CENTRAL') ? 'Central Zone'
+          : rawZone.toUpperCase().includes('WEST') ? 'West Zone'
+          : rawZone.toUpperCase().includes('NORTH') ? 'North Zone'
+          : rawZone.toUpperCase().includes('SOUTH') ? 'South Zone'
+          : rawZone)
+        : 'East Zone';
+      const rawWard = parsed.ward || parsed.wardNo || '';
+      const wardName = rawWard
+        ? (rawWard.toString().startsWith('Ward') ? rawWard.toString() : `Ward ${rawWard}`)
+        : 'Ward 24';
 
       setFormData(prev => ({
         ...prev,
@@ -188,18 +230,24 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
 
       const targetStreetName = parsed.streetName || 'sree nagar';
 
-      // Parse specific checkpoint point from QR string (e.g. CCMC-QR21-P3 -> Point 3)
+      // Which of the 5 checkpoints this QR marks as scanned.
+      // Authoritative source is the checkpoint's position from the backend;
+      // otherwise fall back to the -P{n} suffix, else point 1.
       const lowerCode = scannedHouseId.toLowerCase();
       let targetPoint: number | null = null;
-      const match = lowerCode.match(/(?:-|_|\b)p([1-5])(?:\b|_|\.|$)/);
-      if (match) {
-        targetPoint = parseInt(match[1], 10);
-      } else if (lowerCode.includes('-p5') || lowerCode.includes('p5')) targetPoint = 5;
-      else if (lowerCode.includes('-p4') || lowerCode.includes('p4')) targetPoint = 4;
-      else if (lowerCode.includes('-p3') || lowerCode.includes('p3')) targetPoint = 3;
-      else if (lowerCode.includes('-p2') || lowerCode.includes('p2')) targetPoint = 2;
-      else if (lowerCode.includes('-p1') || lowerCode.includes('p1')) targetPoint = 1;
-      else targetPoint = 1; // Default to point 1 when scanning base QR code
+      const posFromApi = Number(scannedCheckpoint?.position ?? scannedCheckpoint?.checkpointNumber ?? 0);
+      if (posFromApi >= 1 && posFromApi <= 5) {
+        targetPoint = posFromApi;
+      } else {
+        const match = lowerCode.match(/(?:-|_|\b)p([1-5])(?:\b|_|\.)/);
+        if (match) {
+          targetPoint = parseInt(match[1], 10);
+        } else {
+          const scanNum = lowerCode.match(/-scan(\d+)/);
+          const n = scanNum ? parseInt(scanNum[1], 10) : 0;
+          targetPoint = n >= 1 && n <= 5 ? n : 1;
+        }
+      }
 
       const SCAN_KEY = 'ccmc_street_5scans';
       let baseScans: StreetScanPoint[] = [
@@ -248,7 +296,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
 
       setStreetScans(updatedScans);
     }
-  }, [scannedHouseId]);
+  }, [scannedHouseId, scannedCheckpoint]);
 
   // 5 Scan Checkpoints State for Vehicle Mode (Scans 1 to 5 updated one by one per scanned QR checkpoint)
   const [streetScans, setStreetScans] = useState<StreetScanPoint[]>(() => [
