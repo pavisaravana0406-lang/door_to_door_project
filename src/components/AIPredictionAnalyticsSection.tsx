@@ -68,8 +68,100 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
   const [selectedZone, setSelectedZone] = useState<string>('Zone 3');
   const [selectedWard, setSelectedWard] = useState<string>('Ward 12');
   const [selectedStreet, setSelectedStreet] = useState<string>('All Streets');
+  const [datePreset, setDatePreset] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
+  const [dateError, setDateError] = useState<string | null>(null);
+
+  const toISODate = (d: Date): string => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const parseRecordDate = (value: any): string | null => {
+    if (!value) return null;
+    const direct = new Date(value);
+    if (!isNaN(direct.getTime())) return toISODate(direct);
+    // Support "DD/MM/YYYY ..." style
+    const m = String(value).match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (m) {
+      let yy = parseInt(m[3], 10);
+      if (yy < 100) yy += 2000;
+      return `${yy}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`;
+    }
+    return null;
+  };
+
+  // Records actually used by the engine (date-filtered when a range is set)
+  const filteredRecords = useMemo(() => {
+    if (!dateFrom && !dateTo) return records;
+    return (records || []).filter((r: any) => {
+      const iso = parseRecordDate(r?.submittedAt || r?.scannedAt || r?.timestamp || r?.date);
+      if (!iso) return true; // keep undated rows instead of hiding everything
+      if (dateFrom && iso < dateFrom) return false;
+      if (dateTo && iso > dateTo) return false;
+      return true;
+    });
+  }, [records, dateFrom, dateTo]);
+
+  const applyPreset = (preset: string) => {
+    setDatePreset(preset);
+    setDateError(null);
+    const today = new Date();
+    if (preset === 'all') {
+      setDateFrom('');
+      setDateTo('');
+      if (onShowToast) onShowToast('Showing all-time data');
+    } else if (preset === 'today') {
+      const iso = toISODate(today);
+      setDateFrom(iso);
+      setDateTo(iso);
+      if (onShowToast) onShowToast(`Filtered: today (${iso})`);
+    } else if (preset === '7d') {
+      const from = new Date(today);
+      from.setDate(today.getDate() - 6);
+      setDateFrom(toISODate(from));
+      setDateTo(toISODate(today));
+      if (onShowToast) onShowToast('Filtered: last 7 days');
+    } else if (preset === '30d') {
+      const from = new Date(today);
+      from.setDate(today.getDate() - 29);
+      setDateFrom(toISODate(from));
+      setDateTo(toISODate(today));
+      if (onShowToast) onShowToast('Filtered: last 30 days');
+    } else if (preset === 'month') {
+      const from = new Date(today.getFullYear(), today.getMonth(), 1);
+      setDateFrom(toISODate(from));
+      setDateTo(toISODate(today));
+      if (onShowToast) onShowToast('Filtered: this month');
+    } else if (preset === 'custom') {
+      if (onShowToast) onShowToast('Pick From / To dates from the calendar');
+    }
+  };
+
+  const handleCustomFrom = (v: string) => {
+    setDateFrom(v);
+    if (v && dateTo && v > dateTo) setDateError('From date cannot be after To date');
+    else setDateError(null);
+    if (onShowToast) onShowToast(`Date filter from ${v || '—'}`);
+  };
+
+  const handleCustomTo = (v: string) => {
+    setDateTo(v);
+    if (dateFrom && v && dateFrom > v) setDateError('From date cannot be after To date');
+    else setDateError(null);
+    if (onShowToast) onShowToast(`Date filter to ${v || '—'}`);
+  };
+
+  const clearDates = () => {
+    setDateFrom('');
+    setDateTo('');
+    setDatePreset('all');
+    setDateError(null);
+    if (onShowToast) onShowToast('Date filter cleared');
+  };
   
   // Interactive Modals State
   const [activeModal, setActiveModal] = useState<'alerts' | 'full_report' | 'high_risk' | null>(null);
@@ -81,9 +173,10 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
   const [activeDonutIndex, setActiveDonutIndex] = useState<number | null>(null);
 
   // Compute strictly grounded historical predictions via mathematical engine
+  // Uses date-filtered records so the calendar range actually affects analytics.
   const engineResult = useMemo(() => {
-    return runHistoricalPatternPredictionEngine(records, selectedZone, selectedWard, selectedStreet);
-  }, [records, selectedZone, selectedWard, selectedStreet]);
+    return runHistoricalPatternPredictionEngine(filteredRecords, selectedZone, selectedWard, selectedStreet);
+  }, [filteredRecords, selectedZone, selectedWard, selectedStreet]);
 
   const {
     totalHouseholds,
@@ -462,10 +555,10 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
         </div>
 
-        {/* Right Filters Strip (Zone, Ward, Street, Date) */}
-        <div className="flex items-center gap-2.5 flex-wrap w-full xl:w-auto">
+        {/* Right Filters Strip (Zone, Ward, Street, Date) — 2-col on phones */}
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full xl:w-auto">
           {/* Zone Dropdown */}
-          <div className="relative flex-1 sm:flex-initial">
+          <div className="relative w-full sm:w-auto sm:min-w-[130px]">
             <select
               value={selectedZone}
               onChange={(e) => {
@@ -485,7 +578,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
 
           {/* Ward Dropdown */}
-          <div className="relative flex-1 sm:flex-initial">
+          <div className="relative w-full sm:w-auto sm:min-w-[130px]">
             <select
               value={selectedWard}
               onChange={(e) => {
@@ -505,7 +598,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
 
           {/* Street Dropdown */}
-          <div className="relative flex-1 sm:flex-initial">
+          <div className="relative w-full sm:w-auto sm:min-w-[140px]">
             <select
               value={selectedStreet}
               onChange={(e) => {
@@ -524,30 +617,95 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Date Range Filter (Calendar) */}
-          <div className="relative flex items-center gap-1.5 flex-1 sm:flex-initial bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl px-2.5 py-1.5">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => {
-                setDateFrom(e.target.value);
-                if (onShowToast) onShowToast(`Date filter from ${e.target.value || '—'}`);
-              }}
-              className="bg-transparent text-slate-800 text-xs font-bold cursor-pointer focus:outline-none w-[105px]"
-            />
-            <span className="text-slate-400 text-xs font-bold">-</span>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => {
-                setDateTo(e.target.value);
-                if (onShowToast) onShowToast(`Date filter to ${e.target.value || '—'}`);
-              }}
-              className="bg-transparent text-slate-800 text-xs font-bold cursor-pointer focus:outline-none w-[105px]"
-            />
+          {/* Date Range: preset + custom calendar */}
+          <div className="relative col-span-2 sm:col-span-1 w-full sm:w-auto sm:min-w-[150px]">
+            <select
+              value={datePreset}
+              onChange={(e) => applyPreset(e.target.value)}
+              className="w-full appearance-none bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-bold py-2 pl-3 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              aria-label="Date range preset"
+            >
+              <option value="all">All time</option>
+              <option value="today">Today</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="month">This month</option>
+              <option value="custom">Custom range…</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
         </div>
+
+        {/* Custom calendar row — shown only for Custom range, stacks on mobile */}
+        {datePreset === 'custom' && (
+          <div className="mt-3 w-full bg-slate-50 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-end gap-3">
+            <div className="flex-1 min-w-0">
+              <label className="block text-[11px] font-black uppercase tracking-wide text-slate-500 mb-1">
+                From date
+              </label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="date"
+                  value={dateFrom}
+                  max={dateTo || toISODate(new Date())}
+                  onChange={(e) => handleCustomFrom(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs font-bold py-2.5 pl-9 pr-3 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[42px]"
+                />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <label className="block text-[11px] font-black uppercase tracking-wide text-slate-500 mb-1">
+                To date
+              </label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="date"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  max={toISODate(new Date())}
+                  onChange={(e) => handleCustomTo(e.target.value)}
+                  className="w-full bg-white border border-slate-200 text-slate-800 text-xs font-bold py-2.5 pl-9 pr-3 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500 min-h-[42px]"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 sm:pb-[1px]">
+              <button
+                type="button"
+                onClick={clearDates}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 text-xs font-black px-4 py-2.5 rounded-xl bg-white border border-slate-300 text-slate-600 hover:border-rose-300 hover:text-rose-700 transition min-h-[42px] whitespace-nowrap"
+              >
+                <X className="w-3.5 h-3.5" /> Clear
+              </button>
+            </div>
+            {dateError && (
+              <p className="text-[11px] font-bold text-rose-600 sm:w-full">{dateError}</p>
+            )}
+            {!dateError && (dateFrom || dateTo) && (
+              <p className="text-[11px] font-bold text-emerald-700 sm:w-full">
+                Showing {filteredRecords.length} of {records.length} records
+                {dateFrom ? ` from ${dateFrom}` : ''}{dateTo ? ` to ${dateTo}` : ''}
+              </p>
+            )}
+          </div>
+        )}
+        {/* Active non-custom range chip */}
+        {datePreset !== 'custom' && datePreset !== 'all' && (dateFrom || dateTo) && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-bold text-emerald-800">
+            <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1.5">
+              <Calendar className="w-3.5 h-3.5" />
+              {dateFrom} → {dateTo} · {filteredRecords.length}/{records.length} records
+            </span>
+            <button
+              type="button"
+              onClick={clearDates}
+              className="inline-flex items-center gap-1 bg-white border border-slate-300 rounded-full px-3 py-1.5 text-slate-600 hover:border-rose-300 hover:text-rose-700 transition"
+            >
+              <X className="w-3.5 h-3.5" /> Clear
+            </button>
+          </div>
+        )}
 
       </div>
 

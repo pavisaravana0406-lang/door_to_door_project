@@ -403,36 +403,36 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
   const labelCls = 'block text-[12px] uppercase tracking-wide font-bold text-emerald-900 mb-1';
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-emerald-900 text-white rounded-2xl p-5 border border-emerald-800 shadow-xl">
-        <div className="flex items-center space-x-3">
-          <div className="w-11 h-11 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center">
-            <QrCode className="w-6 h-6 text-emerald-300" />
+    <div className="space-y-4 sm:space-y-6 w-full min-w-0 overflow-x-hidden">
+      {/* Page header — stacks cleanly on mobile */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-3 bg-emerald-900 text-white rounded-2xl p-4 sm:p-5 border border-emerald-800 shadow-xl min-w-0">
+        <div className="flex items-start sm:items-center space-x-3 min-w-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
+            <QrCode className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-300" />
           </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-black">QR Checkpoint Management</h2>
-            <p className="text-xs text-emerald-200 font-medium mt-0.5">
+          <div className="min-w-0">
+            <h2 className="text-base sm:text-xl font-black leading-tight break-words">QR Checkpoint Management</h2>
+            <p className="text-[11px] sm:text-xs text-emerald-200 font-medium mt-0.5 leading-snug">
               Auto-generate scannable checkpoint QR codes for every zone, ward and street
             </p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto flex-shrink-0">
           <button
             onClick={loadAll}
             disabled={busy === 'Loading'}
-            className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow border border-emerald-500 disabled:opacity-60 inline-flex items-center space-x-1.5"
+            className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-bold px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl transition shadow border border-emerald-500 disabled:opacity-60 inline-flex items-center justify-center space-x-1.5 whitespace-nowrap min-h-[42px] sm:min-h-0"
           >
-            {busy === 'Loading' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            {busy === 'Loading' ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" /> : <RefreshCw className="w-4 h-4 flex-shrink-0" />}
             <span>Refresh</span>
           </button>
           <button
             onClick={handleDownloadAll}
             disabled={downloading || zoneCheckpoints.length === 0}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow border border-emerald-400 disabled:opacity-60 inline-flex items-center space-x-1.5"
+            className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl transition shadow border border-emerald-400 disabled:opacity-60 inline-flex items-center justify-center space-x-1.5 whitespace-nowrap min-h-[42px] sm:min-h-0"
           >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            <span>Download All (ZIP)</span>
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" /> : <Download className="w-4 h-4 flex-shrink-0" />}
+            <span className="truncate">Download All (ZIP)</span>
           </button>
         </div>
       </div>
@@ -444,9 +444,9 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 min-w-0">
         {/* Left: Create checkpoint form */}
-        <div className="lg:col-span-1 bg-white border border-slate-200 rounded-2xl shadow-sm p-5 h-fit">
+        <div className="lg:col-span-1 bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5 h-fit w-full min-w-0">
           <div className="flex items-center space-x-2 mb-4">
             <Plus className="w-4 h-4 text-emerald-700" />
             <h3 className="text-sm font-black text-slate-900">Create QR Scanner</h3>
@@ -651,21 +651,21 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
         </div>
 
         {/* Right: checkpoint inventory for the selected zone */}
-        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-5">
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <div>
-              <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2">
-                <Building2 className="w-4 h-4 text-emerald-700" />
-                <span>{selectedZone} Checkpoints</span>
+        <div className="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-4 sm:p-5 w-full min-w-0 overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-4 min-w-0">
+            <div className="min-w-0">
+              <h3 className="text-sm font-black text-slate-900 flex items-center space-x-2 min-w-0">
+                <Building2 className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                <span className="truncate">{selectedZone} Checkpoints</span>
               </h3>
-              <p className="text-[11px] text-slate-500 font-semibold mt-0.5">
+              <p className="text-[11px] text-slate-500 font-semibold mt-0.5 break-words">
                 {selectedZoneSummary?.generatedQrs.length || 0} QR codes generated
-                {selectedZoneSummary ? ` · ${selectedZoneSummary.streets} streets` : ''}
+                {selectedZoneSummary ? ` · ${(selectedZoneSummary as any).streets ?? '—'} streets` : ''}
               </p>
             </div>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1 max-w-full sm:max-w-[55%] sm:justify-end overflow-hidden">
               {selectedZoneSummary?.generatedQrs.map((id) => (
-                <span key={id} className="font-mono text-[12px] bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1 rounded-lg">
+                <span key={id} className="font-mono text-[11px] sm:text-[12px] bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-1 rounded-lg whitespace-nowrap max-w-full truncate">
                   {id}
                 </span>
               ))}
@@ -673,44 +673,46 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
           </div>
 
           {zoneCheckpoints.length === 0 ? (
-            <div className="text-center py-14 border-2 border-dashed border-slate-200 rounded-2xl">
+            <div className="text-center py-10 sm:py-14 px-4 border-2 border-dashed border-slate-200 rounded-2xl">
               <QrCode className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <p className="text-sm font-bold text-slate-500">No checkpoints yet for {selectedZone}</p>
+              <p className="text-sm font-bold text-slate-500 break-words">No checkpoints yet for {selectedZone}</p>
               <p className="text-xs text-slate-400 mt-1">Use the form to create one, or press &quot;Generate 5 QR Codes&quot;.</p>
             </div>
           ) : (
-            <div className="grid sm:grid-cols-2 gap-3 max-h-[620px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:max-h-[620px] sm:overflow-y-auto sm:pr-1 min-w-0">
               {zoneCheckpoints.map((c) => (
-                <div key={c.id} className="border border-slate-200 rounded-2xl p-3 bg-white hover:border-emerald-300 transition shadow-sm">
-                  <div className="flex items-start space-x-3">
-                    <QRImageContainer qrId={c.qrId} sizeClassName="w-20 h-20" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-sm font-black text-emerald-800">{c.qrId}</span>
-                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-full ${c.status !== 'Inactive' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
+                <div key={c.qrId} className="border border-slate-200 rounded-2xl p-3 bg-white hover:border-emerald-300 transition shadow-sm w-full min-w-0 overflow-hidden">
+                  <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-start gap-3 min-w-0">
+                    <div className="mx-auto min-[420px]:mx-0 flex-shrink-0">
+                      <QRImageContainer qrId={c.qrId} sizeClassName="w-24 h-24 min-[420px]:w-20 min-[420px]:h-20" />
+                    </div>
+                    <div className="min-w-0 flex-1 w-full">
+                      <div className="flex items-center justify-between gap-2 min-w-0">
+                        <span className="font-mono text-sm font-black text-emerald-800 truncate">{c.qrId}</span>
+                        <span className={`text-[11px] font-black px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0 ${c.status !== 'Inactive' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'}`}>
                           {c.status || 'Active'}
                         </span>
                       </div>
-                      <div className="mt-1 space-y-0.5 text-[11px] text-slate-600 font-medium">
-                        <div className="flex items-center space-x-1"><Home className="w-3 h-3 text-emerald-600" /><span>{c.streetName} · {c.ward}</span></div>
-                        <div className="flex items-center space-x-1"><Users className="w-3 h-3 text-emerald-600" /><span className="truncate">{staffName(c)}</span></div>
-                        <div className="font-mono text-slate-500">Checkpoint #{String(c.checkpointNumber || 1).padStart(2, '0')} · {c.households} households</div>
+                      <div className="mt-1 space-y-0.5 text-[11px] text-slate-600 font-medium min-w-0">
+                        <div className="flex items-start space-x-1 min-w-0"><Home className="w-3 h-3 text-emerald-600 flex-shrink-0 mt-0.5" /><span className="break-words min-w-0">{c.streetName} · {c.ward}</span></div>
+                        <div className="flex items-start space-x-1 min-w-0"><Users className="w-3 h-3 text-emerald-600 flex-shrink-0 mt-0.5" /><span className="break-words min-w-0">{staffName(c)}</span></div>
+                        <div className="font-mono text-slate-500 break-words">Checkpoint #{String(c.checkpointNumber || 1).padStart(2, '0')} · {c.households} households</div>
                       </div>
-                      <div className="flex items-center space-x-1.5 mt-2">
-                        <button onClick={() => setViewQr(c)} className="inline-flex items-center space-x-1 bg-emerald-700 text-white text-[12px] font-black px-2.5 py-1.5 rounded-lg hover:bg-emerald-600 transition">
-                          <Eye className="w-3 h-3" /> View QR
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        <button onClick={() => setViewQr(c)} className="flex-1 min-[420px]:flex-none inline-flex items-center justify-center space-x-1 bg-emerald-700 text-white text-[12px] font-black px-2.5 py-2 min-[420px]:py-1.5 rounded-lg hover:bg-emerald-600 transition min-h-[38px] min-[420px]:min-h-0 whitespace-nowrap">
+                          <Eye className="w-3 h-3 flex-shrink-0" /> <span>View QR</span>
                         </button>
                         <a
                           href={qrImageDownloadUrl(c.qrId)}
                           download={`${c.qrId}.png`}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center space-x-1 bg-white border border-slate-300 text-slate-700 text-[12px] font-black px-2.5 py-1.5 rounded-lg hover:border-emerald-300 transition"
+                          className="flex-1 min-[420px]:flex-none inline-flex items-center justify-center space-x-1 bg-white border border-slate-300 text-slate-700 text-[12px] font-black px-2.5 py-2 min-[420px]:py-1.5 rounded-lg hover:border-emerald-300 transition min-h-[38px] min-[420px]:min-h-0 whitespace-nowrap"
                         >
-                          <Download className="w-3 h-3" /> Download
+                          <Download className="w-3 h-3 flex-shrink-0" /> <span>Download</span>
                         </a>
-                        <button onClick={() => setViewQr(c)} className="inline-flex items-center space-x-1 bg-white border border-slate-300 text-slate-700 text-[12px] font-black px-2.5 py-1.5 rounded-lg hover:border-emerald-300 transition">
-                          <Printer className="w-3 h-3" /> Print
+                        <button onClick={() => setViewQr(c)} className="flex-1 min-[420px]:flex-none inline-flex items-center justify-center space-x-1 bg-white border border-slate-300 text-slate-700 text-[12px] font-black px-2.5 py-2 min-[420px]:py-1.5 rounded-lg hover:border-emerald-300 transition min-h-[38px] min-[420px]:min-h-0 whitespace-nowrap">
+                          <Printer className="w-3 h-3 flex-shrink-0" /> <span>Print</span>
                         </button>
                       </div>
                     </div>
@@ -733,8 +735,8 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
 
       {/* Full QR view / printable label modal */}
       {viewQr && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md max-h-[94vh] sm:max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <div className="flex items-center space-x-2">
                 <QrCode className="w-5 h-5 text-emerald-700" />
