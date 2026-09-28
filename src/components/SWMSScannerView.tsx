@@ -204,6 +204,10 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     setCameraError(null);
     setIsCameraActive(false);
 
+    // Keep the real underlying failure so the UI can explain it
+    // instead of a generic "unavailable" message.
+    let lastStageError: unknown = null;
+
     try {
       if (scannerRef.current) {
         try {
@@ -219,7 +223,28 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
 
       // Check if browser has mediaDevices support
       if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('getUserMedia is not supported on this browser or context.');
+        const inApp = /FBAN|FBAV|FB_IAB|FBAN\/|Instagram|Line\/|MicroMessenger|WhatsApp/i.test(
+          typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
+        );
+        throw new Error(
+          inApp
+            ? 'INAPP_BROWSER: camera is blocked inside this in-app browser. Open this page in Chrome/Safari.'
+            : 'UNSUPPORTED_BROWSER: getUserMedia is not supported on this browser or context.'
+        );
+      }
+
+      // Camera needs a secure context (HTTPS or localhost). Plain HTTP/IP fails.
+      try {
+        const insecure =
+          typeof window !== 'undefined' &&
+          window.isSecureContext === false &&
+          !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(window.location.hostname);
+        if (insecure) {
+          throw new Error('INSECURE_CONTEXT: camera requires HTTPS. Open the https:// site URL.');
+        }
+      } catch (e) {
+        if (e instanceof Error && e.message.startsWith('INSECURE_CONTEXT')) throw e;
+        // ignore detection errors
       }
 
       // Pre-request permission first: unlocks device labels + autofocus on mobile.
@@ -262,6 +287,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         cameras = await Html5Qrcode.getCameras();
       } catch (e) {
         console.warn('getCameras enumeration error:', e);
+        lastStageError = e;
       }
 
       if (cameras && cameras.length > 0) {
@@ -294,6 +320,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
           return;
         } catch (err1) {
           console.warn('Failed to start with enumerated camera ID, trying fallback:', err1);
+          lastStageError = err1;
         }
       }
 
@@ -310,6 +337,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         return;
       } catch (err2) {
         console.warn('Direct facingMode failed:', err2);
+        lastStageError = err2;
       }
 
       // Stage 3: Laptop Webcam / Default video constraint (Works on all Laptops!)
@@ -325,6 +353,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         return;
       } catch (errLaptop) {
         console.warn('Laptop default video start failed:', errLaptop);
+        lastStageError = errLaptop;
       }
 
       // Stage 4: Try any camera ID with HD ask
@@ -340,7 +369,8 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
             setIsCameraActive(true);
             void applyFocusFix();
             return;
-          } catch {
+          } catch (camErr) {
+            lastStageError = camErr;
             // continue loop
           }
         }
@@ -350,17 +380,54 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     } catch (err: unknown) {
       console.warn('Camera auto-start error:', err);
       const errMsg = err instanceof Error ? err.message : String(err);
-      if (errMsg.includes('NotAllowedError') || errMsg.includes('Permission')) {
-        setCameraError(
-          lang === 'ta'
-            ? 'கேமரா அனுமதி தேவைப்படுகிறது. பிரவுசரில் கேமரா அனுமதியை அனுமதிக்கவும்.'
-            : 'Camera permission is required. Please allow camera access in browser settings.'
-        );
+      const stageMsg =
+        lastStageError instanceof Error
+          ? `${lastStageError.name}: ${lastStageError.message}`
+          : String(lastStageError || '');
+      const combined = `${errMsg} ${stageMsg}`;
+      const ta = lang === 'ta';
+
+      const permissionHelp = ta
+        ? 'கேமரா அனுமதி மறுக்கப்பட்டது. Browser address bar-ல் lock icon → Site settings → Camera → Allow, பிறகு page-ஐ reload செய்து Retry அழுத்தவும்.'
+        : 'Camera permission was denied. Tap the lock icon in the address bar → Site settings → Camera → Allow, then reload and press Retry camera.';
+      const busyHelp = ta
+        ? 'கேமரா வேறு app/tab-ல் பயன்பாட்டில் உள்ளது. மற்ற camera app/Tab-களை மூடிவிட்டு Retry அழுத்தவும்.'
+        : 'The camera is busy in another app or tab. Close other camera apps/tabs and press Retry camera.';
+      const missingHelp = ta
+        ? 'இந்த device/browser-ல் பயன்படுத்தக்கூடிய கேமரா இல்லை. Chrome/Safari-ல் திறக்கவும்.'
+        : 'No usable camera was found on this device/browser. Try opening in Chrome or Safari.';
+      const httpsHelp = ta
+        ? 'கேமராவுக்கு HTTPS தேவை. https:// தள URL-ல் திறக்கவும் (http/IP-ல் வேலை செய்யாது).'
+        : 'Camera needs HTTPS. Open the https:// site URL (plain http/IP will not work).';
+      const inappHelp = ta
+        ? 'WhatsApp/Facebook உள்-browser-ல் கேமரா block ஆகும். Chrome/Safari-ல் link-ஐ திறக்கவும்.'
+        : 'In-app browsers (WhatsApp/Facebook) block the camera. Open this link in Chrome or Safari.';
+
+      if (combined.includes('INAPP_BROWSER')) {
+        setCameraError(inappHelp);
+      } else if (combined.includes('INSECURE_CONTEXT')) {
+        setCameraError(httpsHelp);
+      } else if (
+        combined.includes('NotAllowedError') ||
+        combined.includes('Permission denied') ||
+        combined.includes('Permission dismissed')
+      ) {
+        setCameraError(permissionHelp);
+      } else if (combined.includes('NotReadableError') || combined.includes('AbortError') || combined.includes('TrackStartError')) {
+        setCameraError(busyHelp);
+      } else if (
+        combined.includes('NotFoundError') ||
+        combined.includes('OverconstrainedError') ||
+        combined.includes('DevicesNotFound')
+      ) {
+        setCameraError(missingHelp);
+      } else if (combined.includes('UNSUPPORTED_BROWSER')) {
+        setCameraError(inappHelp);
       } else {
         setCameraError(
-          lang === 'ta'
-            ? 'நேரடி கேமரா கிடைக்கவில்லை. கேமரா சரியாக இணைக்கப்பட்டுள்ளதா என சரிபார்க்கவும்.'
-            : 'Live camera stream is unavailable. Please verify your camera connection.'
+          ta
+            ? `நேரடி கேமரா தொடங்கவில்லை (${stageMsg || errMsg}). Retry அழுத்தவும் அல்லது கீழே QR ID தட்டச்சு செய்யவும்.`
+            : `Live camera did not start (${stageMsg || errMsg}). Press Retry or type the QR ID below.`
         );
       }
       setIsCameraActive(false);
