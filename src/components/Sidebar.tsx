@@ -109,16 +109,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* ========================================================================= */}
       {/* 1. DESKTOP SIDEBAR (Visible on lg and up)                                 */}
       {/* ========================================================================= */}
-      <aside className="hidden lg:flex w-72 lg:w-80 bg-[#F2F4F3] border-r border-gray-200/90 min-h-[calc(100vh-80px)] flex-col justify-between p-4 flex-shrink-0 select-none sticky top-20 self-start">
+      <aside className="hidden lg:flex w-72 lg:w-80 bg-[#eef3ee] border-r border-[#dfe7df] min-h-[calc(100vh-80px)] flex-col justify-between p-4 flex-shrink-0 select-none sticky top-20 self-start">
         {/* Top Navigation Items */}
         <div className="space-y-2.5">
           {/* 1. Overview Tab */}
           <button
             onClick={() => handleTabClick('overview')}
-            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
+            data-active={activeTab === 'overview'}
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
               activeTab === 'overview'
-                ? 'bg-[#E9F5ED] text-[#1E7A38] shadow-xs border border-emerald-300/80'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-[#1E7A38]'
+                ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
+                : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
             <div className="flex items-center gap-3.5">
@@ -126,22 +127,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors shadow-xs ${
                   activeTab === 'overview'
                     ? 'bg-[#1E7A38] text-white'
-                    : 'bg-white text-gray-700 border border-gray-200'
+                    : 'dash-sidebar-icon bg-white text-slate-700 border border-gray-200'
                 }`}
               >
                 <LayoutDashboard className="w-6 h-6" />
               </div>
-              <span className="text-sm font-bold">{lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview'}</span>
+              <span className="text-[15px] font-bold text-slate-900">{lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview'}</span>
             </div>
           </button>
 
           {/* 2. AI Prediction Tab (SWMS Copilot) — moved right after Overview */}
           <button
             onClick={() => handleTabClick('ai-prediction')}
-            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
+            data-active={activeTab === 'ai-prediction'}
+            className={`dash-sidebar-item w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
               activeTab === 'ai-prediction'
-                ? 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-800 shadow-xs border border-emerald-300'
-                : 'text-gray-700 hover:bg-emerald-50/60 hover:text-emerald-800'
+                ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
+                : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
             <div className="flex items-center gap-3.5">
@@ -163,10 +165,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 3. Collected Tab */}
           <button
             onClick={() => handleTabClick('collected')}
-            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
               activeTab === 'collected'
-                ? 'bg-[#E9F5ED] text-[#1E7A38] shadow-xs border border-emerald-300/80'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-[#1E7A38]'
+                ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
+                : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
             <div className="flex items-center gap-3.5">
@@ -190,10 +192,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 4. Not Collected Tab */}
           <button
             onClick={() => handleTabClick('not-collected')}
-            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
               activeTab === 'not-collected'
-                ? 'bg-[#E9F5ED] text-[#1E7A38] shadow-xs border border-emerald-300/80'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-[#1E7A38]'
+                ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
+                : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
             <div className="flex items-center gap-3.5">
@@ -217,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 5. Frequently Not Collected Household Tab */}
           <button
             onClick={() => handleTabClick('frequently-not-covered-area')}
-            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
               activeTab === 'frequently-not-covered-area'
                 ? 'bg-rose-50 text-rose-800 shadow-xs border border-rose-300'
                 : 'text-gray-700 hover:bg-rose-50/50 hover:text-rose-800'
@@ -244,10 +246,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 6. Municipal Reports Tab */}
           <button
             onClick={() => handleTabClick('reports')}
-            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
               activeTab === 'reports'
-                ? 'bg-[#E9F5ED] text-[#1E7A38] shadow-xs border border-emerald-300/80'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-[#1E7A38]'
+                ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
+                : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
             <div className="flex items-center gap-3.5">
@@ -266,10 +268,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 7. QR Management Tab (QR Checkpoint Admin) */}
           <button
             onClick={() => handleTabClick('qr-management')}
-            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
               activeTab === 'qr-management'
-                ? 'bg-[#E9F5ED] text-[#1E7A38] shadow-xs border border-emerald-300/80'
-                : 'text-gray-700 hover:bg-gray-100 hover:text-[#1E7A38]'
+                ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
+                : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
             <div className="flex items-center gap-3.5">
@@ -360,8 +362,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onClick={() => handleTabClick(item.id)}
                       className={`w-full flex items-center justify-between p-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
                         isActive
-                          ? 'bg-[#E9F5ED] text-[#1E7A38] shadow-xs border border-emerald-300/80'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-[#1E7A38]'
+                          ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
+                          : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -379,7 +381,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           )}
                           {(item as any).isLive && (
                             <span className="flex h-2.5 w-2.5 absolute top-0.5 right-0.5">
-                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border border-white"></span>
                             </span>
                           )}
@@ -391,7 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span
                           className={`text-xs font-black px-2 py-0.5 rounded-full ${
                             (item as any).isCritical
-                              ? 'bg-rose-100 text-rose-800 animate-pulse border border-rose-300'
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
                               : 'bg-amber-100 text-amber-800 border border-amber-300'
                           }`}
                         >

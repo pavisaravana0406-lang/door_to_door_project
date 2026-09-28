@@ -2,37 +2,44 @@
 @import "leaflet/dist/leaflet.css";
 
 /* ════════════════════════════════════════════════════════════════════
-   SWMS GLOBAL TYPOGRAPHY SYSTEM
-   One type scale for the entire application — every page consumes it.
-   Fonts: Noto Sans / Noto Sans Tamil / Inter (Tamil + English).
+   SWMS GLOBAL TYPOGRAPHY + ENTERPRISE DASHBOARD THEME
+   Poppins throughout; white base with soft green/blue/amber/red accents.
+   Professional, high-contrast, readable. No gradients, no flashy motion.
    ════════════════════════════════════════════════════════════════════ */
 @theme {
-  /* Modern readable stack supporting both Tamil & English */
-  --font-sans: 'Noto Sans', 'Noto Sans Tamil', 'Inter', 'Plus Jakarta Sans', 'Outfit', 'Mukta Malar', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Poppins first (loaded in index.html), Tamil fallback preserved */
+  --font-sans: 'Poppins', 'Noto Sans', 'Noto Sans Tamil', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Global type scale — reduced for compact headings & navigation */
-  --text-2xs: 0.6875rem;          /* 11px */
+  /* Slightly larger, bolder-readable scale for the dashboard */
+  --text-2xs: 0.75rem;            /* 12px — meta only */
   --text-2xs--line-height: 1.5;
-  --text-xs: 0.75rem;             /* 12px — smallest functional text */
+  --text-xs: 0.8125rem;           /* 13px — badges, labels */
   --text-xs--line-height: 1.5;
-  --text-sm: 0.8125rem;           /* 13px — buttons, inputs, navigation */
-  --text-sm--line-height: 1.5;
-  --text-base: 0.875rem;          /* 14px — body text */
-  --text-base--line-height: 1.55;
-  --text-lg: 0.9375rem;           /* 15px — emphasis body */
-  --text-lg--line-height: 1.5;
-  --text-xl: 1.0625rem;           /* 17px — card title */
+  --text-sm: 0.875rem;            /* 14px — buttons, nav */
+  --text-sm--line-height: 1.55;
+  --text-base: 0.9375rem;         /* 15px — body text */
+  --text-base--line-height: 1.6;
+  --text-lg: 1.0625rem;           /* 17px — emphasis body */
+  --text-lg--line-height: 1.55;
+  --text-xl: 1.1875rem;           /* 19px — card title */
   --text-xl--line-height: 1.4;
-  --text-2xl: 1.1875rem;          /* 19px — section title */
+  --text-2xl: 1.375rem;           /* 22px — section title */
   --text-2xl--line-height: 1.3;
-  --text-3xl: 1.375rem;           /* 22px — page heading */
+  --text-3xl: 1.625rem;           /* 26px — page heading */
   --text-3xl--line-height: 1.25;
-  --text-4xl: 1.625rem;           /* 26px */
+  --text-4xl: 1.875rem;           /* 30px */
   --text-4xl--line-height: 1.2;
-  --text-5xl: 1.875rem;           /* 30px — dashboard stat numbers */
+  --text-5xl: 2.125rem;           /* 34px — dashboard stat numbers */
   --text-5xl--line-height: 1.15;
-  --text-6xl: 2.25rem;            /* 36px */
+  --text-6xl: 2.5rem;             /* 40px */
   --text-6xl--line-height: 1.1;
+
+  /* Soft enterprise accents (solid tints, no gradients) */
+  --dash-green-soft: #e9f5ed;
+  --dash-blue-soft: #e8f0fe;
+  --dash-amber-soft: #fef3e2;
+  --dash-red-soft: #fdecea;
+  --dash-ink: #1a2b22;
 }
 
 /* Semantic sizing tokens — legacy fixed-pixel classes map to these */
@@ -45,13 +52,114 @@
 
 html, body, #root {
   font-family: var(--font-sans);
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #1f2937;
+  background-color: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-size-adjust: 100%;
   -webkit-text-size-adjust: 100%;
+  letter-spacing: -0.005em;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   ENTERPRISE DASHBOARD POLISH — cards, badges, tables, sidebar, motion
+   Subtle 200–300ms transitions, 2px lift max, fade+slide-up on load.
+   ════════════════════════════════════════════════════════════════════ */
+.dash-page {
+  background-color: #ffffff;
+  color: #1f2937;
+  font-size: 0.9375rem;
+}
+
+.dash-card {
+  background: #ffffff;
+  border: 1px solid #e5e9e6;
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px rgba(16, 40, 28, 0.05);
+  transition: background-color 250ms ease, border-color 250ms ease,
+    box-shadow 250ms ease, transform 250ms ease;
+}
+.dash-card:hover {
+  border-color: #bfe0c9;
+  box-shadow: 0 8px 20px -8px rgba(30, 122, 56, 0.18);
+  transform: translateY(-2px);
+}
+
+.dash-card-accent-green { border-top: 4px solid #1e7a38; }
+.dash-card-accent-blue { border-top: 4px solid #1a73e8; }
+.dash-card-accent-amber { border-top: 4px solid #ea8600; }
+.dash-card-accent-red { border-top: 4px solid #d93025; }
+
+.dash-section-title {
+  font-weight: 800;
+  color: #14231b;
   letter-spacing: -0.01em;
+}
+
+.dash-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.dash-badge-green { background: #e9f5ed; color: #166534; border-color: #bfe0c9; }
+.dash-badge-blue { background: #e8f0fe; color: #174ea6; border-color: #c2d7f8; }
+.dash-badge-amber { background: #fef3e2; color: #92400e; border-color: #f5d9a8; }
+.dash-badge-red { background: #fdecea; color: #b3261e; border-color: #f5c6c0; }
+.dash-badge-gray { background: #f1f4f2; color: #374151; border-color: #e2e8e4; }
+
+.dash-btn {
+  transition: background-color 250ms ease, border-color 250ms ease,
+    box-shadow 250ms ease, transform 250ms ease, color 250ms ease;
+}
+.dash-btn:hover {
+  box-shadow: 0 6px 14px -6px rgba(16, 40, 28, 0.25);
+  transform: translateY(-1px);
+}
+.dash-btn:active { transform: translateY(0); }
+
+.dash-sidebar-item {
+  transition: background-color 250ms ease, border-color 250ms ease,
+    box-shadow 250ms ease, transform 250ms ease, color 250ms ease;
+}
+.dash-sidebar-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px -8px rgba(30, 122, 56, 0.25);
+}
+.dash-sidebar-item:hover .dash-sidebar-icon {
+  border-color: #1e7a38;
+  color: #1e7a38;
+}
+.dash-sidebar-item[data-active="true"]:hover { transform: none; }
+
+.dash-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.dash-table-row { transition: background-color 200ms ease; }
+.dash-table-row:hover { background-color: rgba(233, 245, 237, 0.65); }
+
+@keyframes dash-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-dash-enter {
+  animation: dash-fade-up 450ms ease-out both;
+}
+
+button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible {
+  outline: 2px solid #1e7a38;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-dash-enter { animation: none; }
+  .dash-card, .dash-btn, .dash-sidebar-item, .dash-table-row { transition: none; }
+  .dash-card:hover, .dash-btn:hover, .dash-sidebar-item:hover { transform: none; }
 }
 
 /* Crisp mobile readability helper classes */

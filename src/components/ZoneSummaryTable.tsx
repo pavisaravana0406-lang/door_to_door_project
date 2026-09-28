@@ -32,19 +32,20 @@ export const ZoneSummaryTable: React.FC<ZoneSummaryTableProps> = ({
     : '0.00';
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs overflow-hidden">
+    <div className="dash-card overflow-hidden">
       {/* Header Title */}
-      <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-white">
-        <h2 className="text-lg font-extrabold text-gray-900 tracking-tight">
+      <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white">
+        <h2 className="dash-section-title text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
           {lang === 'ta' ? 'மண்டல வாரியான ஒட்டுமொத்த சேகரிப்பு சுருக்கம்' : 'Zone Wise Overall Collection Summary'}
         </h2>
+        <span className="dash-badge dash-badge-green w-fit">5 zones</span>
       </div>
 
       {/* Table Container */}
-      <div className="overflow-x-auto">
+      <div className="dash-table-wrap">
         <table className="w-full text-left border-collapse min-w-[640px]">
           <thead>
-            <tr className="text-xs sm:text-sm font-bold divide-x divide-gray-200/60 border-b border-gray-200">
+            <tr className="text-[13px] sm:text-sm font-bold divide-x divide-slate-200/60 border-b border-slate-200">
               {/* Zone Header */}
               <th className="bg-[#E9F5ED] text-[#1E7A38] px-6 py-3.5 w-[28%]">
                 <div className="flex items-center gap-2">
@@ -75,38 +76,38 @@ export const ZoneSummaryTable: React.FC<ZoneSummaryTableProps> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100 text-sm font-semibold text-gray-800">
+          <tbody className="divide-y divide-slate-100 text-[14px] sm:text-[15px] font-semibold text-slate-800">
             {summaries.map((row) => (
               <tr
                 key={row.zone}
                 onClick={() => onSelectZone?.(row.zone)}
-                className="hover:bg-emerald-50/30 transition-colors cursor-pointer divide-x divide-gray-100"
+                className="dash-table-row cursor-pointer divide-x divide-slate-100"
               >
                 {/* Zone Column */}
-                <td className="px-6 py-3.5 text-gray-900 font-bold">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-[#1E7A38] flex-shrink-0" />
-                    <span>{getZoneDisplayName(row.zone, lang)}</span>
+                <td className="px-5 sm:px-6 py-3.5 text-slate-900 font-bold">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <MapPin className="w-4 h-4 text-emerald-700 flex-shrink-0" />
+                    <span className="truncate">{getZoneDisplayName(row.zone, lang)}</span>
                   </div>
                 </td>
 
                 {/* Total Locations */}
-                <td className="px-6 py-3.5 text-center font-bold text-gray-800">
-                  {row.totalLocations.toLocaleString()}
+                <td className="px-5 sm:px-6 py-3.5 text-center font-bold text-slate-800 font-num">
+                  <span className="dash-badge dash-badge-blue">{row.totalLocations.toLocaleString()}</span>
                 </td>
 
                 {/* Collected Count */}
-                <td className="px-6 py-3.5 text-center font-bold text-gray-800">
-                  {row.collectedCount.toLocaleString()}
+                <td className="px-5 sm:px-6 py-3.5 text-center font-bold text-slate-800 font-num">
+                  <span className="dash-badge dash-badge-green">{row.collectedCount.toLocaleString()}</span>
                 </td>
 
                 {/* Not Collected Count */}
-                <td className="px-6 py-3.5 text-center font-bold text-gray-800">
-                  {row.notCollectedCount.toLocaleString()}
+                <td className="px-5 sm:px-6 py-3.5 text-center font-bold text-slate-800 font-num">
+                  <span className="dash-badge dash-badge-amber">{row.notCollectedCount.toLocaleString()}</span>
                 </td>
 
                 {/* Coverage % */}
-                <td className="px-6 py-3.5 text-center font-extrabold text-[#1E7A38]">
+                <td className="px-5 sm:px-6 py-3.5 text-center font-extrabold text-emerald-800 font-num">
                   {row.coveragePercentage.toFixed(2)}%
                 </td>
               </tr>

@@ -85,8 +85,8 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="w-full select-none text-white shadow-md sticky top-0 z-50">
-      {/* Top Main Green Bar - Exact Login Green #1E7A38 */}
-      <div className="bg-[#1E7A38] px-2 sm:px-4 lg:px-8 py-1.5 sm:py-2 lg:py-4 flex items-center justify-between gap-1.5 sm:gap-4 border-b border-[#166534] min-h-[52px] sm:min-h-[64px] lg:min-h-[88px]">
+      {/* Top Main Green Bar - dark enterprise green */}
+      <div className="bg-[#14532d] px-2 sm:px-4 lg:px-8 py-2 sm:py-2.5 lg:py-4 flex items-center justify-between gap-1.5 sm:gap-4 border-b border-[#0f3d22] min-h-[56px] sm:min-h-[68px] lg:min-h-[88px]">
         {/* Left Side: Mobile Menu Toggle + CM Portrait & CCMC Emblem Duo + Municipal Titles */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
           

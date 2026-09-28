@@ -212,7 +212,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="dash-page min-h-screen bg-white flex flex-col font-sans text-slate-900">
       
       {/* 1. Header component */}
       <Header
@@ -247,17 +247,21 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
         />
 
         {/* 3. Main content body */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 pb-6 lg:pb-8 bg-slate-50">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 pb-8 bg-white w-full min-w-0">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+            <div className="space-y-5 sm:space-y-6 max-w-[1400px] mx-auto w-full">
+              <div className="animate-dash-enter flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h1 className="dash-section-title text-2xl sm:text-[28px] font-extrabold text-slate-900 tracking-tight leading-tight">
                     {lang === 'ta' ? 'நிர்வாக ஆய்வுக் கட்டுப்பாட்டகம்' : 'Admin Review Dashboard'}
                   </h1>
+                  <p className="text-sm sm:text-[15px] font-semibold text-slate-500 mt-1">
+                    {lang === 'ta' ? 'நேரடி சேகரிப்பு கண்காணிப்பு' : 'Live collection monitoring across zones and wards'}
+                  </p>
                 </div>
+                <span className="dash-badge dash-badge-green w-fit">Live • ICCC connected</span>
               </div>
 
               {/* KPI cards grid with individual view redirection */}
@@ -283,7 +287,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
               />
 
               {/* Zone summaries */}
-              <div className="w-full">
+              <div className="animate-dash-enter w-full" style={{ animationDelay: '120ms' }}>
                 <ZoneSummaryTable
                   summaries={zoneSummaries}
                   lang={lang}
@@ -294,7 +298,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
               </div>
 
               {/* Recent Collections (Placed on the next line as a full report table) */}
-              <div className="w-full">
+              <div className="animate-dash-enter w-full" style={{ animationDelay: '200ms' }}>
                 <RecentCollectionTable
                   records={collectionRecords}
                   lang={lang}
@@ -438,9 +442,9 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
 
       {/* 5. Floating Toast Notification */}
       {toast && (
-        <div className="fixed top-24 right-4 z-50 bg-[#1E7A38] text-white px-4 py-3 rounded-2xl shadow-2xl border border-emerald-500/40 flex items-center space-x-2 animate-bounce font-bold text-xs">
+        <div className="animate-dash-enter fixed top-24 right-4 left-4 sm:left-auto z-50 bg-[#14532d] text-white px-4 py-3 rounded-2xl shadow-xl border border-emerald-700 flex items-center space-x-2 font-semibold text-sm max-w-md">
           <CheckCircle2 className="w-5 h-5 flex-shrink-0 text-emerald-200" />
-          <span>{toast}</span>
+          <span className="min-w-0 break-words">{toast}</span>
         </div>
       )}
 

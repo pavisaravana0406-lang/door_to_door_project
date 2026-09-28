@@ -63,10 +63,10 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
   }, [records, selectedZone, showAllRecords]);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs overflow-hidden">
+    <div className="dash-card overflow-hidden">
       {/* Table Title & Zone Filter Ribbon */}
-      <div className="px-6 py-4 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 className="text-lg font-extrabold text-gray-900 tracking-tight">
+      <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+        <h2 className="dash-section-title text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
           {lang === 'ta' ? 'சமீபத்திய சேகரிப்பு மேலோட்டம்' : 'Recent Collection Overview'}
         </h2>
 
@@ -92,10 +92,10 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
       </div>
 
       {/* Table Content */}
-      <div className="overflow-x-auto">
+      <div className="dash-table-wrap">
         <table className="w-full text-left border-collapse min-w-[720px]">
           <thead>
-            <tr className="bg-[#EAF3ED] text-[#1E7A38] text-xs sm:text-sm font-bold border-b border-gray-200/80">
+            <tr className="bg-[#e9f5ed] text-emerald-900 text-[13px] sm:text-sm font-bold border-b border-slate-200">
               <th className="px-4 py-3.5 text-center w-[6%] font-bold">{lang === 'ta' ? 'வரிசை' : 'S. No.'}</th>
               <th className="px-4 py-3.5 w-[12%] font-bold">{lang === 'ta' ? 'தேதி' : 'Date'}</th>
               <th className="px-4 py-3.5 w-[14%] font-bold">{lang === 'ta' ? 'மண்டலம்' : 'Zone'}</th>
@@ -108,7 +108,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-gray-100 text-sm font-semibold text-gray-800">
+          <tbody className="divide-y divide-slate-100 text-[14px] sm:text-[15px] font-semibold text-slate-800">
             {displayRecords.map((item, index) => {
               const isPushCart = (item.vehicleType || '').toLowerCase().includes('push') || item.vehicleNo === 'PUSHCART';
               const totalScans = isPushCart ? 1 : 5;
@@ -187,7 +187,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
               const minScansForCollected = isPushCart ? 1 : 3;
               
               return (
-                <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                <tr key={item.id} className="dash-table-row">
                   <td className="px-4 py-3.5 text-center font-bold text-gray-700">
                     {index + 1}
                   </td>
