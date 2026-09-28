@@ -17,9 +17,8 @@ import {
   Play,
   Route
 } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { cmPhoto, cmFallbackPhoto, ccmcLogo, ccmcFallbackLogo } from '../constants/branding';
-import { SREE_NAGAR_QR_PAYLOAD } from './SWMSStreetScanQRCard';
 
 interface SWMSScannerViewProps {
   lang?: 'en' | 'ta';
@@ -81,6 +80,10 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const startingRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [manualQrId, setManualQrId] = useState('');
+  const [galleryError, setGalleryError] = useState<string | null>(null);
   const readerElementId = 'gpay-style-qr-reader';
 
   // Helper to extract clean House ID from QR payload
@@ -134,8 +137,34 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     }, 350);
   };
 
+  // Apply continuous autofocus once the video track is live (fixes blurry prints
+  // that never decode no matter how long you hold them).
+  const applyFocusFix = async () => {
+    try {
+      const videoElem = document.querySelector(`#${readerElementId} video`) as HTMLVideoElement | null;
+      const stream = videoElem?.srcObject as MediaStream | undefined;
+      const track = stream?.getVideoTracks?.()[0];
+      if (!track) return;
+      const caps = (track.getCapabilities?.() || {}) as Record<string, unknown>;
+      const advanced: MediaTrackConstraintSet[] = [];
+      if ('focusMode' in caps) advanced.push({ focusMode: 'continuous' } as unknown as MediaTrackConstraintSet);
+      if ('exposureMode' in caps) advanced.push({ exposureMode: 'continuous' } as unknown as MediaTrackConstraintSet);
+      if (advanced.length > 0) {
+        try {
+          await track.applyConstraints({ advanced });
+        } catch {
+          // ignore — not all devices allow it
+        }
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   // Start Camera with resilient multi-stage fallback for mobile & laptop webcams
   const startCamera = async (facing: 'environment' | 'user' = 'environment') => {
+    if (startingRef.current) return;
+    startingRef.current = true;
     setCameraError(null);
     setIsCameraActive(false);
 
@@ -149,6 +178,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         } catch {
           // ignore
         }
+        scannerRef.current = null;
       }
 
       // Check if browser has mediaDevices support
@@ -156,20 +186,38 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         throw new Error('getUserMedia is not supported on this browser or context.');
       }
 
-      const html5QrCode = new Html5Qrcode(readerElementId);
+      // Pre-request permission first: unlocks device labels + autofocus on mobile.
+      try {
+        const preStream = await navigator.mediaDevices.getUserMedia({
+          video: facing === 'environment' ? { facingMode: 'environment' } : { facingMode: 'user' },
+          audio: false,
+        });
+        preStream.getTracks().forEach((t) => t.stop());
+      } catch (e) {
+        console.warn('Pre-permission request failed:', e);
+      }
+
+      const html5QrCode = new Html5Qrcode(readerElementId, {
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        useBarCodeDetectorIfSupported: true,
+      } as unknown as ConstructorParameters<typeof Html5Qrcode>[1]);
       scannerRef.current = html5QrCode;
 
-      // Dynamic qrbox to prevent crashes on smaller mobile screens
+      // qrbox matches the visible 224–288px frame (capped) so the decoder
+      // looks where the user actually holds the QR, at a calm 10 fps.
       const dynamicQrBox = (viewfinderWidth: number, viewfinderHeight: number) => {
         const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const edgeSize = Math.max(140, Math.floor(minEdge * 0.72));
+        const edgeSize = Math.max(200, Math.min(300, Math.floor(minEdge * 0.62)));
         return { width: edgeSize, height: edgeSize };
       };
 
       const qrConfig = {
-        fps: 15,
+        fps: 10,
         qrbox: dynamicQrBox,
-        disableFlip: facing === 'environment'
+        aspectRatio: 1.0,
+        disableFlip: false,
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
       };
 
       // Stage 1: Enumerate device cameras to select camera
@@ -206,27 +254,14 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
             () => {}
           );
           setIsCameraActive(true);
+          void applyFocusFix();
           return;
         } catch (err1) {
           console.warn('Failed to start with enumerated camera ID, trying fallback:', err1);
         }
       }
 
-      // Stage 2: Laptop Webcam / Default video constraint (Works on all Laptops!)
-      try {
-        await html5QrCode.start(
-          {},
-          qrConfig,
-          (decodedText) => handleDecodedCode(decodedText),
-          () => {}
-        );
-        setIsCameraActive(true);
-        return;
-      } catch (errLaptop) {
-        console.warn('Laptop default video start failed:', errLaptop);
-      }
-
-      // Stage 3: Direct facingMode constraint
+      // Stage 2: Direct facingMode constraint (best for autofocus on phones)
       try {
         await html5QrCode.start(
           { facingMode: facing },
@@ -235,9 +270,25 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
           () => {}
         );
         setIsCameraActive(true);
+        void applyFocusFix();
         return;
       } catch (err2) {
         console.warn('Direct facingMode failed:', err2);
+      }
+
+      // Stage 3: Laptop Webcam / Default video constraint (Works on all Laptops!)
+      try {
+        await html5QrCode.start(
+          {},
+          qrConfig,
+          (decodedText) => handleDecodedCode(decodedText),
+          () => {}
+        );
+        setIsCameraActive(true);
+        void applyFocusFix();
+        return;
+      } catch (errLaptop) {
+        console.warn('Laptop default video start failed:', errLaptop);
       }
 
       // Stage 4: Try any camera ID
@@ -251,6 +302,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
               () => {}
             );
             setIsCameraActive(true);
+            void applyFocusFix();
             return;
           } catch {
             // continue loop
@@ -285,6 +337,8 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
           });
         }
       } catch {}
+    } finally {
+      startingRef.current = false;
     }
   };
 
@@ -353,16 +407,46 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     setCameraFacing(nextFacing);
   };
 
-  // Quick Laptop Test Scan Handler — simulates scanning a QR checkpoint id (e.g. E-SCAN1)
-  const handleQuickTestScan = () => {
-    const sampleIds = ['E-SCAN1', 'E-SCAN2', 'E-SCAN3', 'E-SCAN4', 'E-SCAN5'];
-    const randomQrId = sampleIds[Math.floor(Math.random() * sampleIds.length)];
-    handleDecodedCode(randomQrId);
+  // Manual QR-ID entry fallback (e.g. E-SCAN1 when the lens can't focus)
+  const handleManualSubmit = () => {
+    const clean = manualQrId.trim().toUpperCase().replace(/\s+/g, '');
+    if (!clean) {
+      setGalleryError(lang === 'ta' ? 'QR ID-ஐ தட்டச்சு செய்யவும் (எ.கா. E-SCAN1).' : 'Type the QR ID first (e.g. E-SCAN1).');
+      return;
+    }
+    setGalleryError(null);
+    handleDecodedCode(clean);
   };
 
-  // Sree Nagar Route Test Scan — simulates scanning the Sree Nagar QR card
-  const handleSreeNagarScan = () => {
-    handleDecodedCode(SREE_NAGAR_QR_PAYLOAD);
+  // Gallery upload fallback — decode a photo of the QR from the phone gallery
+  const handleGalleryFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setGalleryError(null);
+    try {
+      let scanner = scannerRef.current;
+      if (!scanner) {
+        scanner = new Html5Qrcode(readerElementId, {
+          formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+          useBarCodeDetectorIfSupported: true,
+        } as unknown as ConstructorParameters<typeof Html5Qrcode>[1]);
+        scannerRef.current = scanner;
+      }
+      const decoded = await scanner.scanFile(file, false);
+      if (decoded) {
+        handleDecodedCode(decoded);
+        return;
+      }
+      throw new Error('empty');
+    } catch {
+      setGalleryError(
+        lang === 'ta'
+          ? 'புகைப்படத்தில் QR கண்டுபிடிக்க முடியவில்லை. தெளிவான புகைப்படம் எடுக்கவும்.'
+          : 'No QR found in that photo. Try a clearer, well-lit photo.'
+      );
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -422,8 +506,8 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
 
           {/* Top Status Pill */}
           <div className="flex items-center gap-2 bg-white text-[#0B132B] px-4 py-1.5 rounded-full font-extrabold text-xs sm:text-sm shadow-lg border border-slate-200">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 flex-shrink-0 animate-ping" />
-            <span>{lang === 'ta' ? 'QR கோட்டை கட்டத்தில் வையுங்கள்' : 'Align Door QR Code within frame'}</span>
+            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isCameraActive ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+            <span>{isCameraActive ? (lang === 'ta' ? 'QR கோட்டை கட்டத்தில் வையுங்கள்' : 'Align Door QR Code within frame') : (lang === 'ta' ? 'கேமரா தொடங்குகிறது...' : 'Starting camera...')}</span>
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -460,11 +544,9 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
           }}
         />
 
-        {/* Viewfinder Window (exact match with media_1790162413143.png - click to scan demo QR anytime) */}
+        {/* Viewfinder Window */}
         <div
-          onClick={handleSreeNagarScan}
-          title={lang === 'ta' ? 'QR ஸ்கேன் செய்ய தட்டவும்' : 'Tap to scan QR code'}
-          className="z-20 relative w-56 h-56 xs:w-64 xs:h-64 sm:w-72 sm:h-72 my-auto flex-shrink-0 flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+          className="z-20 relative w-56 h-56 xs:w-64 xs:h-64 sm:w-72 sm:h-72 my-auto flex-shrink-0 flex items-center justify-center"
         >
           {/* Top-Left Corner */}
           <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-white rounded-tl-xl drop-shadow-[0_0_8px_#10B981] z-20" />
@@ -487,9 +569,9 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
             <div className="absolute left-2 right-2 h-[2.5px] bg-emerald-400 shadow-[0_0_12px_#10B981] animate-[scan_2s_ease-in-out_infinite] z-20" />
           )}
 
-          {/* Camera Off Placeholder matching media_1790162413143.png when camera initializing or off */}
+          {/* Camera Off Placeholder when camera initializing or off */}
           {!isCameraActive && !isSuccessFlash && (
-            <div className="flex flex-col items-center justify-center text-center p-4 z-10">
+            <div className="flex flex-col items-center justify-center text-center p-4 z-10 max-w-[260px]">
               <div className="relative flex items-center justify-center">
                 <svg className="w-24 h-24 text-white opacity-90 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
@@ -500,6 +582,23 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
                   <span className="text-[7px] font-black text-emerald-800 tracking-tighter uppercase leading-none">QR</span>
                 </div>
               </div>
+              {cameraError ? (
+                <div className="mt-3 w-full bg-rose-950/80 border border-rose-500/60 rounded-xl px-3 py-2.5">
+                  <p className="text-[11px] font-bold text-rose-200 leading-snug">{cameraError}</p>
+                  <button
+                    type="button"
+                    onClick={() => startCamera(cameraFacing)}
+                    className="mt-2 w-full inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black px-3 py-2 rounded-lg transition"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    {lang === 'ta' ? 'மீண்டும் முயற்சி' : 'Retry camera'}
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-3 text-[11px] font-bold text-white/80 leading-snug">
+                  {lang === 'ta' ? 'கேமரா தொடங்குகிறது... அனுமதியை உறுதிப்படுத்தவும்' : 'Starting camera... please allow permission'}
+                </p>
+              )}
             </div>
           )}
 
@@ -514,16 +613,74 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         </div>
       </div>
 
-      {/* ── 3. BOTTOM TOOLBAR ── */}
-      <div className="flex-shrink-0 z-30 bg-[#0B132B] py-4 px-4 flex items-center justify-center border-t border-white/10">
-        <button
-          type="button"
-          onClick={handleFlipCamera}
-          className="flex items-center gap-2 bg-white text-[#0B132B] hover:bg-slate-100 font-extrabold text-xs sm:text-sm px-6 py-2.5 rounded-full transition active:scale-95 cursor-pointer shadow-xl border border-slate-200"
-        >
-          <SwitchCamera className="w-4 h-4 text-emerald-600" />
-          <span>{cameraFacing === 'environment' ? 'Rear' : 'Front'}</span>
-        </button>
+      {/* ── 3. BOTTOM TOOLBAR + FALLBACKS ── */}
+      <div className="flex-shrink-0 z-30 bg-[#0B132B] py-3 px-4 flex flex-col gap-2.5 border-t border-white/10 max-h-[42vh] overflow-y-auto">
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={handleFlipCamera}
+            className="flex items-center gap-1.5 bg-white text-[#0B132B] hover:bg-slate-100 font-extrabold text-xs px-4 py-2.5 rounded-full transition active:scale-95 cursor-pointer shadow-xl border border-slate-200"
+          >
+            <SwitchCamera className="w-4 h-4 text-emerald-600" />
+            <span>{cameraFacing === 'environment' ? 'Rear' : 'Front'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={toggleFlashlight}
+            className={`flex items-center gap-1.5 font-extrabold text-xs px-4 py-2.5 rounded-full transition active:scale-95 cursor-pointer shadow-xl border ${
+              flashlightOn ? 'bg-amber-400 text-slate-950 border-amber-300' : 'bg-white/10 text-white hover:bg-white/20 border-white/20'
+            }`}
+          >
+            {flashlightOn ? <Zap className="w-4 h-4" /> : <ZapOff className="w-4 h-4" />}
+            <span>{lang === 'ta' ? 'டார்ச்' : 'Torch'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1.5 bg-white/10 text-white hover:bg-white/20 font-extrabold text-xs px-4 py-2.5 rounded-full transition active:scale-95 cursor-pointer shadow-xl border border-white/20"
+          >
+            <Camera className="w-4 h-4 text-emerald-300" />
+            <span>{lang === 'ta' ? 'புகைப்படம்' : 'Gallery'}</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleGalleryFile}
+            className="hidden"
+          />
+        </div>
+
+        <p className="text-center text-[11px] font-semibold text-white/60 leading-snug">
+          {lang === 'ta'
+            ? 'QR-ஐ சட்டகத்தில் நிறுத்தி 10–15 செ.மீ தூரத்தில் பிடிக்கவும் • மங்கலாக இருந்தால் டார்ச் போடவும்'
+            : 'Hold the QR steady inside the frame, 10–15 cm away • Turn on torch if blurry'}
+        </p>
+
+        {/* Manual QR-ID entry — works even when the lens can't focus */}
+        <div className="flex items-center gap-2 bg-white/10 border border-white/20 rounded-2xl p-2">
+          <QrCode className="w-4 h-4 text-emerald-300 flex-shrink-0 ml-1" />
+          <input
+            value={manualQrId}
+            onChange={(e) => setManualQrId(e.target.value.toUpperCase())}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleManualSubmit(); }}
+            placeholder="E-SCAN1"
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            className="flex-1 min-w-0 bg-transparent text-white text-sm font-bold font-mono placeholder:text-white/30 focus:outline-none px-1"
+          />
+          <button
+            type="button"
+            onClick={handleManualSubmit}
+            className="bg-emerald-500 hover:bg-emerald-400 text-[#0B132B] text-xs font-black px-4 py-2 rounded-xl transition active:scale-95 flex-shrink-0"
+          >
+            {lang === 'ta' ? 'சமர்ப்பி' : 'Submit'}
+          </button>
+        </div>
+        {galleryError && (
+          <p className="text-center text-[11px] font-bold text-rose-300 leading-snug">{galleryError}</p>
+        )}
       </div>
 
     </div>
