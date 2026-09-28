@@ -800,40 +800,27 @@ const QRDetailsSheet: React.FC<QRDetailsSheetProps> = ({
                       </div>
                     )}
 
-                    {/* 5 Scan Proof Photos Thumbnail Strip for Tata Ace */}
-                    {cp.status === 'Collected' && (
+                    {/* Scan Proof Photos — only real uploaded photos are shown.
+                        Previously this fell back to hardcoded stock images, which
+                        fabricated "proof" for collections that had no photos. */}
+                    {cp.status === 'Collected' && (cp.photos?.length ?? 0) > 0 && (
                       <div className="mt-2 bg-sky-50/80 border border-sky-200/80 rounded-xl p-2 space-y-1.5">
                         <div className="flex items-center justify-between text-[10px] font-black text-sky-900 uppercase">
                           <span className="flex items-center gap-1">
                             <Camera className="w-3 h-3 text-sky-700" />
-                            {lang === 'ta' ? 'Tata Ace 5 சான்று புகைப்படங்கள்' : 'Tata Ace 5 Scan Proof Photos'}
+                            {lang === 'ta' ? 'சான்று புகைப்படங்கள்' : 'Scan Proof Photos'}
                           </span>
                           <span className="text-emerald-700 bg-emerald-100 border border-emerald-300 px-1.5 py-0.2 rounded font-mono">
-                            5/5 Photos ✓
+                            {cp.photos!.length} {lang === 'ta' ? 'படங்கள்' : 'Photos'} ✓
                           </span>
                         </div>
                         <div className="grid grid-cols-5 gap-1">
-                          {(cp.photos && cp.photos.length >= 5
-                            ? cp.photos
-                            : [
-                                'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=300&q=80',
-                                'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=300&q=80',
-                                'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=300&q=80',
-                                'https://images.unsplash.com/photo-1503596476-1c12a8ba09a9?auto=format&fit=crop&w=300&q=80',
-                                'https://images.unsplash.com/photo-1584467735871-8e85353a8413?auto=format&fit=crop&w=300&q=80',
-                              ]
-                          ).slice(0, 5).map((photoUrl, pIdx) => (
+                          {cp.photos!.slice(0, 5).map((photoUrl, pIdx) => (
                             <button
                               key={pIdx}
                               onClick={() => {
                                 setLightboxData({
-                                  photos: cp.photos && cp.photos.length >= 5 ? cp.photos : [
-                                    'https://images.unsplash.com/photo-1532996122724-e3c354a0b15b?auto=format&fit=crop&w=800&q=80',
-                                    'https://images.unsplash.com/photo-1611284446314-60a58ac0deb9?auto=format&fit=crop&w=800&q=80',
-                                    'https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?auto=format&fit=crop&w=800&q=80',
-                                    'https://images.unsplash.com/photo-1503596476-1c12a8ba09a9?auto=format&fit=crop&w=800&q=80',
-                                    'https://images.unsplash.com/photo-1584467735871-8e85353a8413?auto=format&fit=crop&w=800&q=80',
-                                  ],
+                                  photos: cp.photos!,
                                   title: cp.qrId,
                                   vehicleNo: 'TN66AD6465',
                                   streetName: cp.streetName,
