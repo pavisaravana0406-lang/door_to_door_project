@@ -125,7 +125,7 @@ def zone_code_for(zone_name: str) -> str:
 
 
 def make_qr_id(zone: str, seq: int) -> str:
-    return f"{ZONE_SCAN_PREFIX.get(zone or '', 'X')}-SCAN{seq}"
+    return f"CCMC-QR{seq}"
 
 
 def next_zone_seq(db: Session, zone: str) -> int:
