@@ -118,10 +118,10 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     return text || 'HID100101';
   };
 
-  // Our created checkpoint QRs encode ONLY the id, e.g. "E-SCAN1".
+  // Our created checkpoint QRs encode ONLY the id, e.g. "CCMC-QR1".
   // Anything else (random QRs, URLs, barcodes) must NOT scan.
   const isOwnCheckpointQr = (raw: string): boolean =>
-    /^[A-Z]-SCAN\d+$/i.test(raw.trim());
+    /^CCMC-QR\d+$/i.test(raw.trim());
 
   const flashInvalidQr = (raw: string) => {
     const shown = raw.trim().slice(0, 24) || '???';

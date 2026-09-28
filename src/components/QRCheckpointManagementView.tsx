@@ -37,14 +37,7 @@ interface Props {
 
 const ZONE_ORDER = ['Central Zone', 'East Zone', 'West Zone', 'North Zone', 'South Zone'];
 
-const SCAN_PREFIX: Record<string, string> = {
-  'Central Zone': 'C',
-  'East Zone': 'E',
-  'West Zone': 'W',
-  'North Zone': 'N',
-  'South Zone': 'S',
-};
-const scanPrefixFor = (zone: string) => SCAN_PREFIX[zone] || 'X';
+
 
 // Helper for instant SVG Data URI QR Code (100% offline & reliable)
 const getFallbackSvgQR = (qrId: string): string => {
@@ -99,15 +92,15 @@ const QRImageContainer: React.FC<{ qrId: string; sizeClassName?: string }> = ({ 
 const MOCK_ZONES_DATA: QRAdminListResult = {
   success: true,
   zones: [
-    { zone: 'East Zone', zoneCode: 'E', checkpoints: 5, generatedQrs: ['E-SCAN1', 'E-SCAN2', 'E-SCAN3', 'E-SCAN4', 'E-SCAN5'] },
-    { zone: 'Central Zone', zoneCode: 'C', checkpoints: 3, generatedQrs: ['C-SCAN1', 'C-SCAN2', 'C-SCAN3'] },
-    { zone: 'West Zone', zoneCode: 'W', checkpoints: 3, generatedQrs: ['W-SCAN1', 'W-SCAN2', 'W-SCAN3'] },
-    { zone: 'North Zone', zoneCode: 'N', checkpoints: 2, generatedQrs: ['N-SCAN1', 'N-SCAN2'] },
-    { zone: 'South Zone', zoneCode: 'S', checkpoints: 3, generatedQrs: ['S-SCAN1', 'S-SCAN2', 'S-SCAN3'] },
+    { zone: 'East Zone', zoneCode: 'E', checkpoints: 5, generatedQrs: ['CCMC-QR1', 'CCMC-QR2', 'CCMC-QR3', 'CCMC-QR4', 'CCMC-QR5'] },
+    { zone: 'Central Zone', zoneCode: 'C', checkpoints: 3, generatedQrs: ['CCMC-QR6', 'CCMC-QR7', 'CCMC-QR8'] },
+    { zone: 'West Zone', zoneCode: 'W', checkpoints: 3, generatedQrs: ['CCMC-QR9', 'CCMC-QR10', 'CCMC-QR11'] },
+    { zone: 'North Zone', zoneCode: 'N', checkpoints: 2, generatedQrs: ['CCMC-QR12', 'CCMC-QR13'] },
+    { zone: 'South Zone', zoneCode: 'S', checkpoints: 3, generatedQrs: ['CCMC-QR14', 'CCMC-QR15', 'CCMC-QR16'] },
   ],
   checkpoints: [
     {
-      qrId: 'E-SCAN1',
+      qrId: 'CCMC-QR1',
       zone: 'East Zone',
       ward: 'Ward 12',
       streetId: 101,
@@ -122,11 +115,11 @@ const MOCK_ZONES_DATA: QRAdminListResult = {
       ssContact: '9842100002',
       cssName: 'Rajendran CSS',
       cssContact: '9842100003',
-      scanUrl: 'https://swms.coimbatore.gov.in/scan/E-SCAN1',
+      scanUrl: 'https://swms.coimbatore.gov.in/scan/CCMC-QR1',
       createdAt: '2026-09-23 08:30 AM',
     },
     {
-      qrId: 'E-SCAN2',
+      qrId: 'CCMC-QR2',
       zone: 'East Zone',
       ward: 'Ward 12',
       streetId: 102,
@@ -141,7 +134,7 @@ const MOCK_ZONES_DATA: QRAdminListResult = {
       ssContact: '9842100002',
       cssName: 'Rajendran CSS',
       cssContact: '9842100003',
-      scanUrl: 'https://swms.coimbatore.gov.in/scan/E-SCAN2',
+      scanUrl: 'https://swms.coimbatore.gov.in/scan/CCMC-QR2',
       createdAt: '2026-09-23 08:45 AM',
     },
   ],
@@ -273,9 +266,8 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
       setError('Please enter the Door No for a door-to-door checkpoint.');
       return;
     }
-    const nextIdNum = zonesData.checkpoints.length + 101;
-    const prefix = scanPrefixFor(selectedZone || 'East Zone');
-    const newQrId = `${prefix}-SCAN${nextIdNum}`;
+    const nextIdNum = zonesData.checkpoints.length + 1;
+    const newQrId = `CCMC-QR${nextIdNum}`;
 
     const newCheckpoint: QRCheckpointAdmin = {
       qrId: newQrId,
@@ -328,7 +320,7 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
                 ? { ...z, checkpoints: z.checkpoints + 1, generatedQrs: [...z.generatedQrs, newQrId] }
                 : z
             )
-          : [...prev.zones, { zone: selectedZone, zoneCode: prefix, checkpoints: 1, generatedQrs: [newQrId] }];
+          : [...prev.zones, { zone: selectedZone, zoneCode: selectedZone.charAt(0), checkpoints: 1, generatedQrs: [newQrId] }];
         return {
           ...prev,
           zones: updatedZones,
@@ -645,7 +637,7 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
               className="w-full bg-emerald-50 hover:bg-emerald-100 border-2 border-dashed border-emerald-400 text-emerald-800 text-xs font-black py-3 rounded-xl transition disabled:opacity-60 inline-flex items-center justify-center space-x-2"
             >
               {busy === 'Generating 5 QR codes' ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
-              <span>Generate 5 QR Codes ({scanPrefixFor(selectedZone)}-SCAN1..05)</span>
+              <span>Generate 5 QR Codes (CCMC-QR1..05)</span>
             </button>
           </div>
         </div>
