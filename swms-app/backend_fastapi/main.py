@@ -43,11 +43,8 @@ app = FastAPI(
 # CORS Middleware configuration to allow React Vite frontend requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-    "https://swms.coimbatoreiccc.com",
-    "https://door-to-door-project.vercel.app",
-],
-    allow_credentials= "https://door-to-door-project.vercel.app",
+    allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

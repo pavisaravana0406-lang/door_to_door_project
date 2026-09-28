@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SWMSHouseholdRecord, SWMSDashboardStats, SWMSAssignment } from './types';
 import { SWMSWorkerApp } from './components/SWMSWorkerApp';
 import { AIAssistantModal } from './components/AIAssistantModal';
+import { LanguageSelectionModal } from './components/LanguageSelectionModal';
 import { VehicleAreaAssignmentView } from './components/VehicleAreaAssignmentView';
 import { CheckCircle2 } from 'lucide-react';
 import { LoginScreen } from './components/LoginScreen';
@@ -84,6 +85,8 @@ export default function App() {
   const [assignedVehicleId, setAssignedVehicleId] = useState<string>(() => {
     return localStorage.getItem('ccmc_assigned_vehicle') || 'v-push-cart';
   });
+  // Initial Language Selection Modal opens automatically after login
+  const [isLangModalOpen, setIsLangModalOpen] = useState(false);
   // Post-Language Vehicle & Area Assignment View
   const [showVehicleAssignment, setShowVehicleAssignment] = useState(false);
   const [liveConnection, setLiveConnection] = useState(true);
@@ -139,7 +142,9 @@ export default function App() {
       localStorage.removeItem('ccmc_street_5scans');
       localStorage.removeItem('ccmc_scanned_addresses');
       sessionStorage.clear();
+      setIsLangModalOpen(true);
     } else {
+      setIsLangModalOpen(false);
       setShowVehicleAssignment(false);
     }
   };
@@ -153,6 +158,7 @@ export default function App() {
     localStorage.removeItem('ccmc_worker_info');
     localStorage.removeItem('ccmc_session_token');
     localStorage.removeItem('ccmc_assignment');
+    setIsLangModalOpen(false);
     setShowVehicleAssignment(false);
     showToast('Session logged out.');
   };
@@ -239,6 +245,13 @@ export default function App() {
     });
   };
 
+  const handleSelectLanguage = (selectedLang: 'en' | 'ta') => {
+    setLang(selectedLang);
+    setIsLangModalOpen(false);
+    setShowVehicleAssignment(false);
+    showToast(selectedLang === 'ta' ? 'தமிழ் மொழி தேர்ந்தெடுக்கப்பட்டது' : 'English Language Selected');
+  };
+
   const handleToggleLang = () => {
     const nextLang = lang === 'en' ? 'ta' : 'en';
     setLang(nextLang);
@@ -261,6 +274,8 @@ export default function App() {
       name: 'Thiru. Katta Ravi Teja, IAS',
     };
     setUser(adminUser);
+    setIsLangModalOpen(false);
+    setShowVehicleAssignment(false);
     localStorage.setItem('ccmc_session', JSON.stringify(adminUser));
     showToast('Switched to Commissioner Command Center.');
   };
@@ -291,6 +306,23 @@ export default function App() {
     );
   }
 
+  // If Language Selection modal is active right after field worker login, render it
+  if (isLangModalOpen) {
+    return (
+      <ErrorBoundary>
+        <LanguageSelectionModal
+          isOpen={true}
+          currentLang={lang}
+          onSelectLanguage={handleSelectLanguage}
+          onClose={() => {
+            setIsLangModalOpen(false);
+            setShowVehicleAssignment(false);
+          }}
+        />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-white sm:bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-emerald-600 selection:text-white">
@@ -311,6 +343,7 @@ export default function App() {
             workerInfo={workerInfo}
             onLogout={handleLogout}
             onSetLanguage={setLang}
+            onOpenLanguageModal={() => setIsLangModalOpen(true)}
             onRefreshData={fetchSwmsData}
             onRecordCreated={handleRecordCreated}
           />
