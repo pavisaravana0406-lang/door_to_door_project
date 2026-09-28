@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Truck, CheckCircle2, Search, Filter, Eye, ShieldCheck, MapPin, Download, ArrowLeft, Layers, Users, Calendar, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Truck, CheckCircle2, Search, Filter, Eye, ShieldCheck, MapPin, Download, ArrowLeft, Layers, Users, Calendar, Sparkles, Home } from 'lucide-react';
 import { CollectionRecord } from '../types';
 import { householdCoveredIcon, householdCoveredFallbackIcon } from '../constants/branding';
 
@@ -20,6 +20,13 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedZone, setSelectedZone] = useState('All');
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  const handleKpiCardClick = (zone: string = 'All') => {
+    setSelectedZone(zone);
+    setSearchTerm('');
+    tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const collectedRecords = records.filter(
     (r) => r.status === 'Collected'
@@ -57,9 +64,6 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black uppercase tracking-wider bg-emerald-100 text-[#1E7A38] px-2 py-0.5 rounded-md">
-                {lang === 'ta' ? 'சரிபார்க்கப்பட்ட சேகரிப்பு பதிவுகள்' : 'Verified Cleared Records'}
-              </span>
               {onBackToOverview && (
                 <button
                   onClick={onBackToOverview}
@@ -72,11 +76,6 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 mt-1">
               {lang === 'ta' ? 'மொத்த வீட்டுச் சேகரிப்பு விவரங்கள்' : 'Total Household Collected Details'}
             </h1>
-            <p className="text-xs sm:text-sm font-medium text-[#1E7A38]">
-              {lang === 'ta'
-                ? 'கோயம்புத்தூர் மாநகராட்சி முழுவதும் சரிபார்க்கப்பட்ட வார்டு வாரியான கதவு சேகரிப்பு பதிவுகள்'
-                : 'Complete Ward-wise Door-to-Door Cleared Locations & Timestamps across Coimbatore City'}
-            </p>
           </div>
         </div>
 
@@ -114,21 +113,31 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
 
       {/* Quick Metrics Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
+        <button
+          type="button"
+          onClick={() => handleKpiCardClick('All')}
+          title={lang === 'ta' ? 'முழு பட்டியலைப் பார்க்க கிளிக் செய்யவும்' : 'Click to view full collected list'}
+          className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5 text-left cursor-pointer transition hover:border-emerald-300 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+        >
           <div className="p-3 bg-emerald-50 text-emerald-700 rounded-xl">
-            <ShieldCheck className="w-6 h-6" />
+            <Home className="w-6 h-6" />
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold">
-              {lang === 'ta' ? 'கழிவு பிரித்தல் வீதம்' : 'Segregation Compliance'}
+              {lang === 'ta' ? 'வீடுகள் சேகரிக்கப்பட்ட வீதம்' : 'Household Collected %'}
             </div>
             <div className="text-xl font-black text-emerald-900">
               {records.length > 0 ? `${((collectedRecords.length / records.length) * 100).toFixed(1)}%` : '0.0%'}
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
+        <button
+          type="button"
+          onClick={() => handleKpiCardClick('All')}
+          title={lang === 'ta' ? 'பணியாளர் பட்டியலைப் பார்க்க கிளிக் செய்யவும்' : 'Click to view worker collections'}
+          className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5 text-left cursor-pointer transition hover:border-blue-300 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-blue-300"
+        >
           <div className="p-3 bg-blue-50 text-blue-700 rounded-xl">
             <Users className="w-6 h-6" />
           </div>
@@ -137,12 +146,17 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
               {lang === 'ta' ? 'தூய்மைப் பணியாளர்கள்' : 'Active Sanitary Workers'}
             </div>
             <div className="text-xl font-black text-blue-900">
-              {uniqueWorkersCount} {lang === 'ta' ? 'பணியாளர்கள்' : 'Personnel'}
+              {uniqueWorkersCount} {lang === 'ta' ? 'பணியாளர்' : uniqueWorkersCount === 1 ? 'Worker' : 'Workers'}
             </div>
           </div>
-        </div>
+        </button>
 
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
+        <button
+          type="button"
+          onClick={() => handleKpiCardClick('All')}
+          title={lang === 'ta' ? 'வார்டு பட்டியலைப் பார்க்க கிளிக் செய்யவும்' : 'Click to view ward collections'}
+          className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5 text-left cursor-pointer transition hover:border-amber-300 hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-amber-300"
+        >
           <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
             <Layers className="w-6 h-6" />
           </div>
@@ -154,6 +168,33 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
               {uniqueWardsCount} {lang === 'ta' ? 'வார்டுகள்' : 'Wards'}
             </div>
           </div>
+        </button>
+      </div>
+
+      {/* Collected Vehicles Summary Banner (Zone-wise Vehicle Tracking) */}
+      <div className="bg-emerald-50/70 border border-emerald-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
+        <div className="flex items-center gap-2">
+          <Truck className="w-5 h-5 text-emerald-700" />
+          <h3 className="text-sm font-black text-emerald-950 uppercase tracking-tight">
+            {lang === 'ta' ? 'மண்டலம் வாரியாக சேகரிக்கப்பட்ட வாகனங்கள்' : 'Collected Vehicles by Zones'}
+          </h3>
+          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 ml-auto">
+            {lang === 'ta' ? 'நேரடி சேகரிப்பு வாகன கண்காணிப்பு' : 'Live Collected Vehicle Tracker'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {['South Zone', 'East Zone', 'West Zone', 'North Zone', 'Central Zone'].map((z) => {
+            const zoneCollected = collectedRecords.filter((r) => r.zone === z);
+            return (
+              <div key={z} className="bg-white p-3 rounded-xl border border-emerald-200/80 shadow-2xs space-y-1">
+                <div className="text-[11px] font-extrabold text-gray-500 uppercase">{z}</div>
+                <div className="text-xs font-black text-[#1E7A38]">
+                  {zoneCollected.length} {lang === 'ta' ? 'வீடுகள் சேகரிக்கப்பட்டது' : 'Households Collected'}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -192,20 +233,7 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between flex-wrap gap-2">
-          <div className="text-xs font-bold text-gray-600">
-            {lang === 'ta' ? (
-              <>
-                மொத்தம் <span className="text-[#1E7A38] font-extrabold">{filtered.length}</span> சரிபார்க்கப்பட்ட சேகரிப்பு பகுதிகள்
-              </>
-            ) : (
-              <>
-                Showing <span className="text-[#1E7A38] font-extrabold">{filtered.length}</span> Verified Covered Locations
-              </>
-            )}
-          </div>
-        </div>
+      <div ref={tableRef} className="bg-white rounded-2xl border border-gray-200/90 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -215,9 +243,8 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
                 <th className="px-5 py-3.5">{lang === 'ta' ? 'வார்டு' : 'Ward'}</th>
                 <th className="px-5 py-3.5">{lang === 'ta' ? 'தெரு முகவரி' : 'Street Address'}</th>
                 <th className="px-5 py-3.5">{lang === 'ta' ? 'ஒதுக்கப்பட்ட பணியாளர்' : 'Assigned Worker'}</th>
-                <th className="px-5 py-3.5 text-center">{lang === 'ta' ? 'சேகரிப்பு%' : 'Bin Level'}</th>
                 <th className="px-5 py-3.5 text-center">{lang === 'ta' ? 'நிலை' : 'Status'}</th>
-                <th className="px-5 py-3.5 text-center">{lang === 'ta' ? 'தணிக்கை' : 'Inspection'}</th>
+                <th className="px-5 py-3.5 text-center">{lang === 'ta' ? 'விவரங்கள்' : 'Details'}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm font-medium text-gray-800">
@@ -231,9 +258,6 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
                     <span>{item.street}</span>
                   </td>
                   <td className="px-5 py-3.5 font-semibold text-gray-800">{item.workerName}</td>
-                  <td className="px-5 py-3.5 text-center font-black text-[#1E7A38]">
-                    {item.binLevelPercent || 85}%
-                  </td>
                   <td className="px-5 py-3.5 text-center">
                     <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-black bg-[#E9F5ED] text-[#1E7A38] border border-emerald-200">
                       <ShieldCheck className="w-3.5 h-3.5" />

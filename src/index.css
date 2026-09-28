@@ -10,43 +10,43 @@
   /* Modern readable stack supporting both Tamil & English */
   --font-sans: 'Noto Sans', 'Noto Sans Tamil', 'Inter', 'Plus Jakarta Sans', 'Outfit', 'Mukta Malar', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Global type scale — never smaller on mobile */
-  --text-2xs: 0.8125rem;          /* 13px */
+  /* Global type scale — reduced for compact headings & navigation */
+  --text-2xs: 0.6875rem;          /* 11px */
   --text-2xs--line-height: 1.5;
-  --text-xs: 0.9375rem;           /* 15px — smallest functional text */
+  --text-xs: 0.75rem;             /* 12px — smallest functional text */
   --text-xs--line-height: 1.5;
-  --text-sm: 1rem;                /* 16px — buttons, inputs, navigation */
+  --text-sm: 0.8125rem;           /* 13px — buttons, inputs, navigation */
   --text-sm--line-height: 1.5;
-  --text-base: 1.0625rem;         /* 17px — body text */
-  --text-base--line-height: 1.6;
-  --text-lg: 1.1875rem;           /* 19px — emphasis body */
-  --text-lg--line-height: 1.55;
-  --text-xl: 1.3125rem;           /* 21px — card title */
-  --text-xl--line-height: 1.45;
-  --text-2xl: 1.5rem;             /* 24px — section title */
-  --text-2xl--line-height: 1.35;
-  --text-3xl: 1.75rem;            /* 28px — page heading */
-  --text-3xl--line-height: 1.3;
-  --text-4xl: 2rem;               /* 32px */
-  --text-4xl--line-height: 1.25;
-  --text-5xl: 2.375rem;           /* 38px — dashboard stat numbers */
-  --text-5xl--line-height: 1.2;
-  --text-6xl: 2.875rem;           /* 46px */
-  --text-6xl--line-height: 1.15;
+  --text-base: 0.875rem;          /* 14px — body text */
+  --text-base--line-height: 1.55;
+  --text-lg: 0.9375rem;           /* 15px — emphasis body */
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.0625rem;           /* 17px — card title */
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.1875rem;          /* 19px — section title */
+  --text-2xl--line-height: 1.3;
+  --text-3xl: 1.375rem;           /* 22px — page heading */
+  --text-3xl--line-height: 1.25;
+  --text-4xl: 1.625rem;           /* 26px */
+  --text-4xl--line-height: 1.2;
+  --text-5xl: 1.875rem;           /* 30px — dashboard stat numbers */
+  --text-5xl--line-height: 1.15;
+  --text-6xl: 2.25rem;            /* 36px */
+  --text-6xl--line-height: 1.1;
 }
 
 /* Semantic sizing tokens — legacy fixed-pixel classes map to these */
 :root {
-  --swms-fs-mini: 14px;    /* tiny helper / meta / footer text */
-  --swms-fs-small: 15px;   /* badges, small labels, secondary meta */
-  --swms-fs-label: 16px;   /* labels, table content, chips, status */
-  --swms-fs-body: 17px;    /* standard body text */
+  --swms-fs-mini: 11px;    /* tiny helper / meta / footer text */
+  --swms-fs-small: 12px;   /* badges, small labels, secondary meta */
+  --swms-fs-label: 13px;   /* labels, table content, chips, status */
+  --swms-fs-body: 14px;    /* standard body text */
 }
 
 html, body, #root {
   font-family: var(--font-sans);
-  font-size: 17px;
-  line-height: 1.55;
+  font-size: 14px;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-size-adjust: 100%;
@@ -80,15 +80,15 @@ button, input, optgroup, select, textarea {
    ──────────────────────────────────────────────────────────────────── */
 .text-\[8px\], .text-\[8\.5px\], .text-\[9px\], .text-\[9\.5px\], .text-\[10px\] {
   font-size: var(--swms-fs-mini) !important;
-  line-height: 1.5 !important;
+  line-height: 1.4 !important;
 }
 .text-\[10\.5px\], .text-\[11px\], .text-\[11\.5px\] {
   font-size: var(--swms-fs-small) !important;
-  line-height: 1.5 !important;
+  line-height: 1.4 !important;
 }
 .text-\[12px\], .text-\[12\.5px\], .text-\[13px\], .text-\[14px\] {
   font-size: var(--swms-fs-label) !important;
-  line-height: 1.5 !important;
+  line-height: 1.4 !important;
 }
 
 /* ════════════════════════════════════════════════════════════════════

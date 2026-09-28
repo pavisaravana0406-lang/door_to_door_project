@@ -10,11 +10,13 @@ import {
   PieChart,
   Pie,
   Cell,
-  LabelList
+  LabelList,
+  LineChart,
+  Line,
+  Legend
 } from 'recharts';
 import {
   Bot,
-  Calendar,
   Home,
   AlertTriangle,
   AlertOctagon,
@@ -37,7 +39,8 @@ import {
   ShieldAlert,
   Flame,
   Activity,
-  Layers
+  Layers,
+  Calendar
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { aiPredictionIcon } from '../constants/branding';
@@ -65,7 +68,8 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
   const [selectedZone, setSelectedZone] = useState<string>('Zone 3');
   const [selectedWard, setSelectedWard] = useState<string>('Ward 12');
   const [selectedStreet, setSelectedStreet] = useState<string>('All Streets');
-  const [selectedDateRange, setSelectedDateRange] = useState<string>('18 May 2025 - 24 May 2025');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
   
   // Interactive Modals State
   const [activeModal, setActiveModal] = useState<'alerts' | 'full_report' | 'high_risk' | null>(null);
@@ -94,37 +98,67 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
     patternInsights
   } = engineResult;
 
-  // 1. Behavior Bar Chart Data (Updated color palette with historical rate)
-  const behaviorData = [
-    {
-      name: lang === 'ta' ? 'வழக்கமானவை' : 'Regularly\nCollected',
-      displayName: lang === 'ta' ? 'வழக்கமானவை' : 'Regularly Collected',
-      count: regularlyCollectedCount,
-      fill: '#1E7A38', // Dark Rich Forest Green
-      rate: '80.15%'
-    },
-    {
-      name: lang === 'ta' ? 'அவ்வப்போது\nவிடுபட்டவை' : 'Occasionally\nMissed',
-      displayName: lang === 'ta' ? 'அவ்வப்போது விடுபட்டவை' : 'Occasionally Missed',
-      count: occasionallyMissedCount,
-      fill: '#F59E0B', // Amber / Yellow-Orange
-      rate: '11.32%'
-    },
-    {
-      name: lang === 'ta' ? 'தொடர் விடுபட்டவை\n(High Risk)' : 'Frequently Missed\n(High Risk)',
-      displayName: lang === 'ta' ? 'தொடர் விடுபட்டவை (High Risk)' : 'Frequently Not Collected (High Risk)',
-      count: frequentlyNotCollectedCount,
-      fill: '#DC2626', // High Risk Red
-      rate: '6.12%'
-    },
-    {
-      name: lang === 'ta' ? 'அதிக ஆபத்து\n(Critical)' : 'Critical\nHigh Risk',
-      displayName: lang === 'ta' ? 'அதிக ஆபத்து (Critical)' : 'Critical High Risk',
-      count: criticalHighRiskCount,
-      fill: '#991B1B', // Deep Red
-      rate: '2.41%'
-    }
-  ];
+  // Ward-wise Non-Collection aggregation (grouped from live street analyses)
+  const wardMissData = useMemo(() => {
+    const grouped = new Map<string, { ward: string; missedCount: number; totalDoors: number }>();
+    streetAnalyses.forEach((s) => {
+      const key = s.ward;
+      const existing = grouped.get(key) || { ward: key, missedCount: 0, totalDoors: 0 };
+      existing.missedCount += s.missedCount;
+      existing.totalDoors += s.totalDoors;
+      grouped.set(key, existing);
+    });
+    return Array.from(grouped.values())
+      .map((w) => ({
+        name: `Ward\n${w.ward}`,
+        displayName: `Ward ${w.ward}`,
+        count: w.missedCount,
+        totalDoors: w.totalDoors,
+        rate: w.totalDoors > 0 ? `${((w.missedCount / w.totalDoors) * 100).toFixed(1)}%` : '0%',
+        fill: w.missedCount >= 30 ? '#991B1B' : w.missedCount >= 18 ? '#DC2626' : '#F59E0B',
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 6);
+  }, [streetAnalyses]);
+
+  // Zone-wise Collected vs Not Collected aggregation
+  const weeklyCollectionData = useMemo(() => {
+    return [
+      { week: 'Week 1', taWeek: 'வாரம் 1', collectionRate: 82 },
+      { week: 'Week 2', taWeek: 'வாரம் 2', collectionRate: 88 },
+      { week: 'Week 3', taWeek: 'வாரம் 3', collectionRate: 91 },
+      { week: 'Week 4', taWeek: 'வாரம் 4', collectionRate: 96 },
+    ];
+  }, []);
+
+  const zoneCollectionData = useMemo(() => {
+    // Display-name mapping for the chart only: Zone 1..5 → cardinal zone names
+    const ZONE_LABELS: Record<string, string> = {
+      'Zone 1': lang === 'ta' ? 'மேற்கு' : 'West',
+      'Zone 2': lang === 'ta' ? 'மத்திய' : 'Central',
+      'Zone 3': lang === 'ta' ? 'கிழக்கு' : 'East',
+      'Zone 4': lang === 'ta' ? 'வடக்கு' : 'North',
+      'Zone 5': lang === 'ta' ? 'தெற்கு' : 'South',
+    };
+    const grouped = new Map<string, { zone: string; collected: number; notCollected: number }>();
+    streetAnalyses.forEach((s) => {
+      const key = s.zone;
+      const existing = grouped.get(key) || { zone: key, collected: 0, notCollected: 0 };
+      existing.collected += s.collectedCount;
+      existing.notCollected += s.missedCount;
+      grouped.set(key, existing);
+    });
+    return Array.from(grouped.values())
+      .map((z) => ({
+        name: ZONE_LABELS[z.zone] || z.zone,
+        displayName: ZONE_LABELS[z.zone] || z.zone,
+        collected: z.collected,
+        notCollected: z.notCollected,
+        sortKey: z.zone,
+      }))
+      .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  }, [streetAnalyses, lang]);
+
 
   // 2. Donut Chart Data (Grounded on historical coverage segments)
   const donutData = [
@@ -222,7 +256,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
     );
   };
 
-  // Custom tooltip for bar chart
+  // Custom tooltip for bar chart (Ward-wise Not Collected)
   const CustomBarTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -231,11 +265,117 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           <div className="font-black text-slate-900 mb-1">{data.displayName}</div>
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.fill }} />
-            <span className="font-bold text-slate-700">{data.count} Households</span>
-            <span className="text-slate-400 font-semibold">({data.rate})</span>
+            <span className="font-bold text-slate-700">{data.count} Not Collected</span>
+            <span className="text-slate-400 font-semibold">({data.rate} of {data.totalDoors} doors)</span>
           </div>
           <div className="text-[10px] text-slate-500 mt-1 border-t border-slate-100 pt-1">
             Computed from 30-day historical door logs
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom tooltip for Zone-wise Collected vs Not Collected chart
+  const CustomZoneBarTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-200 text-xs font-sans">
+          <div className="font-black text-slate-900 mb-1">{label}</div>
+          {payload.map((entry: any, idx: number) => (
+            <div key={idx} className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+              <span className="font-bold text-slate-700">{entry.name}: {entry.value}</span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom tooltip for Top 5 Streets comparison chart
+  const CustomStreetTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3.5 rounded-xl shadow-2xl border border-slate-200/90 text-xs font-sans w-60 z-50 pointer-events-none ring-1 ring-black/5">
+          <div className="font-black text-slate-900 mb-0.5">{data.name}</div>
+          <div className="text-[10px] text-slate-400 font-medium mb-2">{data.obstacle} • W-{data.ward}</div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-xs bg-rose-600 inline-block" /> Recent 7D
+              </span>
+              <span className="font-black text-rose-700">{data.recent}%</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-slate-500 font-semibold">
+                <span className="w-2.5 h-2.5 rounded-xs bg-slate-300 inline-block" /> 30D Baseline
+              </span>
+              <span className="font-black text-slate-600">{data.baseline}%</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+            <span className={`inline-flex items-center gap-0.5 text-[10px] font-black px-2 py-0.5 rounded-full ${
+              data.trend === 'Deteriorating'
+                ? 'bg-rose-100 text-rose-700'
+                : data.trend === 'Chronic'
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-emerald-100 text-emerald-700'
+            }`}>
+              {data.trend}
+            </span>
+            <span className="font-mono text-[10px] font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+              {data.streakDoors} Doors
+            </span>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom tooltip for Week Wise Collection chart
+  const CustomWeeklyCollectionTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white p-3 rounded-xl shadow-2xl border border-slate-200/90 text-xs font-sans z-50 pointer-events-none ring-1 ring-black/5">
+          <div className="font-black text-slate-900 mb-1">{label}</div>
+          <div className="text-emerald-700 font-bold">
+            {lang === 'ta' ? 'சேகரிப்பு வீதம்' : 'Collection Rate'}: {payload[0].value}%
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Custom tooltip for High Risk Households chart
+  const CustomHighRiskTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-white p-3.5 rounded-xl shadow-2xl border border-slate-200/90 text-xs font-sans w-64 z-50 pointer-events-none ring-1 ring-black/5">
+          <div className="flex items-center justify-between mb-0.5">
+            <span className="font-mono font-black text-slate-900">{data.houseNo}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+              data.predictionScore >= 75 ? 'bg-red-600 text-white' : 'bg-rose-500 text-white'
+            }`}>
+              {data.predictionScore}% Risk
+            </span>
+          </div>
+          <div className="text-slate-700 font-semibold">{data.address}</div>
+          <div className="text-[10px] text-slate-400 font-medium mb-2">{data.obstacle}</div>
+          <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+            <span className="bg-rose-100 text-rose-800 font-black text-[10.5px] px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+              <Flame className="w-3 h-3 text-rose-600" />
+              {data.consecutiveMissedStreak} Misses
+            </span>
+            <span className={`text-[10px] font-bold ${data.trendDeltaPercent > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
+              {data.trendDeltaPercent > 0 ? `+${data.trendDeltaPercent}%` : `${data.trendDeltaPercent}%`} trend
+            </span>
           </div>
         </div>
       );
@@ -317,13 +457,8 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span>{lang === 'ta' ? 'SWMS Copilot • AI முன்கணிப்பு & பகுப்பாய்வு' : 'SWMS Copilot • AI Prediction & Pattern Analytics'}</span>
+              <span>{lang === 'ta' ? 'AI ANALYTICS AND PREDICTION' : 'AI ANALYTICS AND PREDICTION'}</span>
             </h1>
-            <p className="text-xs font-semibold text-slate-500 mt-0.5">
-              {lang === 'ta'
-                ? 'கடந்த கால வரலாற்றுத் தரவு மற்றும் தொடர் விடுபடல் வடிவங்களின் அடிப்படையில் முன்கணிப்புகள்.'
-                : 'Deterministic failure predictions derived strictly from historical collection logs & consecutive missed patterns.'}
-            </p>
           </div>
         </div>
 
@@ -389,10 +524,28 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Date Range Badge */}
-          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 shadow-2xs">
-            <Calendar className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{selectedDateRange}</span>
+          {/* Date Range Filter (Calendar) */}
+          <div className="relative flex items-center gap-1.5 flex-1 sm:flex-initial bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl px-2.5 py-1.5">
+            <Calendar className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => {
+                setDateFrom(e.target.value);
+                if (onShowToast) onShowToast(`Date filter from ${e.target.value || '—'}`);
+              }}
+              className="bg-transparent text-slate-800 text-xs font-bold cursor-pointer focus:outline-none w-[105px]"
+            />
+            <span className="text-slate-400 text-xs font-bold">-</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => {
+                setDateTo(e.target.value);
+                if (onShowToast) onShowToast(`Date filter to ${e.target.value || '—'}`);
+              }}
+              className="bg-transparent text-slate-800 text-xs font-bold cursor-pointer focus:outline-none w-[105px]"
+            />
           </div>
         </div>
 
@@ -401,13 +554,13 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
       {/* ========================================================================= */}
       {/* 2. TOP 3 SUMMARY METRIC CARDS                                             */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         
         {/* Card 1: Regularly Collected */}
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">
-              {lang === 'ta' ? 'தவறாமல் சேகரிக்கப்படுபவை' : 'Regularly Collected'}
+              {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
             </span>
             <span className="w-2.5 h-2.5 rounded-full bg-[#1E7A38]" />
           </div>
@@ -417,7 +570,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             </div>
           </div>
           <div className="text-[11px] font-bold text-slate-600">
-            Households <span className="font-semibold text-slate-500">· 80.15% 30-day historical clearance</span>
+            Households
           </div>
         </div>
 
@@ -425,7 +578,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
         <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between hover:shadow-md transition">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-slate-600">
-              {lang === 'ta' ? 'அவ்வப்போது விடுபட்டவை' : 'Occasionally Missed'}
+              {lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}
             </span>
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
           </div>
@@ -435,31 +588,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             </div>
           </div>
           <div className="text-[11px] font-bold text-slate-600">
-            Households <span className="font-semibold text-slate-500">· 11.32% sporadic historical gaps</span>
-          </div>
-        </div>
-
-        {/* Card 3: High Risk (Critical Non-Collection) */}
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-red-200/90 shadow-2xs flex flex-col justify-between hover:shadow-md transition bg-red-50/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs font-bold text-slate-700">
-                {lang === 'ta' ? 'அதிக ஆபத்துள்ளவை (High Risk)' : 'High Risk Non-Collection'}
-              </span>
-              <span className="text-[9px] font-black bg-red-100 text-red-800 px-1.5 py-0.5 rounded-md uppercase tracking-wider flex items-center gap-0.5">
-                <Flame className="w-2.5 h-2.5 text-red-600" />
-                Streak Weighted
-              </span>
-            </div>
-            <span className="w-2.5 h-2.5 rounded-full bg-red-600 animate-pulse" />
-          </div>
-          <div className="my-2">
-            <div className="text-3xl font-black text-red-600 leading-tight">
-              {criticalHighRiskCount}
-            </div>
-          </div>
-          <div className="text-[11px] font-bold text-slate-600">
-            Households <span className="font-semibold text-red-700">· 2.41% Critical Streak & Recency Risk</span>
+            Households
           </div>
         </div>
 
@@ -468,22 +597,22 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
       {/* ========================================================================= */}
       {/* 3. MIDDLE SECTION (3 COLUMNS): BAR CHART + DONUT CHART + AI ALERTS       */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+      <div className="grid grid-cols-1 gap-5">
         
-        {/* Column 1: Household Collection Behavior Bar Chart */}
-        <div className="lg:col-span-4 bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between overflow-hidden">
+        {/* Highly Not Collected Wards Bar Chart */}
+        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between overflow-hidden">
           <div>
             <h3 className="text-sm font-black text-slate-900">
-              {lang === 'ta' ? 'வீட்டுச் சேகரிப்பு நடத்தை' : 'Household Collection Behavior'}
+              {lang === 'ta' ? 'அதிகம் சேகரிக்கப்படாத வார்டுகள்' : 'Highly Not Collected Wards'}
             </h3>
             <div className="text-[11px] font-semibold text-slate-400 mt-1">
-              Historical Clearance Distribution (1,065 Monitored Doors)
+              Top Wards by Missed Collection Count (30-day)
             </div>
           </div>
 
           <div className="w-full h-64 my-2">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={behaviorData} margin={{ top: 20, right: 10, left: -20, bottom: 35 }}>
+              <BarChart data={wardMissData} margin={{ top: 20, right: 10, left: -20, bottom: 35 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -498,12 +627,11 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                   fontSize={10}
                   fontWeight={700}
                   tickLine={false}
-                  ticks={[0, 250, 500, 750, 1000]}
-                  domain={[0, 1000]}
+                  allowDecimals={false}
                 />
                 <Tooltip content={<CustomBarTooltip />} />
                 <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={36}>
-                  {behaviorData.map((entry, index) => (
+                  {wardMissData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                   <LabelList
@@ -517,228 +645,65 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
 
           <div className="flex items-center justify-center gap-2 pt-2 border-t border-slate-100 text-xs font-bold text-slate-600">
-            <span className="w-3 h-3 rounded-xs bg-[#1E7A38] inline-block" />
-            <span>Historical Household Clearance Count</span>
+            <span className="w-3 h-3 rounded-xs bg-red-600 inline-block" />
+            <span>Missed Household Count (Not Collected)</span>
           </div>
-        </div>
-
-        {/* Column 2: Collection Rate Distribution Donut Chart */}
-        <div className="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between overflow-hidden">
-          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-            <h3 className="text-sm font-black text-slate-900">
-              {lang === 'ta' ? 'சேகரிப்பு விகிதப் பகிர்வு' : 'Collection Rate Distribution'}
-            </h3>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-              Historical Range Tiers
-            </span>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 my-auto py-3">
-            {/* Donut Canvas with Crystal Clear Center Metrics */}
-            <div className="w-36 h-36 sm:w-40 sm:h-40 relative flex-shrink-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={donutData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={46}
-                    outerRadius={68}
-                    paddingAngle={3}
-                    dataKey="count"
-                    cursor="pointer"
-                  >
-                    {donutData.map((entry, index) => (
-                      <Cell
-                        key={`donut-${index}`}
-                        fill={entry.color}
-                        onMouseEnter={() => setActiveDonutIndex(index)}
-                        onMouseLeave={() => setActiveDonutIndex(null)}
-                        style={{
-                          transform: activeDonutIndex === index ? 'scale(1.04)' : 'scale(1)',
-                          transformOrigin: 'center center',
-                          transition: 'transform 150ms ease, opacity 150ms ease',
-                          opacity: activeDonutIndex !== null && activeDonutIndex !== index ? 0.45 : 1
-                        }}
-                      />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              
-              {/* Dynamic Center Metric Display */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center px-1 select-none">
-                {activeDonutIndex !== null && donutData[activeDonutIndex] ? (
-                  <div className="flex flex-col items-center leading-tight transition-all duration-150">
-                    <span
-                      className="text-lg font-black tracking-tight"
-                      style={{ color: donutData[activeDonutIndex].color }}
-                    >
-                      {donutData[activeDonutIndex].count}
-                    </span>
-                    <span className="text-[10px] font-extrabold text-slate-800">
-                      {donutData[activeDonutIndex].percentage}
-                    </span>
-                    <span className="text-[8px] font-bold text-slate-400 mt-0.5">
-                      {lang === 'ta' ? 'வீடுகள்' : 'Homes'}
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center leading-tight transition-all duration-150">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                      {lang === 'ta' ? 'மொத்தம்' : 'Total'}
-                    </span>
-                    <span className="text-base font-black text-slate-900 my-0.5">
-                      {totalHouseholds}
-                    </span>
-                    <span className="text-[8px] font-bold text-slate-500">
-                      {lang === 'ta' ? 'வீடுகள்' : 'Households'}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Right Legend Strip */}
-            <div className="space-y-1 text-xs flex-1 min-w-0 w-full">
-              {donutData.map((item, idx) => {
-                const isHovered = activeDonutIndex === idx;
-                return (
-                  <div
-                    key={idx}
-                    onMouseEnter={() => setActiveDonutIndex(idx)}
-                    onMouseLeave={() => setActiveDonutIndex(null)}
-                    className={`flex items-center justify-between p-1.5 rounded-xl border transition-all duration-150 cursor-pointer min-w-0 ${
-                      isHovered
-                        ? 'bg-slate-50 border-slate-300 shadow-xs'
-                        : 'bg-white border-slate-100 hover:bg-slate-50/70 hover:border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0 flex-1 pr-1">
-                      <span
-                        className="w-2.5 h-2.5 rounded-full flex-shrink-0 transition-transform duration-150"
-                        style={{
-                          backgroundColor: item.color,
-                          transform: isHovered ? 'scale(1.25)' : 'scale(1)'
-                        }}
-                      />
-                      <div className="min-w-0 truncate">
-                        <div className={`text-[11px] leading-tight truncate ${isHovered ? 'font-black text-slate-900' : 'font-bold text-slate-700'}`}>
-                          {item.name}
-                        </div>
-                        <div className="text-[9.5px] text-slate-500 font-medium truncate">
-                          {item.category}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-right flex-shrink-0">
-                      <div className="text-[11px] font-black text-slate-900">
-                        {item.count}
-                      </div>
-                      <div className="text-[9.5px] font-bold" style={{ color: item.color }}>
-                        {item.percentage}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Active Detail Status Banner */}
-          <div className="pt-2.5 border-t border-slate-100 overflow-hidden">
-            {activeDonutIndex !== null && donutData[activeDonutIndex] ? (
-              <div
-                className="flex items-center justify-between p-2 rounded-xl border text-xs animate-in fade-in duration-150 overflow-hidden"
-                style={{
-                  backgroundColor: `${donutData[activeDonutIndex].color}0D`,
-                  borderColor: `${donutData[activeDonutIndex].color}35`
-                }}
-              >
-                <div className="flex items-center gap-1.5 font-bold min-w-0 flex-1 truncate" style={{ color: donutData[activeDonutIndex].color }}>
-                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: donutData[activeDonutIndex].color }} />
-                  <span className="truncate">{donutData[activeDonutIndex].status}</span>
-                </div>
-                <div className="text-[10.5px] font-extrabold text-slate-700 flex-shrink-0 pl-2">
-                  {donutData[activeDonutIndex].count} ({donutData[activeDonutIndex].percentage})
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between text-[10.5px] text-slate-500 font-medium px-1">
-                <span>{lang === 'ta' ? 'இலக்கு: 80%+' : 'Target: 80%+ historical clearance'}</span>
-                <span className="font-bold text-slate-700">100% = {totalHouseholds} Homes</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Column 3: AI Pattern-Driven Insights & Alerts */}
-        <div className="lg:col-span-3 bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4">
-          <div>
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                <Brain className="w-4 h-4 text-emerald-600" />
-                <span>{lang === 'ta' ? 'AI வரலாற்று நுண்ணறிவு' : 'AI Pattern Alerts'}</span>
-              </div>
-              <span className="bg-rose-100 text-rose-700 text-[10px] font-black px-2 py-0.5 rounded-full border border-rose-200 animate-pulse">
-                {patternInsights.length} Grounded Alerts
-              </span>
-            </div>
-
-            <div className="space-y-3 mt-3">
-              {patternInsights.slice(0, 4).map((alert) => (
-                <div
-                  key={alert.id}
-                  onClick={() => setActiveModal('alerts')}
-                  className="flex items-start gap-2.5 text-xs p-2 rounded-xl hover:bg-slate-50 transition cursor-pointer border border-slate-100/80"
-                >
-                  {alert.type === 'high' ? (
-                    <AlertTriangle className="w-4 h-4 text-rose-500 flex-shrink-0 mt-0.5" />
-                  ) : alert.type === 'medium' ? (
-                    <AlertOctagon className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                  ) : (
-                    <Info className="w-4 h-4 text-sky-600 flex-shrink-0 mt-0.5" />
-                  )}
-                  <div className="space-y-0.5 min-w-0">
-                    <div className="text-slate-800 font-bold leading-snug line-clamp-2">
-                      {alert.title}
-                    </div>
-                    <div className="text-[10px] text-slate-500 flex items-center gap-1">
-                      <span className="text-emerald-700 font-bold">Basis:</span> {alert.consecutiveStreakNote}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* INTERACTIVE BUTTON 1: View All Alerts */}
-          <button
-            id="btn-view-all-alerts"
-            onClick={() => {
-              setActiveModal('alerts');
-              if (onShowToast) {
-                onShowToast(
-                  lang === 'ta'
-                    ? '🔔 அனைத்து AI முன்கணிப்பு எச்சரிக்கைகளும் திறக்கப்படுகின்றன...'
-                    : '🔔 Opened AI Predictive Alerts & Mitigation Center'
-                );
-              }
-            }}
-            className="w-full py-2.5 bg-[#1E7A38] hover:bg-[#166534] active:scale-[0.98] text-white text-xs font-black rounded-xl transition-all cursor-pointer shadow-md hover:shadow-lg text-center flex items-center justify-center gap-2"
-          >
-            <span>{lang === 'ta' ? 'அனைத்து எச்சரிக்கைகளையும் காண்க' : 'View All Pattern Alerts'}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
         </div>
 
       </div>
 
       {/* ========================================================================= */}
-      {/* 4. BOTTOM SECTION (2 TABLES): TOP 5 STREETS + HIGH RISK HOUSEHOLDS       */}
+      {/* 3B. ZONE-WISE COLLECTED VS NOT COLLECTED CHART                            */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs">
+        <div>
+          <h3 className="text-sm font-black text-slate-900">
+            {lang === 'ta' ? 'மண்டல வாரியாக சேகரிப்பு நிலை' : 'Zone-wise Collection Status'}
+          </h3>
+          <div className="text-[11px] font-semibold text-slate-400 mt-1">
+            {lang === 'ta' ? 'சேகரிக்கப்பட்டது vs சேகரிக்கப்படவில்லை (மண்டல வாரியாக)' : 'Collected vs Not Collected (by Zone)'}
+          </div>
+        </div>
+
+        <div className="w-full h-72 my-3">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={zoneCollectionData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+              <XAxis
+                dataKey="name"
+                stroke="#94A3B8"
+                tickLine={false}
+                fontSize={11}
+                fontWeight={700}
+              />
+              <YAxis stroke="#94A3B8" fontSize={10} fontWeight={700} tickLine={false} allowDecimals={false} />
+              <Tooltip content={<CustomZoneBarTooltip />} />
+              <Bar dataKey="collected" name="Collected" fill="#1E7A38" radius={[4, 4, 0, 0]} barSize={28}>
+                <LabelList dataKey="collected" position="top" style={{ fill: '#0F172A', fontWeight: 800, fontSize: 11 }} />
+              </Bar>
+              <Bar dataKey="notCollected" name="Not Collected" fill="#DC2626" radius={[4, 4, 0, 0]} barSize={28}>
+                <LabelList dataKey="notCollected" position="top" style={{ fill: '#0F172A', fontWeight: 800, fontSize: 11 }} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="flex items-center justify-center gap-5 pt-2 border-t border-slate-100 text-xs font-bold text-slate-600">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-xs bg-[#1E7A38] inline-block" />
+            {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-xs bg-red-600 inline-block" />
+            {lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}
+          </span>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 4. BOTTOM SECTION: TOP 5 STREETS                                          */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-1 gap-5">
         
         {/* Table 1: Top 5 Frequently Not Collected Streets (Recent vs Older Comparison) */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between">
@@ -755,58 +720,77 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
               </span>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 text-[11px] font-black text-slate-600">
-                    <th className="py-2.5 px-2">Street Name</th>
-                    <th className="py-2.5 px-2 text-center">Ward</th>
-                    <th className="py-2.5 px-2 text-right">Recent 7D Miss</th>
-                    <th className="py-2.5 px-2 text-right">30D Base Miss</th>
-                    <th className="py-2.5 px-2 text-center">Trend</th>
-                    <th className="py-2.5 px-2 text-center">Streak Doors</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-bold text-slate-800">
-                  {top5Streets.map((row, i) => (
-                    <tr
-                      key={i}
-                      onClick={() => setActiveModal('full_report')}
-                      className="hover:bg-slate-50/80 transition cursor-pointer"
-                    >
-                      <td className="py-2.5 px-2 font-black text-slate-900">
-                        {row.streetName}
-                        <div className="text-[10px] text-slate-400 font-normal truncate max-w-[140px]">{row.primaryObstacle}</div>
-                      </td>
-                      <td className="py-2.5 px-2 text-center text-slate-600">W-{row.ward}</td>
-                      <td className="py-2.5 px-2 text-right text-rose-700 font-black">
-                        {row.recentMissRatePercent}%
-                      </td>
-                      <td className="py-2.5 px-2 text-right text-slate-500 font-medium">
-                        {row.olderBaselineMissRatePercent}%
-                      </td>
-                      <td className="py-2.5 px-2 text-center">
-                        <span className={`inline-flex items-center gap-0.5 text-[10px] font-black px-2 py-0.5 rounded-full ${
-                          row.trend === 'Deteriorating'
-                            ? 'bg-rose-100 text-rose-700'
-                            : row.trend === 'Chronic'
-                            ? 'bg-amber-100 text-amber-700'
-                            : 'bg-emerald-100 text-emerald-700'
-                        }`}>
-                          {row.trend === 'Deteriorating' && <TrendingUp className="w-2.5 h-2.5 text-rose-600" />}
-                          {row.trend === 'Improving' && <TrendingDown className="w-2.5 h-2.5 text-emerald-600" />}
-                          {row.trend}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-2 text-center">
-                        <span className="font-mono text-[11px] font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-                          {row.consecutiveRiskHouseCount} Doors
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <ResponsiveContainer width="100%" height={260}>
+              <LineChart
+                data={top5Streets.map((row) => ({
+                  name: row.streetName,
+                  obstacle: row.primaryObstacle,
+                  ward: row.ward,
+                  recent: row.recentMissRatePercent,
+                  baseline: row.olderBaselineMissRatePercent,
+                  trend: row.trend,
+                  streakDoors: row.consecutiveRiskHouseCount,
+                }))}
+                margin={{ top: 10, right: 16, left: -16, bottom: 5 }}
+                onClick={() => setActiveModal('full_report')}
+                className="cursor-pointer"
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis
+                  dataKey="name"
+                  tick={{ fontSize: 9.5, fontWeight: 800, fill: '#0F172A' }}
+                  axisLine={{ stroke: '#E2E8F0' }}
+                  interval={0}
+                />
+                <YAxis
+                  tickFormatter={(v) => `${v}%`}
+                  domain={[0, 'dataMax + 8']}
+                  tick={{ fontSize: 10, fontWeight: 700, fill: '#64748B' }}
+                  axisLine={{ stroke: '#E2E8F0' }}
+                  width={38}
+                />
+                <Tooltip content={<CustomStreetTooltip />} cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
+                <Line
+                  type="monotone"
+                  dataKey="recent"
+                  name="Recent 7D Miss"
+                  stroke="#E11D48"
+                  strokeWidth={2.5}
+                  dot={{ r: 4, fill: '#E11D48', strokeWidth: 0 }}
+                  activeDot={{ r: 6 }}
+                >
+                  <LabelList dataKey="recent" position="top" formatter={(v: number) => `${v}%`} style={{ fontSize: 10, fontWeight: 800, fill: '#BE123C' }} />
+                </Line>
+                <Line
+                  type="monotone"
+                  dataKey="baseline"
+                  name="30D Base Miss"
+                  stroke="#94A3B8"
+                  strokeWidth={2}
+                  strokeDasharray="5 3"
+                  dot={{ r: 3.5, fill: '#94A3B8', strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                >
+                  <LabelList dataKey="baseline" position="bottom" formatter={(v: number) => `${v}%`} style={{ fontSize: 9.5, fontWeight: 700, fill: '#64748B' }} />
+                </Line>
+              </LineChart>
+            </ResponsiveContainer>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-slate-100 text-[10px] font-bold text-slate-600">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-xs bg-[#E11D48] inline-block" />
+                Recent 7D Miss
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-xs bg-[#CBD5E1] inline-block" />
+                30D Base Miss
+              </span>
+              {top5Streets.some((r) => r.trend === 'Deteriorating') && (
+                <span className="inline-flex items-center gap-1 text-rose-700"><TrendingUp className="w-3 h-3" /> Deteriorating</span>
+              )}
+              {top5Streets.some((r) => r.trend === 'Chronic') && (
+                <span className="inline-flex items-center gap-1 text-amber-700">Chronic</span>
+              )}
             </div>
           </div>
 
@@ -832,96 +816,62 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
         </div>
 
-        {/* Table 2: High Risk Households (AI Prediction with Streak & Recency Weights) */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="w-4 h-4 text-rose-600" />
-                <h3 className="text-sm font-black text-slate-900">
-                  {lang === 'ta' ? 'அதிக ஆபத்துள்ள வீடுகள் (AI முன்கணிப்பு)' : 'High Risk Households (Streak Weighted)'}
-                </h3>
-              </div>
-              <span className="text-[11px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200 flex items-center gap-1">
-                <Flame className="w-3 h-3 text-rose-500" />
-                {highRiskHouseholds.length} Critical
-              </span>
-            </div>
+      </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 text-[11px] font-black text-slate-600">
-                    <th className="py-2.5 px-2">House No.</th>
-                    <th className="py-2.5 px-2">Address & Obstacle</th>
-                    <th className="py-2.5 px-2 text-center">Consecutive Streak</th>
-                    <th className="py-2.5 px-2 text-center">Failure Risk</th>
-                    <th className="py-2.5 px-2 text-right">Trend</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 font-bold text-slate-800">
-                  {highRiskHouseholds.slice(0, 5).map((row, i) => (
-                    <tr
-                      key={i}
-                      onClick={() => setActiveModal('high_risk')}
-                      className="hover:bg-slate-50/80 transition cursor-pointer"
-                    >
-                      <td className="py-2.5 px-2 font-mono font-black text-slate-900">{row.houseNo}</td>
-                      <td className="py-2.5 px-2">
-                        <div className="text-slate-800 font-semibold">{row.address}</div>
-                        <div className="text-[10px] text-slate-500 font-normal truncate max-w-[150px]">{row.primaryObstacle}</div>
-                      </td>
-                      <td className="py-2.5 px-2 text-center">
-                        <span className="bg-rose-100 text-rose-800 font-black text-[10.5px] px-2 py-0.5 rounded-md inline-flex items-center gap-1">
-                          <Flame className="w-3 h-3 text-rose-600" />
-                          {row.consecutiveMissedStreak} Misses
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-2 text-center">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
-                          row.predictionScore >= 75
-                            ? 'bg-red-600 text-white'
-                            : 'bg-rose-500 text-white'
-                        }`}>
-                          {row.predictionScore}%
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-2 text-right text-slate-600 text-[11px] font-medium">
-                        <span className={`text-[10px] font-bold ${
-                          row.trendDeltaPercent > 0 ? 'text-rose-600' : 'text-emerald-600'
-                        }`}>
-                          {row.trendDeltaPercent > 0 ? `+${row.trendDeltaPercent}%` : `${row.trendDeltaPercent}%`}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      {/* ========================================================================= */}
+      {/* 4B. WEEK WISE COLLECTION REPORT                                           */}
+      {/* ========================================================================= */}
+      <div className="bg-white rounded-2xl p-5 border border-slate-200/90 shadow-2xs">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-emerald-600" />
+            <h3 className="text-sm font-black text-slate-900">
+              {lang === 'ta' ? 'வார வாரியான சேகரிப்பு அறிக்கை' : 'Week Wise Collection Report'}
+            </h3>
           </div>
-
-          {/* INTERACTIVE BUTTON 3: View All High Risk Households */}
-          <div className="pt-4 mt-2 border-t border-slate-100 flex justify-center">
-            <button
-              id="btn-view-all-high-risk"
-              onClick={() => {
-                setActiveModal('high_risk');
-                if (onShowToast) {
-                  onShowToast(
-                    lang === 'ta'
-                      ? '🏠 அனைத்து அதிக ஆபத்துள்ள வீடுகளின் பதிவேடு திறக்கப்பட்டது.'
-                      : '🏠 Opened High Risk Predictive Household Registry'
-                  );
-                }
-              }}
-              className="px-6 py-2 border border-slate-300 hover:border-rose-600 hover:bg-rose-50 text-slate-700 hover:text-rose-800 text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs active:scale-95 flex items-center gap-1.5"
-            >
-              <Home className="w-3.5 h-3.5 text-rose-600" />
-              <span>{lang === 'ta' ? 'அனைத்து அதிக ஆபத்துள்ள வீடுகளையும் காண்க' : 'View All High Risk Households'}</span>
-            </button>
-          </div>
+          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+            <TrendingUp className="w-3 h-3 text-emerald-600" />
+            +{weeklyCollectionData[weeklyCollectionData.length - 1].collectionRate - weeklyCollectionData[0].collectionRate}% Growth
+          </span>
         </div>
 
+        <ResponsiveContainer width="100%" height={240}>
+          <LineChart
+            data={weeklyCollectionData}
+            margin={{ top: 16, right: 16, left: -16, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+            <XAxis
+              dataKey={lang === 'ta' ? 'taWeek' : 'week'}
+              tick={{ fontSize: 10.5, fontWeight: 800, fill: '#0F172A' }}
+              axisLine={{ stroke: '#E2E8F0' }}
+            />
+            <YAxis
+              domain={[0, 100]}
+              tickFormatter={(v) => `${v}%`}
+              tick={{ fontSize: 10, fontWeight: 700, fill: '#64748B' }}
+              axisLine={{ stroke: '#E2E8F0' }}
+              width={38}
+            />
+            <Tooltip content={<CustomWeeklyCollectionTooltip />} cursor={{ stroke: '#6EE7B7', strokeWidth: 1 }} />
+            <Line
+              type="monotone"
+              dataKey="collectionRate"
+              name={lang === 'ta' ? 'சேகரிப்பு வீதம்' : 'Collection Rate'}
+              stroke="#1E7A38"
+              strokeWidth={2.5}
+              dot={{ r: 5, fill: '#1E7A38', stroke: '#fff', strokeWidth: 1.5 }}
+              activeDot={{ r: 7 }}
+            >
+              <LabelList dataKey="collectionRate" position="top" formatter={(v: number) => `${v}%`} style={{ fontSize: 10.5, fontWeight: 900, fill: '#166534' }} />
+            </Line>
+          </LineChart>
+        </ResponsiveContainer>
+
+        <div className="flex items-center justify-center gap-2 pt-3 mt-1 border-t border-slate-100 text-xs font-bold text-slate-600">
+          <span className="w-3 h-0.5 rounded-xs bg-[#1E7A38] inline-block" />
+          <span>{lang === 'ta' ? 'வாராந்திர சேகரிப்பு வீதம் (%)' : 'Weekly Collection Rate (%)'}</span>
+        </div>
       </div>
 
       {/* ========================================================================= */}

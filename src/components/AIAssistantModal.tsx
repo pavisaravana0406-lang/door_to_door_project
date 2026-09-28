@@ -68,13 +68,13 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
       const houses = Math.floor(35 + Math.random() * 55);
 
       const aiText = lang === 'ta'
-        ? `🤖 [SWMS Copilot Analytics கணிப்பு Report]\n` +
+        ? `🤖 [AI ANALYTICS AND PREDICTION கணிப்பு Report]\n` +
           `• பெறப்பட்ட பயனர் தகவல்: "${userQ}"\n` +
           `• முன்னறிவிக்கப்பட்ட அபாய அளவு (Risk Score): ${riskScore}% [HIGH CRITICAL]\n` +
           `• கழிவு தேக்கக் கணிப்பு காலம்: அடுத்த ${hoursWindow} மணி நேரத்தில் கழிவு வழிதல் அபாயம்\n` +
           `• பாதிக்கப்பட்ட வீடுகள் மதிப்பீடு: ~${houses} வீடுகள்\n` +
           `• AI பரிந்துரைக்கப்பட்ட தீர்வு: 2 BOV மின்சார ஆட்டோக்கள் மற்றும் வாகன மாற்றுப் பாதை ஒதுக்கீடு தூண்டப்பட்டது.`
-        : `🤖 [SWMS Copilot Analytics Prediction Report]\n` +
+        : `🤖 [AI ANALYTICS AND PREDICTION Prediction Report]\n` +
           `• Received User Feed: "${userQ}"\n` +
           `• Predicted Risk Score: ${riskScore}% [HIGH CRITICAL]\n` +
           `• Overflow Bottleneck Window: High accumulation risk within next ${hoursWindow} hours\n` +

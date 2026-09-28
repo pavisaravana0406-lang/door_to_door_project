@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, XCircle, Search, Filter, Eye, RefreshCw, MapPin, Truck, ArrowLeft, CheckCircle2, Phone, AlertCircle, FileSpreadsheet, Lock, AlertOctagon } from 'lucide-react';
+import { AlertTriangle, XCircle, Search, Filter, Eye, RefreshCw, MapPin, Truck, ArrowLeft, CheckCircle2, Phone, AlertCircle, FileSpreadsheet, Lock, Ban, Milestone, HelpCircle } from 'lucide-react';
 import { CollectionRecord } from '../types';
 import { householdNotCoveredIcon, householdNotCoveredFallbackIcon } from '../constants/branding';
 
@@ -27,9 +27,12 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
   );
   const collectedCount = records.filter(r => r.status === 'Collected').length;
 
-  const lockedCount = pendingRecords.filter(r => r.reasonIfNotCollected?.toLowerCase().includes('lock') || r.remarks?.toLowerCase().includes('lock')).length;
-  const obstacleCount = pendingRecords.filter(r => r.reasonIfNotCollected?.toLowerCase().includes('road') || r.reasonIfNotCollected?.toLowerCase().includes('obstacle') || r.remarks?.toLowerCase().includes('road')).length;
-  const delayCount = pendingRecords.length - lockedCount - obstacleCount > 0 ? pendingRecords.length - lockedCount - obstacleCount : 0;
+  const lockedCount = pendingRecords.filter(r => r.reasonIfNotCollected?.toLowerCase().includes('lock') || r.reasonIfNotCollected?.toLowerCase().includes('closed') || r.remarks?.toLowerCase().includes('lock')).length;
+  const refusedCount = pendingRecords.filter(r => r.reasonIfNotCollected?.toLowerCase().includes('segregat') || r.reasonIfNotCollected?.toLowerCase().includes('refus') || r.remarks?.toLowerCase().includes('refus')).length;
+  const narrowLaneCount = pendingRecords.filter(r => r.reasonIfNotCollected?.toLowerCase().includes('narrow') || r.reasonIfNotCollected?.toLowerCase().includes('road') || r.reasonIfNotCollected?.toLowerCase().includes('obstacle') || r.remarks?.toLowerCase().includes('narrow')).length;
+  const otherReasonCount = pendingRecords.length - lockedCount - refusedCount - narrowLaneCount > 0
+    ? pendingRecords.length - lockedCount - refusedCount - narrowLaneCount
+    : 0;
 
   const filtered = pendingRecords.filter((r) => {
     const matchesSearch =
@@ -61,9 +64,6 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-black uppercase tracking-wider bg-rose-100 text-rose-800 px-2 py-0.5 rounded-md">
-                {lang === 'ta' ? 'முன்னுரிமை விடுபட்ட பகுதிகள் அறிக்கை' : 'Priority Missed Locations Report'}
-              </span>
               {onBackToOverview && (
                 <button
                   onClick={onBackToOverview}
@@ -76,11 +76,6 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
             <h1 className="text-xl sm:text-2xl font-black text-gray-900 mt-1">
               {lang === 'ta' ? 'சேகரிக்கப்படாத வீடுகள் அறிக்கை' : 'Total Household Not Collected Reports'}
             </h1>
-            <p className="text-xs sm:text-sm font-medium text-rose-800">
-              {lang === 'ta'
-                ? 'உடனடி கவனம் தேவை — ஆய்விற்கும் உடனடி தீர்விற்கும் உட்பட்ட விடுபட்ட சேகரிப்பு பகுதிகள்'
-                : 'Immediate Attention Required — Uncollected Waste Locations Requiring Inspection & Resolution'}
-            </p>
           </div>
         </div>
 
@@ -117,14 +112,14 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
       </div>
 
       {/* Missed Reason Breakdown Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
           <div className="p-3 bg-rose-50 text-rose-700 rounded-xl">
             <Lock className="w-6 h-6" />
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold">
-              {lang === 'ta' ? 'பூட்டப்பட்ட வீடுகள் / கேட்' : 'Locked House / Gate'}
+              {lang === 'ta' ? 'வீடு பூட்டப்பட்டுள்ளது' : 'House Closed / Locked'}
             </div>
             <div className="text-xl font-black text-rose-900">
               {lockedCount} {lang === 'ta' ? 'வீடுகள்' : 'Households'}
@@ -134,28 +129,42 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
 
         <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
           <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
-            <AlertOctagon className="w-6 h-6" />
+            <Ban className="w-6 h-6" />
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold">
-              {lang === 'ta' ? 'பாதை தடைகள் / வேலைகள்' : 'Road Obstacle / Construction'}
+              {lang === 'ta' ? 'கழிவு பிரிக்கப்படாத மறுப்பு' : 'Unsegregated Waste Refused'}
             </div>
             <div className="text-xl font-black text-amber-900">
-              {obstacleCount} {lang === 'ta' ? 'பகுதிகள்' : 'Locations'}
+              {refusedCount} {lang === 'ta' ? 'வீடுகள்' : 'Households'}
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
+          <div className="p-3 bg-orange-50 text-orange-700 rounded-xl">
+            <Milestone className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-xs text-gray-500 font-semibold">
+              {lang === 'ta' ? 'குறுகிய சந்து' : 'Narrow Lane'}
+            </div>
+            <div className="text-xl font-black text-orange-900">
+              {narrowLaneCount} {lang === 'ta' ? 'பகுதிகள்' : 'Locations'}
             </div>
           </div>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
           <div className="p-3 bg-blue-50 text-blue-700 rounded-xl">
-            <Truck className="w-6 h-6" />
+            <HelpCircle className="w-6 h-6" />
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold">
-              {lang === 'ta' ? 'வாகன தாமதம் / பிற காரணங்கள்' : 'Other / Vehicle Delay'}
+              {lang === 'ta' ? 'பிற காரணங்கள்' : 'Other Reason'}
             </div>
             <div className="text-xl font-black text-blue-900">
-              {delayCount} {lang === 'ta' ? 'பகுதிகள்' : 'Locations'}
+              {otherReasonCount} {lang === 'ta' ? 'பகுதிகள்' : 'Locations'}
             </div>
           </div>
         </div>
@@ -166,7 +175,7 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
         <div className="flex items-center gap-2">
           <Truck className="w-5 h-5 text-rose-700" />
           <h3 className="text-sm font-black text-rose-950 uppercase tracking-tight">
-            {lang === 'ta' ? 'மண்டலம் வாரியாக இன்னும் குப்பை சேகரிக்காத வாகனங்கள்' : 'Uncollected Vehicles Breakdown by Zone'}
+            {lang === 'ta' ? 'மண்டலம் வாரியாக இன்னும் குப்பை சேகரிக்காத வாகனங்கள்' : 'Not Collected Vehicles by Zones'}
           </h3>
           <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-rose-200 text-rose-900 ml-auto">
             LIVE UNCOLLECTED VEHICLE TRACKER
@@ -176,26 +185,11 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {['South Zone', 'East Zone', 'West Zone', 'North Zone', 'Central Zone'].map((z) => {
             const zonePending = pendingRecords.filter((r) => r.zone === z);
-            const vehiclesInZone = Array.from(
-              new Set(zonePending.map((r) => r.vehicleNo || 'TN66AD6465'))
-            );
             return (
               <div key={z} className="bg-white p-3 rounded-xl border border-rose-200/80 shadow-2xs space-y-1">
                 <div className="text-[11px] font-extrabold text-gray-500 uppercase">{z}</div>
                 <div className="text-xs font-black text-rose-800">
                   {zonePending.length} {lang === 'ta' ? 'வீடுகள் நிலுவை' : 'Households Missed'}
-                </div>
-                <div className="text-[11px] font-mono font-bold text-slate-800 pt-1 border-t border-gray-100 flex items-center gap-1 flex-wrap">
-                  <span className="text-gray-400 font-sans">{lang === 'ta' ? 'வாகனம்:' : 'Vehicle:'}</span>
-                  {vehiclesInZone.length > 0 ? (
-                    vehiclesInZone.map((v) => (
-                      <span key={v} className="bg-rose-100 text-rose-900 px-1.5 py-0.5 rounded text-[10px] font-black">
-                        {v}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="text-emerald-700 text-[10px] font-bold">✓ None</span>
-                  )}
                 </div>
               </div>
             );
@@ -286,7 +280,7 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
                   </td>
                   <td className="px-5 py-3.5 text-xs text-rose-900 font-bold max-w-[220px]">
                     <span className="bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-md block truncate">
-                      {item.reasonIfNotCollected || (lang === 'ta' ? 'வாகன தாமதம்' : 'Vehicle Delay')}
+                      {item.reasonIfNotCollected || (lang === 'ta' ? 'பிற காரணங்கள்' : 'Other Reason')}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 font-semibold text-gray-800">{item.workerName}</td>

@@ -277,60 +277,20 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
   return (
     <div id="frequently-not-covered-area-view" className="space-y-6">
       
-      {/* 1. Main Header & Hero Banner */}
+      {/* 1. Main Header Banner */}
+      <div className="bg-white text-slate-900 rounded-2xl p-6 border border-amber-200/90 shadow-sm">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+          <span>{lang === 'ta' ? 'அடிக்கடி சேகரிக்கப்படாத வீடுகள்' : 'Frequently Not Collected Household'}</span>
+        </h1>
+      </div>
+
+      {/* 2. KPI Metric Strip */}
       <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 relative overflow-hidden">
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2.5 flex-wrap">
-              <span className="bg-rose-50 text-rose-700 text-xs font-black px-3 py-1 rounded-full border border-rose-200 uppercase tracking-widest flex items-center gap-1.5 shadow-2xs">
-                <Flame className="w-3.5 h-3.5 text-rose-600 animate-bounce" />
-                {lang === 'ta' ? 'தொடர் விடுபடல் கண்காணிப்பு மையம்' : 'Chronic Household Intelligence'}
-              </span>
-              <span className="bg-amber-50 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full border border-amber-200 shadow-2xs">
-                {lang === 'ta' ? 'முன்னுரிமை வீடுகள்' : 'High Priority Households'}
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900 flex items-center gap-3">
-              <span>{lang === 'ta' ? 'அடிக்கடி சேகரிக்கப்படாத வீடுகள்' : 'Frequently Not Collected Household'}</span>
-            </h1>
-            
-            <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-3xl leading-relaxed">
-              {lang === 'ta'
-                ? 'கோயம்புத்தூர் மாநகராட்சியில் தொடர்ந்து 3+ நாட்களுக்கு மேல் குப்பை சேகரிக்கப்படாத வீடுகளைக் கண்காணித்து விரைவு நடவடிக்கை எடுக்கும் பிரத்யேக பகுதி.'
-                : 'CCMC Directorate monitoring portal for chronic uncollected households requiring SBM intervention.'}
-            </p>
-          </div>
-
-          {/* Quick Action Button */}
-          <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap flex-shrink-0">
-            <button
-              onClick={handleExportReport}
-              className="px-4 py-3 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-2xl border border-slate-300 transition-all cursor-pointer flex items-center gap-2 shadow-xs"
-            >
-              <Download className="w-4 h-4 text-slate-600" />
-              <span>{lang === 'ta' ? 'அறிக்கை பதிவிறக்கு' : 'Export Report'}</span>
-            </button>
-
-            <button
-              onClick={() => {
-                if (onNavigateToLiveTracking) {
-                  onNavigateToLiveTracking('All', 'Frequently Uncollected Households');
-                }
-              }}
-              className="px-4 py-3 bg-[#1E7A38] hover:bg-[#166534] text-white font-black text-xs rounded-2xl shadow-md transition-all cursor-pointer flex items-center gap-2"
-            >
-              <Navigation className="w-4 h-4 text-white" />
-              <span>{lang === 'ta' ? 'GPS வரைபடத்தில் பார்' : 'View GPS Map'}</span>
-            </button>
-          </div>
-        </div>
-
         {/* Highlight KPI Metric Strip */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mt-6 pt-6 border-t border-slate-100">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 hover:border-slate-300 transition">
             <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">
-              {lang === 'ta' ? 'பாதிக்கப்பட்ட வீடுகள்' : 'Impacted Houses'}
+              {lang === 'ta' ? 'அடிக்கடி சேகரிக்கப்படாத வீடுகள்' : 'Frequently Not Collected Household'}
             </span>
             <div className="text-2xl sm:text-3xl font-black text-amber-600 mt-0.5">
               {summaryMetrics.totalImpactedHouses} <span className="text-xs font-normal text-slate-400">Doors</span>
@@ -345,15 +305,33 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
               {summaryMetrics.severeStreakCount} <span className="text-xs font-normal text-slate-400">Houses</span>
             </div>
           </div>
+        </div>
+      </div>
 
-          <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 hover:border-slate-300 transition">
-            <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">
-              {lang === 'ta' ? 'சராசரி விடுபடல் வீதம்' : 'Avg Missed Rate'}
-            </span>
-            <div className="text-2xl sm:text-3xl font-black text-[#1E7A38] mt-0.5">
-              {summaryMetrics.avgPercentage}% <span className="text-xs font-normal text-slate-400">Rate</span>
-            </div>
-          </div>
+      {/* Frequently Not Collected Households by Zone */}
+      <div className="bg-amber-50/70 border border-amber-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
+        <div className="flex items-center gap-2">
+          <Flame className="w-5 h-5 text-amber-700" />
+          <h3 className="text-sm font-black text-amber-950 uppercase tracking-tight">
+            {lang === 'ta' ? 'மண்டலம் வாரியாக அடிக்கடி சேகரிக்கப்படாத வீடுகள்' : 'Frequently Not Collected Households by Zone'}
+          </h3>
+          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-amber-200 text-amber-900 ml-auto">
+            {lang === 'ta' ? 'நேரடி கண்காணிப்பு' : 'Live Chronic Tracker'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {['South Zone', 'East Zone', 'West Zone', 'North Zone', 'Central Zone'].map((z) => {
+            const zoneHouses = houses.filter((h) => h.zone === z);
+            return (
+              <div key={z} className="bg-white p-3 rounded-xl border border-amber-200/80 shadow-2xs space-y-1">
+                <div className="text-[11px] font-extrabold text-gray-500 uppercase">{z}</div>
+                <div className="text-xs font-black text-amber-800">
+                  {zoneHouses.length} {lang === 'ta' ? 'வீடுகள்' : 'Households'}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

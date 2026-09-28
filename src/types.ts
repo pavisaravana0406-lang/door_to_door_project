@@ -172,6 +172,12 @@ export interface CollectionRecord {
   completedScansCount?: number;
   streetScans?: StreetScanPoint[];
   coverageStatus?: CoverageStatus;
+  siName?: string;
+  siContact?: string;
+  ssName?: string;
+  ssContact?: string;
+  cssName?: string;
+  cssContact?: string;
 }
 
 
@@ -613,6 +619,7 @@ export interface QRCheckpointAdmin {
   zoneCode: string;
   ward: string;
   streetName: string;
+  doorNo?: string | null;
   area: string | null;
   checkpointNumber: number;
   households: number;
@@ -658,6 +665,7 @@ export interface QRGenerateSinglePayload {
   ward: string;
   streetId: number;
   households: number;
+  doorNo?: string | null;
   workerId?: number | null;
   siName?: string | null;
   siContact?: string | null;

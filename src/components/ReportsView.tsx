@@ -58,6 +58,7 @@ import {
   REAL_QR_VEHICLE_REPORTS,
   VEHICLE_ASSIGNMENT_EVENT,
 } from '../utils/vehicleAssignmentStorage';
+import { getWardsForZone } from '../constants/wards';
 
 import { 
   reportsIcon,
@@ -93,6 +94,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   const [selectedDate, setSelectedDate] = useState<string>('2026-05-13');
   const [selectedMonth, setSelectedMonth] = useState<string>('2026-05');
   const [selectedZone, setSelectedZone] = useState<string>('All');
+  const [selectedWard, setSelectedWard] = useState<string>('All');
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('all');
   const [vehicleViewMode, setVehicleViewMode] = useState<'table' | 'cards' | 'ward-matrix'>('table');
   const [dailyViewPeriod, setDailyViewPeriod] = useState<'daily' | 'monthly'>('daily');
@@ -577,7 +579,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             ['கோயம்புத்தூர் மாநகராட்சி (CCMC)'],
             ['திடக்கழிவு மேலாண்மை இயக்கம் - ஸ்மார்ட் ICCC கண்காணிப்பு அமைப்பு'],
             [`அறிக்கை: ${reportTitle.toUpperCase()}`],
-            [`காலம்: ${periodText} | மண்டலம்: ${translateZone(selectedZone, lang)} | நிலை வடிகட்டி: ${translateStatus(dailyStatusFilter, lang)}`],
+            [`காலம்: ${periodText} | மண்டலம்: ${translateZone(selectedZone, lang)} | வார்டு: ${selectedWard === 'All' ? 'அனைத்தும்' : selectedWard} | நிலை வடிகட்டி: ${translateStatus(dailyStatusFilter, lang)}`],
             [`உருவாக்கப்பட்ட தேதி: ${new Date().toLocaleString('ta-IN')} | குறிப்பு: CCMC/SWM/${new Date().getFullYear()}/${activeReportType.toUpperCase()}`],
             [],
             headers,
@@ -587,7 +589,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             ['COIMBATORE CITY MUNICIPAL CORPORATION (CCMC)'],
             ['Solid Waste Management Directorate - Smart ICCC Monitoring System'],
             [`Report: ${reportTitle.toUpperCase()}`],
-            [`Period: ${periodText} | Zone Filter: ${selectedZone} | Status Filter: ${dailyStatusFilter}`],
+            [`Period: ${periodText} | Zone Filter: ${selectedZone} | Ward Filter: ${selectedWard} | Status Filter: ${dailyStatusFilter}`],
             [`Generated On: ${new Date().toLocaleString()} | Reference: CCMC/SWM/${new Date().getFullYear()}/${activeReportType.toUpperCase()}`],
             [],
             headers,
@@ -912,9 +914,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             650, 24, 9, 'bold', '#064E3B', 'left'
           );
           if (metaLeftImg) doc.addImage(metaLeftImg, 'PNG', 6, 30, 140, 5.5);
-
-          const metaRightImg = createTextCanvasImage('திடக்கழிவு மேலாண்மை இயக்கம் • தணிக்கை சரிபார்க்கப்பட்டது', 450, 24, 9, 'normal', '#047857', 'right');
-          if (metaRightImg) doc.addImage(metaRightImg, 'PNG', pageWidth - 100, 30, 94, 5.5);
         } else {
           doc.setTextColor(6, 78, 59);
           doc.setFontSize(6.5);
@@ -924,11 +923,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             6,
             34
           );
-
-          doc.setTextColor(4, 120, 87);
-          doc.setFontSize(6.5);
-          doc.setFont('helvetica', 'normal');
-          doc.text('Solid Waste Management Directorate • SWM Audit Verified', pageWidth - 6, 34, { align: 'right' });
         }
       };
 
@@ -1170,18 +1164,23 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   const filteredWorkerReports = useMemo(() => {
     return realWorkerReports.filter((w) => {
       const matchZone = selectedZone === 'All' || w.zone === selectedZone;
+      const matchWard = selectedWard === 'All' || w.ward === selectedWard;
       const matchSearch =
         w.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         w.ward.toLowerCase().includes(searchTerm.toLowerCase()) ||
         w.assignedRoute.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchZone && matchSearch;
+      return matchZone && matchWard && matchSearch;
     });
-  }, [realWorkerReports, selectedZone, searchTerm]);
+  }, [realWorkerReports, selectedZone, selectedWard, searchTerm]);
 
   // Filtered Vehicles for Assignment & Fleet Reports
   const filteredVehicleAssignmentReports = useMemo(() => {
     return vehicleReports.filter((v) => {
       const matchZone = selectedZone === 'All' || v.zone === selectedZone;
+      const matchWard =
+        selectedWard === 'All' ||
+        v.ward === selectedWard ||
+        (v.assignedWards && v.assignedWards.includes(selectedWard));
       const matchType =
         selectedVehicleType === 'all' ||
         v.type.toLowerCase() === selectedVehicleType.toLowerCase() ||
@@ -1191,7 +1190,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         (selectedVehicleType === 'OBL-PVT' && v.type.toLowerCase().includes('obl'));
       
       const search = searchTerm.toLowerCase().trim();
-      if (!search) return matchZone && matchType;
+      if (!search) return matchZone && matchWard && matchType;
 
       const inPlate = v.vehicleNo.toLowerCase().includes(search);
       const inType = v.type.toLowerCase().includes(search);
@@ -1202,9 +1201,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       const inAssignedStreets = v.assignedStreets && v.assignedStreets.some((s) => s.toLowerCase().includes(search));
       const inGps = v.gpsStatus && v.gpsStatus.toLowerCase().includes(search);
 
-      return matchZone && matchType && (inPlate || inType || inDriver || inPhone || inWard || inAssignedWards || inAssignedStreets || inGps);
+      return matchZone && matchWard && matchType && (inPlate || inType || inDriver || inPhone || inWard || inAssignedWards || inAssignedStreets || inGps);
     });
-  }, [vehicleReports, selectedZone, selectedVehicleType, searchTerm]);
+  }, [vehicleReports, selectedZone, selectedWard, selectedVehicleType, searchTerm]);
 
   // Filtered Vehicles
   const filteredVehicleReports = useMemo(() => {
@@ -1283,6 +1282,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   const filteredStreetReports = useMemo(() => {
     return realStreetReports.filter((s) => {
       const matchZone = selectedZone === 'All' || s.zone === selectedZone;
+      const matchWard = selectedWard === 'All' || s.ward === selectedWard;
       const matchStatus =
         dailyStatusFilter === 'all' || s.status === dailyStatusFilter;
       const matchSearch =
@@ -1290,9 +1290,35 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         s.ward.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.workerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.vehicleNo.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchZone && matchStatus && matchSearch;
+      return matchZone && matchWard && matchStatus && matchSearch;
     });
-  }, [realStreetReports, selectedZone, dailyStatusFilter, searchTerm]);
+  }, [realStreetReports, selectedZone, selectedWard, dailyStatusFilter, searchTerm]);
+
+  // KPI totals for the Zone-wise report (respects the Zone filter)
+  const zoneKpiTotals = useMemo(() => {
+    const scoped = selectedZone === 'All' ? zoneSummaries : zoneSummaries.filter((z) => z.zone === selectedZone);
+    return scoped.reduce(
+      (acc, z) => {
+        acc.total += z.totalLocations;
+        acc.collected += z.collectedCount;
+        acc.notCollected += z.notCollectedCount;
+        return acc;
+      },
+      { total: 0, collected: 0, notCollected: 0 }
+    );
+  }, [zoneSummaries, selectedZone]);
+
+  // Official ward list for the selected zone (20 wards per zone, 100 total) —
+  // independent of how many wards currently have live report records,
+  // so every administrative ward is selectable in the filter.
+  const availableWards = useMemo(() => getWardsForZone(selectedZone), [selectedZone]);
+
+  // Reset ward filter if it's no longer valid for the selected zone
+  useEffect(() => {
+    if (selectedWard !== 'All' && !availableWards.includes(selectedWard)) {
+      setSelectedWard('All');
+    }
+  }, [availableWards, selectedWard]);
 
   return (
     <div className="space-y-6">
@@ -1310,17 +1336,9 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
-                {lang === 'ta' ? 'மாநகராட்சி அறிக்கைகள் உருவாக்கும் மையம்' : 'Municipal Reports Generation Center'}
+                {lang === 'ta' ? 'அறிக்கைகள்' : 'Reports'}
               </h1>
-              <span className="bg-emerald-100 text-[#1E7A38] text-xs font-black px-2.5 py-0.5 rounded-full border border-emerald-300">
-                {lang === 'ta' ? 'ஆணையர் தணிக்கை மையம்' : "Commissioner's Audit Engine"}
-              </span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium mt-0.5">
-              {lang === 'ta'
-                ? 'கோயம்புத்தூர் மாநகராட்சியின் திடக்கழிவு மேலாண்மை குப்பை சேகரிப்பு தணிக்கை மற்றும் அறிக்கைகளை பதிவிறக்குக.'
-                : 'Generate, audit, print, and export all Coimbatore City Municipal Corporation waste collection performance records.'}
-            </p>
           </div>
         </div>
 
@@ -1564,8 +1582,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             </div>
           )}
 
-          {/* Date Picker (or Month Picker when Monthly is selected) */}
-          {activeReportType !== 'vehicle-assignment' && activeReportType !== 'zone' && (
+          {/* Date Picker (or Month Picker when Monthly is selected) — available across all report types */}
+          {(
             dailyViewPeriod === 'monthly' && activeReportType === 'daily' ? (
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-gray-600">{lang === 'ta' ? 'மாதம்:' : 'Month:'}</span>
@@ -1605,6 +1623,21 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <option value="South Zone">{lang === 'ta' ? 'தெற்கு மண்டலம்' : 'South Zone'}</option>
               <option value="West Zone">{lang === 'ta' ? 'மேற்கு மண்டலம்' : 'West Zone'}</option>
               <option value="East Zone">{lang === 'ta' ? 'கிழக்கு மண்டலம்' : 'East Zone'}</option>
+            </select>
+          </div>
+
+          {/* Ward Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-600">{lang === 'ta' ? 'வார்டு:' : 'Ward:'}</span>
+            <select
+              value={selectedWard}
+              onChange={(e) => setSelectedWard(e.target.value)}
+              className="text-xs font-bold bg-gray-50 border border-gray-300 rounded-xl px-3 py-1.5 text-gray-800 focus:outline-hidden focus:ring-2 focus:ring-emerald-500 max-w-[160px]"
+            >
+              <option value="All">{lang === 'ta' ? 'அனைத்து வார்டுகளும்' : 'All Wards'}</option>
+              {availableWards.map((w) => (
+                <option key={w} value={w}>{w}</option>
+              ))}
             </select>
           </div>
 
@@ -1724,21 +1757,14 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 bg-[#113B22]/70 border border-emerald-400/30 rounded-full text-xs font-semibold text-emerald-200">
-              {lang === 'ta' ? 'சான்றளிக்கப்பட்ட தணிக்கை பதிவு' : 'Certified Audit Record'}
-            </span>
-          </div>
         </div>
 
         {/* Report Metadata Sub-Ribbon */}
         <div className="bg-emerald-50/70 border-b border-emerald-200/70 px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs text-emerald-950">
           <div className="flex items-center gap-3 flex-wrap font-semibold">
-            <span className="bg-emerald-200/80 text-emerald-900 px-2 py-0.5 rounded font-bold text-[11px]">
-              {lang === 'ta' ? 'குறிப்பு' : 'Ref'}: CCMC/SWM/{new Date().getFullYear()}/{activeReportType.toUpperCase()}
-            </span>
             <span>{lang === 'ta' ? 'மண்டலம்' : 'Zone'}: <strong className="text-emerald-900">{translateZone(selectedZone, lang)}</strong></span>
+            <span>•</span>
+            <span>{lang === 'ta' ? 'வார்டு' : 'Ward'}: <strong className="text-emerald-900">{selectedWard === 'All' ? (lang === 'ta' ? 'அனைத்தும்' : 'All') : selectedWard}</strong></span>
             <span>•</span>
             <span>{lang === 'ta' ? 'காலம்' : 'Period'}: <strong className="text-emerald-900">{dailyViewPeriod === 'monthly' && activeReportType === 'daily' ? selectedMonth : selectedDate}</strong></span>
             {activeReportType === 'daily' && (
@@ -1747,11 +1773,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                 <span>{lang === 'ta' ? 'நிலை' : 'Status Filter'}: <strong className="text-emerald-900">{translateStatus(dailyStatusFilter, lang)}</strong></span>
               </>
             )}
-          </div>
-          <div className="text-[11px] text-emerald-800 font-medium">
-            {lang === 'ta'
-              ? 'திடக்கழிவு மேலாண்மை இயக்கம் • தணிக்கை சரிபார்க்கப்பட்டது'
-              : 'Solid Waste Management Directorate • SWM Audit Verified'}
           </div>
         </div>
 
@@ -1944,6 +1965,37 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
         {/* ----------------- REPORT VIEW 2: ZONE-WISE REPORT ----------------- */}
         {activeReportType === 'zone' && (
           <div className="p-6 space-y-6">
+            {/* KPI Summary Boxes: Collected vs Not Collected */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-4 rounded-2xl border border-gray-200 bg-gray-50 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
+                    {lang === 'ta' ? 'மொத்த இடங்கள்' : 'Total Locations'}
+                  </div>
+                  <div className="text-2xl font-black text-gray-900 mt-0.5">{zoneKpiTotals.total}</div>
+                </div>
+                <Layers className="w-8 h-8 text-gray-400" />
+              </div>
+              <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold text-emerald-700 uppercase tracking-wide">
+                    {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
+                  </div>
+                  <div className="text-2xl font-black text-emerald-800 mt-0.5">{zoneKpiTotals.collected}</div>
+                </div>
+                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+              </div>
+              <div className="p-4 rounded-2xl border border-rose-200 bg-rose-50 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold text-rose-700 uppercase tracking-wide">
+                    {lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}
+                  </div>
+                  <div className="text-2xl font-black text-rose-800 mt-0.5">{zoneKpiTotals.notCollected}</div>
+                </div>
+                <XCircle className="w-8 h-8 text-rose-500" />
+              </div>
+            </div>
+
             <div className="overflow-x-auto rounded-xl border border-gray-200">
               <table className="w-full text-left border-collapse text-xs">
                 <thead className="bg-[#EAF3ED] text-[#1E7A38] font-bold border-b border-gray-200">

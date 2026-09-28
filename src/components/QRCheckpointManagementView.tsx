@@ -182,6 +182,8 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
   // Create-checkpoint form state
   const [ward, setWard] = useState('Ward 12');
   const [streetInput, setStreetInput] = useState('Sree Nagar Main Road');
+  const [generationMode, setGenerationMode] = useState<'street' | 'door'>('street');
+  const [doorNo, setDoorNo] = useState('');
   const [households, setHouseholds] = useState('100');
   const [workerInput, setWorkerInput] = useState('Karthik M');
   const [ssInput, setSsInput] = useState('Manoharan SS');
@@ -254,6 +256,7 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
   const resetForm = () => {
     setStreetInput('');
     setHouseholds('100');
+    setDoorNo('');
     setWorkerInput('');
     setSsInput('');
     setCssInput('');
@@ -266,6 +269,10 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
       setError('Please type a street name for the checkpoint.');
       return;
     }
+    if (generationMode === 'door' && !doorNo.trim()) {
+      setError('Please enter the Door No for a door-to-door checkpoint.');
+      return;
+    }
     const nextIdNum = zonesData.checkpoints.length + 101;
     const prefix = scanPrefixFor(selectedZone || 'East Zone');
     const newQrId = `${prefix}-SCAN${nextIdNum}`;
@@ -275,8 +282,9 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
       zone: selectedZone || 'East Zone',
       ward: ward.trim() || 'Ward 12',
       streetId: nextIdNum,
-      streetName: finalStreet,
-      households: Number(households) || 100,
+      streetName: generationMode === 'door' && doorNo.trim() ? `${finalStreet} (Door No: ${doorNo.trim()})` : finalStreet,
+      doorNo: generationMode === 'door' ? doorNo.trim() : null,
+      households: generationMode === 'door' ? 1 : (Number(households) || 100),
       workerId: 1,
       workerName: workerInput.trim() || 'Worker',
       workerPhone: '9876543210',
@@ -298,7 +306,8 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
           zone: selectedZone,
           ward: ward,
           streetId: nextIdNum,
-          households: Number(households) || 100,
+          households: generationMode === 'door' ? 1 : (Number(households) || 100),
+          doorNo: generationMode === 'door' ? doorNo.trim() : null,
           workerId: 1,
           siName: siInput,
           siContact: null,
@@ -329,7 +338,11 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
 
       setViewQr(newCheckpoint);
       resetForm();
-      showToast(`Checkpoint created for "${finalStreet}" and QR ${newQrId} generated.`);
+      showToast(
+        generationMode === 'door'
+          ? `QR Scanner created for "${finalStreet}" Door No ${doorNo.trim()} — QR ${newQrId} generated.`
+          : `QR Scanner created for "${finalStreet}" and QR ${newQrId} generated.`
+      );
     } catch (e: any) {
       setError(e?.message || 'Failed to create checkpoint.');
     } finally {
@@ -436,7 +449,7 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
         <div className="lg:col-span-1 bg-white border border-slate-200 rounded-2xl shadow-sm p-5 h-fit">
           <div className="flex items-center space-x-2 mb-4">
             <Plus className="w-4 h-4 text-emerald-700" />
-            <h3 className="text-sm font-black text-slate-900">Create Checkpoint &amp; Generate QR</h3>
+            <h3 className="text-sm font-black text-slate-900">Create QR Scanner</h3>
           </div>
           <div className="space-y-3">
             <div>
@@ -491,16 +504,65 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
               </datalist>
             </div>
             <div>
-              <label className={labelCls}>Household Count</label>
-              <input
-                type="number"
-                min={0}
-                placeholder="Enter count (e.g. 100)"
-                value={households}
-                onChange={(e) => setHouseholds(e.target.value)}
-                className={inputCls}
-              />
+              <label className={labelCls}>QR Generation Type</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setGenerationMode('street')}
+                  disabled={busy !== null}
+                  className={`text-xs font-black py-2 rounded-xl border-2 transition ${
+                    generationMode === 'street'
+                      ? 'bg-emerald-700 border-emerald-700 text-white'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Street Wise
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setGenerationMode('door')}
+                  disabled={busy !== null}
+                  className={`text-xs font-black py-2 rounded-xl border-2 transition ${
+                    generationMode === 'door'
+                      ? 'bg-emerald-700 border-emerald-700 text-white'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Door to Door
+                </button>
+              </div>
+              <p className="text-[10.5px] text-slate-400 font-semibold mt-1">
+                {generationMode === 'street'
+                  ? 'Street Wise: one QR covers the whole street — Door No not required.'
+                  : 'Door to Door: one QR per household — Door No is required.'}
+              </p>
             </div>
+            {generationMode === 'door' && (
+              <div>
+                <label className={labelCls}>Door No</label>
+                <input
+                  type="text"
+                  placeholder="Enter Door No (e.g. 24A)"
+                  value={doorNo}
+                  onChange={(e) => setDoorNo(e.target.value)}
+                  className={inputCls}
+                  disabled={busy !== null}
+                />
+              </div>
+            )}
+            {generationMode === 'street' && (
+              <div>
+                <label className={labelCls}>Household Count</label>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="Enter count (e.g. 100)"
+                  value={households}
+                  onChange={(e) => setHouseholds(e.target.value)}
+                  className={inputCls}
+                />
+              </div>
+            )}
             <div>
               <label className={labelCls}>Assign Worker</label>
               <input
@@ -575,7 +637,7 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
               className="w-full bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-black py-3 rounded-xl shadow-lg transition disabled:opacity-60 inline-flex items-center justify-center space-x-2"
             >
               {busy === 'Creating checkpoint' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-              <span>Create Checkpoint</span>
+              <span>Create QR Scanner</span>
             </button>
             <button
               onClick={handleGenerateFive}

@@ -59,6 +59,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: LayoutDashboard,
     },
     {
+      id: 'ai-prediction' as NavigationTab,
+      label: lang === 'ta' ? 'AI ANALYTICS AND PREDICTION' : 'AI ANALYTICS AND PREDICTION',
+      shortLabel: lang === 'ta' ? 'AI ANALYTICS' : 'AI ANALYTICS',
+      type: 'image',
+      image: AI_PREDICTION_ICON_URL,
+      badge: 'AI',
+    },
+    {
       id: 'collected' as NavigationTab,
       label: lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected',
       shortLabel: lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected',
@@ -87,14 +95,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       image: REPORTS_ICON_URL,
     },
     {
-      id: 'ai-prediction' as NavigationTab,
-      label: lang === 'ta' ? 'SWMS Copilot' : 'SWMS Copilot',
-      shortLabel: lang === 'ta' ? 'SWMS Copilot' : 'SWMS Copilot',
-      type: 'image',
-      image: AI_PREDICTION_ICON_URL,
-      badge: 'AI',
-    },
-    {
       id: 'qr-management' as NavigationTab,
       label: lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management',
       shortLabel: lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management',
@@ -112,25 +112,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside className="hidden lg:flex w-72 lg:w-80 bg-[#F2F4F3] border-r border-gray-200/90 min-h-[calc(100vh-80px)] flex-col justify-between p-4 flex-shrink-0 select-none sticky top-20 self-start">
         {/* Top Navigation Items */}
         <div className="space-y-2.5">
-          {/* Brand Header — exact Login page logo */}
-          <div className="flex items-center gap-3 px-2 pb-3 mb-1 border-b border-gray-200">
-            <div className="w-12 h-12 rounded-full border-[2.5px] border-[#F59E0B] bg-white p-0.5 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0">
-              <img
-                src={ccmcLogo}
-                alt="Coimbatore City Municipal Corporation Logo"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  if (e.currentTarget.src !== ccmcFallbackLogo) e.currentTarget.src = ccmcFallbackLogo;
-                }}
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <div className="min-w-0">
-              <div className="text-sm font-black text-gray-900 leading-tight">Coimbatore City Municipal Corporation</div>
-              <div className="text-[11px] font-bold text-[#1E7A38] uppercase tracking-wide">Solid Waste Management System</div>
-            </div>
-          </div>
-
           {/* 1. Overview Tab */}
           <button
             onClick={() => handleTabClick('overview')}
@@ -150,11 +131,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <LayoutDashboard className="w-6 h-6" />
               </div>
-              <span className="text-base font-bold">{lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview'}</span>
+              <span className="text-sm font-bold">{lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview'}</span>
             </div>
           </button>
 
-          {/* 2. Collected Tab */}
+          {/* 2. AI Prediction Tab (SWMS Copilot) — moved right after Overview */}
+          <button
+            onClick={() => handleTabClick('ai-prediction')}
+            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
+              activeTab === 'ai-prediction'
+                ? 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-800 shadow-xs border border-emerald-300'
+                : 'text-gray-700 hover:bg-emerald-50/60 hover:text-emerald-800'
+            }`}
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-emerald-500/50 bg-emerald-50/50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
+                <img
+                  src={AI_PREDICTION_ICON_URL}
+                  alt="AI Prediction"
+                  referrerPolicy="no-referrer"
+                  className="w-full h-full object-cover rounded-xl"
+                />
+              </div>
+              <span className="text-sm font-bold">{lang === 'ta' ? 'AI ANALYTICS AND PREDICTION' : 'AI ANALYTICS AND PREDICTION'}</span>
+            </div>
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
+              AI
+            </span>
+          </button>
+
+          {/* 3. Collected Tab */}
           <button
             onClick={() => handleTabClick('collected')}
             className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
@@ -177,11 +183,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
-              <span className="text-base font-bold">{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}</span>
+              <span className="text-sm font-bold">{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}</span>
             </div>
           </button>
 
-          {/* 3. Not Collected Tab */}
+          {/* 4. Not Collected Tab */}
           <button
             onClick={() => handleTabClick('not-collected')}
             className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
@@ -204,11 +210,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
-              <span className="text-base font-bold">{lang === 'ta' ? 'சேகரிக்கப்படாதவை' : 'Not Collected'}</span>
+              <span className="text-sm font-bold">{lang === 'ta' ? 'சேகரிக்கப்படாதவை' : 'Not Collected'}</span>
             </div>
           </button>
 
-          {/* 4. Frequently Not Collected Household Tab */}
+          {/* 5. Frequently Not Collected Household Tab */}
           <button
             onClick={() => handleTabClick('frequently-not-covered-area')}
             className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
@@ -231,11 +237,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
-              <span className="text-base font-bold">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Not Collected Household'}</span>
+              <span className="text-sm font-bold">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Not Collected Household'}</span>
             </div>
           </button>
 
-          {/* 5. Municipal Reports Tab */}
+          {/* 6. Municipal Reports Tab */}
           <button
             onClick={() => handleTabClick('reports')}
             className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
@@ -253,33 +259,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
-              <span className="text-base font-bold">{lang === 'ta' ? 'அறிக்கைகள்' : 'Reports'}</span>
+              <span className="text-sm font-bold">{lang === 'ta' ? 'அறிக்கைகள்' : 'Reports'}</span>
             </div>
-          </button>
-
-          {/* 6. AI Prediction Tab (SWMS Copilot) */}
-          <button
-            onClick={() => handleTabClick('ai-prediction')}
-            className={`w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-sm transition-all text-left cursor-pointer ${
-              activeTab === 'ai-prediction'
-                ? 'bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-800 shadow-xs border border-emerald-300'
-                : 'text-gray-700 hover:bg-emerald-50/60 hover:text-emerald-800'
-            }`}
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-emerald-500/50 bg-emerald-50/50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
-                <img
-                  src={AI_PREDICTION_ICON_URL}
-                  alt="AI Prediction"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover rounded-xl"
-                />
-              </div>
-              <span className="text-base font-bold">SWMS Copilot</span>
-            </div>
-            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
-              AI
-            </span>
           </button>
 
           {/* 7. QR Management Tab (QR Checkpoint Admin) */}
@@ -301,7 +282,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <QrCode className="w-6 h-6" />
               </div>
-              <span className="text-base font-bold">{lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management'}</span>
+              <span className="text-sm font-bold">{lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management'}</span>
             </div>
             <span className="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
               QR
@@ -324,7 +305,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#1E7A38] flex items-center justify-center flex-shrink-0 border border-emerald-200/80 shadow-xs">
               <LogOut className="w-6 h-6 text-[#1E7A38]" />
             </div>
-            <span className="text-base font-bold">{lang === 'ta' ? 'வெளியேறு' : 'Logout'}</span>
+            <span className="text-sm font-bold">{lang === 'ta' ? 'வெளியேறு' : 'Logout'}</span>
           </button>
         </div>
       </aside>

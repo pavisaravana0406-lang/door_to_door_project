@@ -86,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="w-full select-none text-white shadow-md sticky top-0 z-50">
       {/* Top Main Green Bar - Exact Login Green #1E7A38 */}
-      <div className="bg-[#1E7A38] px-2 sm:px-4 lg:px-6 py-1.5 sm:py-2 flex items-center justify-between gap-1.5 sm:gap-4 border-b border-[#166534] min-h-[52px] sm:min-h-[64px]">
+      <div className="bg-[#1E7A38] px-2 sm:px-4 lg:px-8 py-1.5 sm:py-2 lg:py-4 flex items-center justify-between gap-1.5 sm:gap-4 border-b border-[#166534] min-h-[52px] sm:min-h-[64px] lg:min-h-[88px]">
         {/* Left Side: Mobile Menu Toggle + CM Portrait & CCMC Emblem Duo + Municipal Titles */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
           
@@ -106,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
             {/* 1. Coimbatore City Emblem / CCMC Logo */}
             <div 
-              className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden border-2 border-amber-400 bg-white p-0.5 shadow-sm relative flex-shrink-0 flex items-center justify-center" 
+              className="w-7 h-7 sm:w-9 sm:h-9 lg:w-14 lg:h-14 rounded-lg overflow-hidden border-2 border-amber-400 bg-white p-0.5 shadow-sm relative flex-shrink-0 flex items-center justify-center" 
               title="Coimbatore City Municipal Corporation Emblem"
             >
               <img
@@ -124,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* 2. Smart City Mission Logo */}
             <div 
-              className="w-7 h-7 sm:w-9 sm:h-9 rounded-full overflow-hidden border-2 border-amber-400 bg-white p-0.5 shadow-sm relative flex-shrink-0 flex items-center justify-center" 
+              className="w-7 h-7 sm:w-9 sm:h-9 lg:w-14 lg:h-14 rounded-lg overflow-hidden border-2 border-amber-400 bg-white p-0.5 shadow-sm relative flex-shrink-0 flex items-center justify-center" 
               title="Smart City Mission"
             >
               <img
@@ -161,16 +161,16 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Desktop View: Single horizontal line (>= sm) */}
               <div className="hidden sm:flex sm:flex-col sm:justify-center leading-tight">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm lg:text-base font-black tracking-tight text-white whitespace-nowrap drop-shadow-xs">
+                  <span className="text-sm lg:text-lg font-black tracking-tight text-white whitespace-nowrap drop-shadow-xs">
                     Coimbatore City Municipal Corporation
                   </span>
                   {userRole !== 'admin' && (
-                    <span className="text-xs lg:text-sm font-black tracking-wider text-amber-300 uppercase whitespace-nowrap drop-shadow-xs">
+                    <span className="text-xs lg:text-base font-black tracking-wider text-amber-300 uppercase whitespace-nowrap drop-shadow-xs">
                       • {lang === 'ta' ? 'களப் பணியாளர்' : 'SANITARY FIELD WORKER'}
                     </span>
                   )}
                 </div>
-                <div className="text-[10px] lg:text-[11px] font-black tracking-wider text-amber-300 uppercase whitespace-nowrap drop-shadow-xs mt-0.5">
+                <div className="text-[10px] lg:text-sm font-black tracking-wider text-amber-300 uppercase whitespace-nowrap drop-shadow-xs mt-0.5">
                   Integrated Command and Control Center (ICCC)
                 </div>
               </div>

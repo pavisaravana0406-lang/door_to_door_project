@@ -6,7 +6,7 @@ import type {
   QRGenerateSinglePayload,
 } from '../types';
 
-const RENDER_API_URL = 'https://door-to-door-project.onrender.com';
+const RENDER_API_URL = 'https://swms-fastapi-backend.onrender.com';
 
 export const API_BASE: string = (() => {
   const fromEnv = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/+$/, '');

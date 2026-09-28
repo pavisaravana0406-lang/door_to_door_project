@@ -13,7 +13,6 @@ import { RecordDetailModal } from './RecordDetailModal';
 import { FrequentlyNotCoveredAreaView } from './FrequentlyNotCoveredAreaView';
 import { AIPredictionAnalyticsSection } from './AIPredictionAnalyticsSection';
 import { QRCheckpointManagementView } from './QRCheckpointManagementView';
-import { AdminAnalyticsDashboard } from './AdminAnalyticsDashboard';
 
 import {
   INITIAL_KPI_METRICS,
@@ -258,11 +257,6 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
                   <h1 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
                     {lang === 'ta' ? 'நிர்வாக ஆய்வுக் கட்டுப்பாட்டகம்' : 'Admin Review Dashboard'}
                   </h1>
-                  <p className="text-xs sm:text-sm text-gray-500 font-semibold">
-                    {lang === 'ta'
-                      ? 'கோயம்புத்தூர் மாநகராட்சி ஸ்மார்ட் திடக்கழிவு மேலாண்மை கண்ணோட்டம்'
-                      : 'CCMC Smart Solid Waste Management Directorate overview'}
-                  </p>
                 </div>
               </div>
 
@@ -287,9 +281,6 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
                   showToast(lang === 'ta' ? 'அடிக்கடி சேகரிக்கப்படாத வீடுகள் பகுதிக்குத் நகர்ந்தது' : 'Navigated to: Frequently Not Covered Area Intelligence View');
                 }}
               />
-
-              {/* Municipal Collection Analytics Dashboard */}
-              <AdminAnalyticsDashboard lang={lang} />
 
               {/* Zone summaries */}
               <div className="w-full">
