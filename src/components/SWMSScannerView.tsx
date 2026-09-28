@@ -12,7 +12,7 @@ import {
   Play,
   Route
 } from 'lucide-react';
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import jsQR from 'jsqr';
 import { cmPhoto, cmFallbackPhoto, ccmcLogo, ccmcFallbackLogo } from '../constants/branding';
 
 interface SWMSScannerViewProps {
@@ -73,12 +73,16 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
   const [scannedResult, setScannedResult] = useState<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
-  const scannerRef = useRef<Html5Qrcode | null>(null);
-  // Serializes camera start/stop so overlapping transitions can never collide
-  // ("Cannot transition to a new state, already under transition").
-  const transitionLock = useRef<Promise<void>>(Promise.resolve());
-  const busyRef = useRef(false);
+  // Native camera pipeline — we own the <video> element, the MediaStream and
+  // the jsQR decode loop directly, so no library state machine can wedge.
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number>(0);
+  const decodingRef = useRef(false);
   const startGenRef = useRef(0);
+  const startingRef = useRef(false);
+  const doneRef = useRef(false);
 
   // Transient "not our QR" notice — camera keeps scanning underneath.
   const [invalidQrNotice, setInvalidQrNotice] = useState<string | null>(null);
@@ -135,11 +139,12 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
 
   // Trigger successful scan action — own checkpoint QRs only.
   const handleDecodedCode = (decodedText: string) => {
-    if (isSuccessFlash) return; // avoid duplicate triggers
+    if (isSuccessFlash || doneRef.current) return; // avoid duplicate triggers
     if (!isOwnCheckpointQr(decodedText)) {
       flashInvalidQr(decodedText);
       return; // keep the camera running for the correct QR
     }
+    doneRef.current = true; // stop the decode loop immediately
     setIsSuccessFlash(true);
     const houseId = parseHouseId(decodedText);
     setScannedResult(houseId);
@@ -159,22 +164,17 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     }, 350);
   };
 
-  // HD constraints: forces a sharp high-resolution stream instead of the
-  // default blurry 640x480 that can never resolve a printed QR.
-  const hdConstraints = (facing: 'environment' | 'user', deviceId?: string) => ({
-    ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
-    facingMode: facing,
-    width: { ideal: 1920 },
-    height: { ideal: 1080 },
-  });
+  const getCanvas = (): HTMLCanvasElement | null => {
+    if (typeof document === 'undefined') return null;
+    if (!canvasRef.current) canvasRef.current = document.createElement('canvas');
+    return canvasRef.current;
+  };
 
   // Apply continuous autofocus once the video track is live (fixes blurry prints
   // that never decode no matter how long you hold them).
   const applyFocusFix = async (refocus = false) => {
     try {
-      const videoElem = document.querySelector(`#${readerElementId} video`) as HTMLVideoElement | null;
-      const stream = videoElem?.srcObject as MediaStream | undefined;
-      const track = stream?.getVideoTracks?.()[0];
+      const track = streamRef.current?.getVideoTracks?.()[0];
       if (!track) return false;
       const caps = (track.getCapabilities?.() || {}) as Record<string, unknown>;
       // Tap-to-focus: kick the lens by flipping manual -> continuous.
@@ -215,32 +215,94 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try { navigator.vibrate(20); } catch { /* ignore */ }
     }
-    // Restart only when the scanner is truly idle — never mid-transition.
-    if (!ok && !busyRef.current && !scannerRef.current?.isScanning) {
+    // Restart only when the stream is truly idle.
+    if (!ok && !decodingRef.current && !streamRef.current) {
       startCamera(cameraFacing);
     }
   };
 
-  // Wait for any in-flight camera transition, then hold the lock.
-  const acquireCameraTurn = async (): Promise<() => void> => {
-    const prev = transitionLock.current;
-    let release = () => {};
-    const cur = new Promise<void>((res) => { release = res; });
-    transitionLock.current = cur;
-    await prev;
-    busyRef.current = true;
-    return () => {
-      busyRef.current = false;
-      release();
-    };
+  // Native decode loop: draws our own <video> frames to an offscreen canvas
+  // and runs jsQR on them. No library owns the camera, so nothing can wedge.
+  const decodeOnce = (): string | null => {
+    const video = videoRef.current;
+    const canvas = getCanvas();
+    if (!video || !canvas) return null;
+    if (video.readyState < 2 || video.videoWidth === 0) return null;
+    const targetW = 640;
+    const scale = Math.min(1, targetW / video.videoWidth);
+    const w = Math.max(1, Math.floor(video.videoWidth * scale));
+    const h = Math.max(1, Math.floor(video.videoHeight * scale));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(video, 0, 0, w, h);
+    let img: ImageData;
+    try {
+      img = ctx.getImageData(0, 0, w, h);
+    } catch {
+      return null;
+    }
+    try {
+      const res = jsQR(img.data, w, h, { inversionAttempts: 'attemptBoth' });
+      return res?.data ?? null;
+    } catch {
+      return null;
+    }
   };
 
-  // Start Camera with resilient multi-stage fallback for mobile & laptop webcams
+  const runDecodeLoop = () => {
+    cancelAnimationFrame(rafRef.current);
+    decodingRef.current = true;
+    let lastRun = 0;
+    const tick = () => {
+      if (!streamRef.current || doneRef.current) {
+        decodingRef.current = false;
+        return;
+      }
+      const now = performance.now();
+      if (now - lastRun >= 180) {
+        lastRun = now;
+        const text = decodeOnce();
+        if (text) {
+          handleDecodedCode(text);
+          return;
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
+  const stopTracks = () => {
+    cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
+    decodingRef.current = false;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => {
+        try { t.stop(); } catch { /* ignore */ }
+      });
+      streamRef.current = null;
+    }
+    const video = videoRef.current;
+    if (video) {
+      try { video.pause(); } catch { /* ignore */ }
+      video.srcObject = null;
+    }
+  };
+
+  // Start Camera with resilient multi-stage fallback for mobile & laptop webcams.
+  // Plain getUserMedia stages — track.stop() is synchronous, so overlapping
+  // start/stop calls can never collide the way the old library did.
   const startCamera = async (facing: 'environment' | 'user' = 'environment') => {
     const myGen = ++startGenRef.current;
-    const release = await acquireCameraTurn();
+    if (startingRef.current) return;
+    startingRef.current = true;
     setCameraError(null);
     setIsCameraActive(false);
+    doneRef.current = false;
 
     // Keep the real underlying failure so the UI can explain it
     // instead of a generic "unavailable" message.
@@ -249,17 +311,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     try {
       // A newer start/stop superseded this one while it waited — bail out.
       if (myGen !== startGenRef.current) return;
-      if (scannerRef.current) {
-        try {
-          if (scannerRef.current.isScanning) {
-            await scannerRef.current.stop();
-          }
-          await scannerRef.current.clear();
-        } catch {
-          // ignore
-        }
-        scannerRef.current = null;
-      }
+      stopTracks();
 
       // Check if browser has mediaDevices support
       if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -287,172 +339,110 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         // ignore detection errors
       }
 
-      // Pre-request permission first: unlocks device labels + autofocus on mobile.
-      try {
-        const preStream = await navigator.mediaDevices.getUserMedia({
-          video: facing === 'environment' ? { facingMode: 'environment' } : { facingMode: 'user' },
-          audio: false,
-        });
-        preStream.getTracks().forEach((t) => t.stop());
-      } catch (e) {
-        console.warn('Pre-permission request failed:', e);
-      }
-
-      const html5QrCode = new Html5Qrcode(readerElementId, {
-        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-        useBarCodeDetectorIfSupported: true,
-      } as unknown as ConstructorParameters<typeof Html5Qrcode>[1]);
-      scannerRef.current = html5QrCode;
-
-      // qrbox matches the visible 224–288px frame (capped) so the decoder
-      // looks where the user actually holds the QR, at a calm 10 fps.
-      const dynamicQrBox = (viewfinderWidth: number, viewfinderHeight: number) => {
-        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const edgeSize = Math.max(200, Math.min(300, Math.floor(minEdge * 0.62)));
-        return { width: edgeSize, height: edgeSize };
-      };
-
-      const qrConfig = {
-        fps: 10,
-        qrbox: dynamicQrBox,
-        aspectRatio: 1.0,
-        disableFlip: false,
-        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-      };
-
-      // One attempt to start the stream. A "transition" collision means a
-      // previous stop/start is still settling — wait and retry once on the
-      // same instance instead of failing the whole camera.
-      const safeStart = async (constraints: unknown): Promise<boolean> => {
+      // Attach a stream to our own <video> and wait for real frames.
+      // Returns false on black/frozen preview so the next stage is tried.
+      const attachAndVerify = async (stream: MediaStream): Promise<boolean> => {
+        const video = videoRef.current;
+        if (!video || myGen !== startGenRef.current) {
+          stream.getTracks().forEach((t) => { try { t.stop(); } catch { /* ignore */ } });
+          return false;
+        }
+        streamRef.current = stream;
+        video.srcObject = stream;
+        video.muted = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('webkit-playsinline', '');
         try {
-          await html5QrCode.start(
-            constraints as never,
-            qrConfig,
-            (decodedText) => handleDecodedCode(decodedText),
-            () => {}
-          );
-          return true;
+          await video.play();
         } catch (e) {
-          const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
-          if (/transition/i.test(msg)) {
-            console.warn('Camera transition collision, waiting and retrying once:', msg);
-            await new Promise((r) => setTimeout(r, 900));
-            // A newer start/stop took over while waiting — give up quietly.
-            if (myGen !== startGenRef.current) return false;
-            try {
-              await html5QrCode.start(
-                constraints as never,
-                qrConfig,
-                (decodedText) => handleDecodedCode(decodedText),
-                () => {}
-              );
-              return true;
-            } catch (e2) {
-              lastStageError = e2;
-              return false;
-            }
+          console.warn('Video play failed:', e);
+        }
+        for (let i = 0; i < 20; i++) {
+          if (myGen !== startGenRef.current) return false;
+          if (video.videoWidth > 0 && video.readyState >= 2 && !video.paused) return true;
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        console.warn('Camera stream opened but no video frames, trying next mode.');
+        lastStageError = new Error('BLACK_PREVIEW: stream opened but no video frames arrived.');
+        stopTracks();
+        return false;
+      };
+
+      const tryConstraints = async (video: MediaTrackConstraints, label: string): Promise<boolean> => {
+        if (myGen !== startGenRef.current) return false;
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video, audio: false });
+          if (myGen !== startGenRef.current) {
+            stream.getTracks().forEach((t) => { try { t.stop(); } catch { /* ignore */ } });
+            return false;
           }
+          if (await attachAndVerify(stream)) return true;
+          console.warn(`Camera mode "${label}" gave no frames, trying next.`);
+          return false;
+        } catch (e) {
+          console.warn(`Camera mode "${label}" failed:`, e);
           lastStageError = e;
           return false;
         }
       };
 
-      // Verifies the video actually flows (some devices report success but
-      // render a black/frozen frame). Forces muted inline playback for iOS.
-      const videoFlowing = async (): Promise<boolean> => {
-        for (let i = 0; i < 20; i++) {
-          if (myGen !== startGenRef.current) return false;
-          const v = document.querySelector(`#${readerElementId} video`) as HTMLVideoElement | null;
-          if (v) {
-            try {
-              v.muted = true;
-              v.setAttribute('playsinline', '');
-              v.setAttribute('webkit-playsinline', '');
-              if (v.paused) await v.play();
-            } catch {
-              // ignore — check frame state below anyway
-            }
-            if (v.videoWidth > 0 && v.readyState >= 2 && !v.paused) return true;
-          }
-          await new Promise((r) => setTimeout(r, 200));
-        }
-        return false;
-      };
+      const HD = { width: { ideal: 1920 }, height: { ideal: 1080 } };
 
-      const quietReset = async () => {
-        try {
-          if (html5QrCode.isScanning) await html5QrCode.stop();
-        } catch {
-          // ignore
-        }
-        try {
-          await html5QrCode.clear();
-        } catch {
-          // ignore
-        }
-      };
-
-      const startOk = async (constraints: unknown): Promise<boolean> => {
-        const ok = await safeStart(constraints);
-        if (!ok || myGen !== startGenRef.current) return false;
-        if (await videoFlowing()) {
-          setIsCameraActive(true);
-          void applyFocusFix();
-          return true;
-        }
-        // Stream opened but no frames (black preview) — reset and try next stage.
-        console.warn('Camera stream opened but no video frames, trying next mode.');
-        lastStageError = new Error('BLACK_PREVIEW: stream opened but no video frames arrived.');
-        await quietReset();
-        return false;
-      };
-
-      // Stage 1: Enumerate device cameras to select camera
-      let cameras: Array<{ id: string; label: string }> = [];
+      // Stage 1: exact rear/front device for a sharp HD stream.
+      let devices: MediaDeviceInfo[] = [];
       try {
-        cameras = await Html5Qrcode.getCameras();
+        devices = await navigator.mediaDevices.enumerateDevices();
       } catch (e) {
-        console.warn('getCameras enumeration error:', e);
+        console.warn('Device enumeration error:', e);
         lastStageError = e;
       }
-
-      if (cameras && cameras.length > 0) {
-        let chosenCamera = cameras[0];
+      const videoInputs = devices.filter((d) => d.kind === 'videoinput');
+      const pickDevice = (): string | undefined => {
+        if (videoInputs.length === 0) return undefined;
+        const byLabel = (re: RegExp) => videoInputs.find((d) => re.test(d.label || ''));
         if (facing === 'environment') {
-          const backCam = cameras.find((c) =>
-            c.label.toLowerCase().includes('back') ||
-            c.label.toLowerCase().includes('rear') ||
-            c.label.toLowerCase().includes('environment') ||
-            c.label.toLowerCase().includes('0')
+          return (
+            byLabel(/back|rear|environment/i)?.deviceId ||
+            videoInputs[videoInputs.length - 1]?.deviceId ||
+            videoInputs[0]?.deviceId
           );
-          chosenCamera = backCam || cameras[cameras.length - 1] || cameras[0];
-        } else {
-          const frontCam = cameras.find((c) =>
-            c.label.toLowerCase().includes('front') ||
-            c.label.toLowerCase().includes('user')
-          );
-          chosenCamera = frontCam || cameras[0];
         }
-
-        if (await startOk(hdConstraints(facing, chosenCamera.id))) return;
-        console.warn('Failed to start with enumerated camera ID, trying fallback.');
+        return byLabel(/front|user|face/i)?.deviceId || videoInputs[0]?.deviceId;
+      };
+      const exactId = pickDevice();
+      if (exactId) {
+        if (await tryConstraints({ deviceId: { exact: exactId }, facingMode: facing, ...HD }, 'exact-device-hd')) {
+          setIsCameraActive(true);
+          void applyFocusFix();
+          runDecodeLoop();
+          return;
+        }
+      } else {
+        console.warn('No video input enumerated, trying facing mode.');
       }
 
-      // Stage 2: Direct facingMode constraint with HD ask (best for autofocus on phones)
-      if (await startOk(hdConstraints(facing))) return;
-      console.warn('Direct facingMode failed, trying default.');
+      // Stage 2: facing mode with HD ask (best for autofocus on phones).
+      if (await tryConstraints({ facingMode: facing, ...HD }, 'facing-hd')) {
+        setIsCameraActive(true);
+        void applyFocusFix();
+        runDecodeLoop();
+        return;
+      }
 
-      // Stage 3: Laptop Webcam / Default video constraint (Works on all Laptops!)
-      if (await startOk({})) return;
-      console.warn('Laptop default video start failed, trying each camera.');
+      // Stage 3: plain facing mode (laptops + older phones).
+      if (await tryConstraints({ facingMode: facing }, 'facing-basic')) {
+        setIsCameraActive(true);
+        void applyFocusFix();
+        runDecodeLoop();
+        return;
+      }
 
-      // Stage 4: Try any camera ID with HD ask
-      if (cameras && cameras.length > 0) {
-        for (const cam of cameras) {
-          if (await startOk(hdConstraints(facing, cam.id))) return;
-          // continue loop
-        }
+      // Stage 4: any camera, no ideals at all.
+      if (await tryConstraints(true as unknown as MediaTrackConstraints, 'any-camera')) {
+        setIsCameraActive(true);
+        void applyFocusFix();
+        runDecodeLoop();
+        return;
       }
 
       throw new Error('All live camera stream attempts failed on this device.');
@@ -520,38 +510,16 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         }
       } catch {}
     } finally {
-      release();
+      startingRef.current = false;
     }
   };
 
-  const stopCamera = async () => {
-    // Bumps the generation so any queued start aborts, then stops serially.
+  const stopCamera = () => {
+    // Bumps the generation so any in-flight start aborts, then stops tracks.
+    // track.stop() is fully synchronous — overlapping calls cannot collide.
     startGenRef.current++;
-    const release = await acquireCameraTurn();
-    try {
-      if (scannerRef.current) {
-        try {
-          if (scannerRef.current.isScanning) {
-            await scannerRef.current.stop();
-          }
-          await scannerRef.current.clear();
-        } catch {
-          // ignore — a colliding transition settles on its own
-        }
-        scannerRef.current = null;
-      }
-      setIsCameraActive(false);
-      try {
-        const container = document.getElementById(readerElementId);
-        if (container) {
-          Array.from(container.children).forEach(child => {
-            if (child.tagName !== 'VIDEO') child.remove();
-          });
-        }
-      } catch {}
-    } finally {
-      release();
-    }
+    stopTracks();
+    setIsCameraActive(false);
   };
 
   // Auto start camera on component mount
@@ -651,11 +619,20 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
       {/* ── 2. CAMERA VIEWPORT & VIEWFINDER ── */}
       <div className="relative flex-1 w-full flex flex-col justify-center items-center overflow-hidden bg-black py-4 px-4 min-h-0">
 
-        {/* Html5Qrcode video container */}
+        {/* Our own video element — direct MediaStream, no library DOM */}
         <div
           id={readerElementId}
           className="absolute inset-0 w-full h-full bg-black"
-        />
+        >
+          <video
+            ref={videoRef}
+            muted
+            playsInline
+            autoPlay
+            disablePictureInPicture
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
 
         {/* Dark vignette overlay */}
         <div
