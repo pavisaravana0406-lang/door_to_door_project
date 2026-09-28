@@ -35,6 +35,14 @@ import schemas
 # Create database tables automatically in Neon PostgreSQL
 Base.metadata.create_all(bind=engine)
 
+# create_all() never ALTERs an existing table, so add any column that a newer
+# model expects but Neon is missing (keeps the schema from drifting).
+try:
+    from sync_schema import sync_schema
+    sync_schema()
+except Exception as _sync_exc:  # pragma: no cover
+    print(f"[SWMS] schema sync skipped: {_sync_exc}")
+
 app = FastAPI(
     title="Coimbatore Solid Waste Management System (SWMS) API",
     description="FastAPI Backend backed by Neon cloud PostgreSQL",
