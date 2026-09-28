@@ -19,7 +19,6 @@ import {
   adminQROptions,
   adminQRZones,
   adminQRGenerateSingle,
-  adminQRGenerateZone,
   adminQRDownloadAll,
   qrImageUrl,
   qrImageDownloadUrl,
@@ -342,30 +341,6 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
     }
   };
 
-  const handleGenerateFive = async () => {
-    setBusy('Generating 5 QR codes');
-    setError(null);
-    try {
-      const res = await adminQRGenerateZone(token, selectedZone);
-      setZonesData((prev) => ({
-        ...prev,
-        checkpoints: [...prev.checkpoints, ...res.checkpoints],
-        zones: prev.zones.map((z) =>
-          z.zone === selectedZone
-            ? { ...z, checkpoints: z.checkpoints + res.checkpoints.length, generatedQrs: [...z.generatedQrs, ...res.checkpoints.map((c) => c.qrId)] }
-            : z,
-        ),
-      }));
-      showToast(
-        `${res.message} ${res.duplicateQrs?.length ? `(already present: ${res.duplicateQrs.join(', ')})` : ''}`,
-      );
-    } catch (e: any) {
-      setError(e?.message || 'Failed to generate zone QR codes.');
-    } finally {
-      setBusy(null);
-    }
-  };
-
   const handleDownloadAll = async () => {
     setDownloading(true);
     setError(null);
@@ -631,14 +606,7 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
               {busy === 'Creating checkpoint' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
               <span>Create QR Scanner</span>
             </button>
-            <button
-              onClick={handleGenerateFive}
-              disabled={busy !== null}
-              className="w-full bg-emerald-50 hover:bg-emerald-100 border-2 border-dashed border-emerald-400 text-emerald-800 text-xs font-black py-3 rounded-xl transition disabled:opacity-60 inline-flex items-center justify-center space-x-2"
-            >
-              {busy === 'Generating 5 QR codes' ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
-              <span>Generate 5 QR Codes (CCMC-QR1..05)</span>
-            </button>
+
           </div>
         </div>
 
