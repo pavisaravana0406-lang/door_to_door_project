@@ -32,7 +32,6 @@ import {
   XCircle,
   AlertTriangle,
   Camera,
-  UploadCloud,
   Trash2,
   Image as ImageIcon
 } from 'lucide-react';
@@ -367,7 +366,6 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const [scanWarnMsg, setScanWarnMsg] = useState<string | null>(null);
   const [proofPhoto, setProofPhoto] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const uploadInputRef = React.useRef<HTMLInputElement>(null);
 
   // Live WebCam / Camera Viewfinder State & Refs
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
@@ -460,7 +458,6 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const handleRemovePhoto = () => {
     setProofPhoto(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    if (uploadInputRef.current) uploadInputRef.current.value = '';
   };
 
   const handleScanCardClick = (scan: StreetScanPoint) => {
@@ -503,6 +500,17 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       e.preventDefault();
     }
     if (isSubmitting) return;
+
+    // A proof photo is mandatory — never submit the record without one.
+    if (!proofPhoto) {
+      setScanWarnMsg(
+        lang === 'ta'
+          ? '⚠️ சேகரிப்பு உறுதிப்படுத்த ஒரு புகைப்படம் கட்டாயம். கேமரா படம் எடுக்கவும்!'
+          : '⚠️ A proof photo is required. Please take a photo before submitting.'
+      );
+      setTimeout(() => setScanWarnMsg(null), 5000);
+      return;
+    }
 
     setIsSubmitting(true);
     playChimeTone('success');
@@ -720,17 +728,8 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
               </div>
             </div>
 
-            {/* Action buttons: Edit & Details */}
+            {/* Action button: Details */}
             <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0 ml-auto">
-              <button
-                type="button"
-                onClick={() => setShowMoreDetails(true)}
-                className="bg-[#00875A] hover:bg-[#00704A] text-white font-black text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 rounded-xl shadow-xs flex items-center space-x-1 cursor-pointer transition active:scale-95"
-              >
-                <Pencil className="w-3.5 h-3.5 text-white" />
-                <span>Edit</span>
-              </button>
-
               <button
                 type="button"
                 onClick={() => setShowMoreDetails(true)}
@@ -1045,8 +1044,18 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
           </div>
         )}
 
-        {/* THIRD CARD: PROOF PHOTO COLLECTION */}
+        {/* THIRD CARD: PROOF PHOTO COLLECTION (mandatory) */}
         <div className="bg-white p-4 rounded-3xl border-2 border-emerald-300 shadow-sm space-y-3">
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            ref={fileInputRef}
+            onChange={handlePhotoChange}
+            className="hidden"
+            id="photo-capture-input"
+          />
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-1.5">
               <Camera className="w-4 h-4 text-emerald-600" />
@@ -1057,17 +1066,17 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full ${
               proofPhoto
                 ? 'bg-emerald-100 text-[#00875A] border border-emerald-300'
-                : 'bg-amber-100 text-amber-800 border border-amber-300'
+                : 'bg-rose-100 text-rose-800 border border-rose-300'
             }`}>
               {proofPhoto
                 ? (lang === 'ta' ? 'புகைப்படம் இணைக்கப்பட்டது ✓' : 'Photo Attached ✓')
-                : (lang === 'ta' ? 'விருப்பத்திற்குரியது / Optional' : 'Optional')}
+                : (lang === 'ta' ? 'கட்டாயம் / Mandatory' : 'Mandatory')}
             </span>
           </div>
 
-          <div className="border-t border-slate-100 pt-2.5">
-            {proofPhoto ? (
-              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 bg-slate-900 shadow-sm group">
+          <div className="border-t border-slate-100 pt-2.5 space-y-3">
+            {proofPhoto && (
+              <div className="relative rounded-2xl overflow-hidden border-2 border-emerald-400 bg-slate-900 shadow-sm">
                 <img
                   src={proofPhoto}
                   alt="Waste Collection Proof"
@@ -1094,46 +1103,30 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  ref={fileInputRef}
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                  id="photo-capture-input"
-                />
-                <input
-                  type="file"
-                  accept="image/*"
-                  ref={uploadInputRef}
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                  id="photo-upload-input"
-                />
+            )}
 
-                {/* Camera Capture Button */}
-                <button
-                  type="button"
-                  onClick={() => handleStartCamera('environment')}
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#00875A] hover:bg-[#00704A] text-white font-black py-3 px-4 rounded-2xl shadow-xs cursor-pointer transition active:scale-95 text-xs sm:text-sm border border-emerald-600/40 select-none"
-                >
-                  <Camera className="w-5 h-5 text-emerald-100" />
-                  <span>{lang === 'ta' ? 'கேமரா படம் எடுக்கவும்' : 'Take Photo (Camera)'}</span>
-                </button>
-
-                {/* Upload File Button */}
-                <label
-                  htmlFor="photo-upload-input"
-                  className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3 px-4 rounded-2xl cursor-pointer transition active:scale-95 text-xs sm:text-sm border border-slate-300 select-none"
-                >
-                  <UploadCloud className="w-5 h-5 text-slate-600" />
-                  <span>{lang === 'ta' ? 'பதிவேற்று' : 'Upload File'}</span>
-                </label>
+            {!proofPhoto && (
+              <div className="bg-rose-50 border border-rose-200 rounded-xl p-3 flex items-start gap-2 text-xs font-bold text-rose-800">
+                <AlertTriangle className="w-4 h-4 text-rose-600 mt-0.5 flex-shrink-0" />
+                <span>{lang === 'ta'
+                  ? 'சேகரிப்பு உறுதிப்படுத்த ஒரு புகைப்படம் கட்டாயம்.'
+                  : 'A proof photo is required to submit this collection record.'}</span>
               </div>
             )}
+
+            {/* Camera capture stays available before and after a photo is taken */}
+            <button
+              type="button"
+              onClick={() => handleStartCamera('environment')}
+              className="w-full flex items-center justify-center gap-2 bg-[#00875A] hover:bg-[#00704A] text-white font-black py-3 px-4 rounded-2xl shadow-xs cursor-pointer transition active:scale-95 text-xs sm:text-sm border border-emerald-600/40 select-none"
+            >
+              <Camera className="w-5 h-5 text-emerald-100" />
+              <span>
+                {proofPhoto
+                  ? (lang === 'ta' ? 'மீண்டும் படம் எடுக்கவும்' : 'Retake Photo (Camera)')
+                  : (lang === 'ta' ? 'கேமரா படம் எடுக்கவும்' : 'Take Photo (Camera)')}
+              </span>
+            </button>
           </div>
         </div>
 
@@ -1160,6 +1153,8 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             <span className="font-black text-white text-base">
               {isSubmitting
                 ? (lang === 'ta' ? 'சமர்ப்பிக்கப்படுகிறது...' : 'Submitting Status...')
+                : !proofPhoto
+                ? (lang === 'ta' ? '📷 புகைப்படம் எடுக்கவும் (கட்டாயம்)' : '📷 Take Proof Photo First (Required)')
                 : isPushCart
                 ? formData.coverageStatus === 'Covered'
                   ? (lang === 'ta' ? 'சேகரிக்கப்பட்டது நிலை சமர்ப்பி (Submit Covered)' : 'Submit Covered Status (Pushcart)')
