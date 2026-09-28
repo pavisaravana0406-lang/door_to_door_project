@@ -359,13 +359,53 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         }
       };
 
+      // Verifies the video actually flows (some devices report success but
+      // render a black/frozen frame). Forces muted inline playback for iOS.
+      const videoFlowing = async (): Promise<boolean> => {
+        for (let i = 0; i < 20; i++) {
+          if (myGen !== startGenRef.current) return false;
+          const v = document.querySelector(`#${readerElementId} video`) as HTMLVideoElement | null;
+          if (v) {
+            try {
+              v.muted = true;
+              v.setAttribute('playsinline', '');
+              v.setAttribute('webkit-playsinline', '');
+              if (v.paused) await v.play();
+            } catch {
+              // ignore — check frame state below anyway
+            }
+            if (v.videoWidth > 0 && v.readyState >= 2 && !v.paused) return true;
+          }
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        return false;
+      };
+
+      const quietReset = async () => {
+        try {
+          if (html5QrCode.isScanning) await html5QrCode.stop();
+        } catch {
+          // ignore
+        }
+        try {
+          await html5QrCode.clear();
+        } catch {
+          // ignore
+        }
+      };
+
       const startOk = async (constraints: unknown): Promise<boolean> => {
         const ok = await safeStart(constraints);
-        if (ok && myGen === startGenRef.current) {
+        if (!ok || myGen !== startGenRef.current) return false;
+        if (await videoFlowing()) {
           setIsCameraActive(true);
           void applyFocusFix();
           return true;
         }
+        // Stream opened but no frames (black preview) — reset and try next stage.
+        console.warn('Camera stream opened but no video frames, trying next mode.');
+        lastStageError = new Error('BLACK_PREVIEW: stream opened but no video frames arrived.');
+        await quietReset();
         return false;
       };
 

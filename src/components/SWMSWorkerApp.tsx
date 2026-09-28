@@ -266,10 +266,16 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
     setActiveTab('scan');
   };
 
-  // After a collection record is saved → refresh dashboard and return to it
+  // After a collection record is saved → refresh dashboard data.
+  // Navigation stays on the form's own success screen (Scan Next / Back),
+  // so the worker always sees a clear confirmation — never a sudden jump.
   const handleCollectionSaved = () => {
     setDashboardRefreshKey(k => k + 1);
+  };
+
+  const backToHistory = () => {
     setResolution(null);
+    setResolveError(null);
     setActiveTab('history');
   };
 
@@ -409,11 +415,13 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
               lang={lang}
               token={token ?? null}
               resolution={resolution}
-              onBack={() => setActiveTab('history')}
+              onBack={backToHistory}
               onSaved={handleCollectionSaved}
               onNextScan={() => {
-                setActiveTab('scan');
+                setResolution(null);
+                setResolveError(null);
                 setScanError(null);
+                setActiveTab('scan');
               }}
             />
           </div>
