@@ -9,7 +9,7 @@ import {
 import { SWMSHouseholdFormView } from './SWMSHouseholdFormView';
 import { SWMSScannerView } from './SWMSScannerView';
 import { DustbinAnimationModal } from './DustbinAnimationModal';
-import { SWMSStreetScanQRCard } from './SWMSStreetScanQRCard';
+import { SWMSStreetScanQRCard, getStreetScanRoute, StreetScanRoute } from './SWMSStreetScanQRCard';
 import { SWMSCollectionDashboardView, getVehicleRouteDetails } from './SWMSCollectionDashboardView';
 import { SWMSCollectionFormView } from './SWMSCollectionFormView';
 import { resolveCheckpoint, uploadScanPhoto } from '../api/client';
@@ -71,7 +71,7 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<WorkerTab>('history');
   const [scannedHouseId, setScannedHouseId] = useState('HID100101');
-  const [scannedRouteData, setScannedRouteData] = useState<Record<string, string> | null>(null);
+  const [scannedRouteData, setScannedRouteData] = useState<Record<string, string> | StreetScanRoute | null>(null);
   const [resolution, setResolution] = useState<CheckpointResolveResponse | null>(null);
 
   // Checkpoint resolution status (used as overlay over the scanner)
@@ -191,6 +191,25 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
       } finally {
         setResolvingCheckpoint(false);
       }
+      return;
+    }
+
+    const streetRoute = getStreetScanRoute(cleanQr);
+    if (streetRoute) {
+      const parsed = streetRoute;
+      const cleanAssignedVeh = (assignment?.vehicleNumber || assignedVehicleId || userName || 'YOGARAJ').replace(/[\s\-_]/g, '').toUpperCase();
+      const cleanScannedVeh = (parsed.vehicleNo || '').replace(/[\s\-_]/g, '').toUpperCase();
+      const isMatch = !cleanAssignedVeh || !cleanScannedVeh || cleanAssignedVeh.includes(cleanScannedVeh) || cleanScannedVeh.includes(cleanAssignedVeh);
+      if (!isMatch) {
+        const assignedRouteInfo = getVehicleRouteDetails(assignment?.vehicleNumber || assignedVehicleId || userName || 'YOGARAJ');
+        const errorMsg = lang === 'ta'
+          ? `🚫 வாகன முரண்பாடு எச்சரிக்கை (QR Mismatch Alert)!\n\n• நீங்கள் ஒதுக்கப்பட்டுள்ள வாகனம்: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• நீங்கள் ஸ்கேன் செய்த QR: ${parsed.streetName} (${parsed.vehicleNo})\n\nதயவுசெய்து உங்கள் வாகனத்திற்குரிய (${assignedRouteInfo.vehicleNo}) QR குறியீட்டை மட்டும் ஸ்கேன் செய்யவும்!`
+          : `🚫 Vehicle QR Mismatch Alert!\n\n• Your Assigned Vehicle: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• Scanned QR: ${parsed.streetName} (${parsed.vehicleNo})\n\nPlease scan your assigned vehicle's (${assignedRouteInfo.vehicleNo}) QR code only!`;
+        setScanError(errorMsg);
+        return;
+      }
+      setScannedRouteData(parsed);
+      setActiveTab('routedetails');
       return;
     }
 
