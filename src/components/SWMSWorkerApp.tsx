@@ -163,13 +163,38 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
     }
   };
 
-  // Handle Scan completion: checkpoint QR ids (E-SCAN1) resolve via backend
-  // into the collection form; everything else uses the legacy flows below.
+  // Handle Scan completion: known street/checkpoint QR ids (E-SCAN1, CCMC-QR1, …)
+  // open the street coverage form pre-filled with that street's details.
+  // Anything else falls back to the legacy household flow below.
   const handleScanComplete = async (scannedText: string) => {
     setScanError(null);
 
     const cleanQr = (scannedText || '').trim();
-    if (/-SCAN\d+\s*$/i.test(cleanQr)) {
+
+    // Resolve locally first so a printed card never 404s against the backend,
+    // and the worker always sees the street data that matches the QR.
+    const streetRoute = getStreetScanRoute(cleanQr);
+    if (streetRoute) {
+      const assignedKey = assignment?.vehicleNumber || assignedVehicleId || userName || 'YOGARAJ';
+      const cleanAssignedVeh = (assignedKey || '').replace(/[\s\-_]/g, '').toUpperCase();
+      const cleanScannedVeh = (streetRoute.vehicleNo || '').replace(/[\s\-_]/g, '').toUpperCase();
+      const isMatch = !cleanAssignedVeh || !cleanScannedVeh || cleanAssignedVeh.includes(cleanScannedVeh) || cleanScannedVeh.includes(cleanAssignedVeh);
+      if (!isMatch) {
+        const assignedRouteInfo = getVehicleRouteDetails(assignedKey);
+        const errorMsg = lang === 'ta'
+          ? `🚫 வாகன முரண்பாடு எச்சரிக்கை (QR Mismatch Alert)!\n\n• நீங்கள் ஒதுக்கப்பட்டுள்ள வாகனம்: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• நீங்கள் ஸ்கேன் செய்த QR: ${streetRoute.streetName} (${streetRoute.vehicleNo})\n\nதயவுசெய்து உங்கள் வாகனத்திற்குரிய (${assignedRouteInfo.vehicleNo}) QR குறியீட்டை மட்டும் ஸ்கேன் செய்யவும்!`
+          : `🚫 Vehicle QR Mismatch Alert!\n\n• Your Assigned Vehicle: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• Scanned QR: ${streetRoute.streetName} (${streetRoute.vehicleNo})\n\nPlease scan your assigned vehicle's (${assignedRouteInfo.vehicleNo}) QR code only!`;
+        setScanError(errorMsg);
+        return;
+      }
+      setScannedRouteData(streetRoute);
+      setScannedHouseId(cleanQr);
+      setActiveTab('form');
+      return;
+    }
+
+    // Unknown checkpoint id — let the backend resolve it from the database.
+    if (/^[A-Z]+-SCAN\d+$/i.test(cleanQr)) {
       const qrId = cleanQr.toUpperCase().replace(/\s+/g, '');
       if (!token) {
         setResolveError(
@@ -191,26 +216,6 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
       } finally {
         setResolvingCheckpoint(false);
       }
-      return;
-    }
-
-    const streetRoute = getStreetScanRoute(cleanQr);
-    if (streetRoute) {
-      const parsed = streetRoute;
-      const cleanAssignedVeh = (assignment?.vehicleNumber || assignedVehicleId || userName || 'YOGARAJ').replace(/[\s\-_]/g, '').toUpperCase();
-      const cleanScannedVeh = (parsed.vehicleNo || '').replace(/[\s\-_]/g, '').toUpperCase();
-      const isMatch = !cleanAssignedVeh || !cleanScannedVeh || cleanAssignedVeh.includes(cleanScannedVeh) || cleanScannedVeh.includes(cleanAssignedVeh);
-      if (!isMatch) {
-        const assignedRouteInfo = getVehicleRouteDetails(assignment?.vehicleNumber || assignedVehicleId || userName || 'YOGARAJ');
-        const errorMsg = lang === 'ta'
-          ? `🚫 வாகன முரண்பாடு எச்சரிக்கை (QR Mismatch Alert)!\n\n• நீங்கள் ஒதுக்கப்பட்டுள்ள வாகனம்: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• நீங்கள் ஸ்கேன் செய்த QR: ${parsed.streetName} (${parsed.vehicleNo})\n\nதயவுசெய்து உங்கள் வாகனத்திற்குரிய (${assignedRouteInfo.vehicleNo}) QR குறியீட்டை மட்டும் ஸ்கேன் செய்யவும்!`
-          : `🚫 Vehicle QR Mismatch Alert!\n\n• Your Assigned Vehicle: ${assignedRouteInfo.streetName} (${assignedRouteInfo.vehicleNo})\n• Scanned QR: ${parsed.streetName} (${parsed.vehicleNo})\n\nPlease scan your assigned vehicle's (${assignedRouteInfo.vehicleNo}) QR code only!`;
-        setScanError(errorMsg);
-        return;
-      }
-      setScannedRouteData(parsed);
-      setScannedHouseId(cleanQr);
-      setActiveTab('form');
       return;
     }
 

@@ -37,7 +37,7 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import { ccmcLogo, ccmcFallbackLogo, smartCityLogo, smartCityFallbackLogo } from '../constants/branding';
-import { SREE_NAGAR_SCAN_ROUTE, MAGESHWARI_NAGAR_SCAN_ROUTE, THIYAGIKUMAR_STREET_SCAN_ROUTE, MGR_VEEDHI_SCAN_ROUTE, KALYANAM_SUNDHARAM_STREET_SCAN_ROUTE, PONNI_NAGAR_SCAN_ROUTE, PONNI_NAGAR_2_SCAN_ROUTE, KANDHASAMY_LAYOUT_SCAN_ROUTE, LAKSHMI_MILLS_SIGNAL_SCAN_ROUTE, MARIYAMMAN_KOVIL_STREET_SCAN_ROUTE, KK_NAGAR_SCAN_ROUTE, RANGANATHAN_KOVIL_STREET_SCAN_ROUTE, BAJANA_KOVIL_VEEDHI_SCAN_ROUTE, BAARI_NAGAR_VEEDHI_CUT_ROAD_SCAN_ROUTE, RAMASAMY_KOONARCUT_ROAD_SCAN_ROUTE, MADHURA_ENCLAVE_SCAN_ROUTE, SENTHOORA_PURAM_SCAN_ROUTE, MEENAKSHI_NAGAR_SCAN_ROUTE, VISAGA_GARDEN_SCAN_ROUTE, MARUTHI_ENVUE_SCAN_ROUTE, PALANI_AANDAVAR_KOVIL_VEEDHI_SCAN_ROUTE, KGK_MAIN_ROAD_SCAN_ROUTE, NAGAMMA_NAYAGAR_VEEDHI_SCAN_ROUTE, ALAGAACHI_THOTTAM_SCAN_ROUTE, MUTHUSAMY_SERKAI_VEEDHI_SCAN_ROUTE } from './SWMSStreetScanQRCard';
+import { getStreetScanRoute } from './SWMSStreetScanQRCard';
 
 interface SWMSHouseholdFormViewProps {
   scannedHouseId?: string;
@@ -159,58 +159,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     try {
       parsed = JSON.parse(scannedHouseId);
     } catch {
-      const lower = scannedHouseId.toLowerCase().trim();
-      if (lower.includes('ccmc-qr25') || lower.includes('qr25') || lower.includes('muthusamy') || lower.includes('serkai') || lower.includes('sathya') || lower.includes('tn66po982') || lower.includes('msv-025')) {
-        parsed = MUTHUSAMY_SERKAI_VEEDHI_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr24') || lower.includes('qr24') || lower.includes('alagaachi') || lower.includes('thottam') || lower.includes('magendran') || lower.includes('pushcart10') || lower.includes('at-024')) {
-        parsed = ALAGAACHI_THOTTAM_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr23') || lower.includes('qr23') || lower.includes('nagamma') || lower.includes('nayagar') || lower.includes('chellamuthu') || lower.includes('pushcart9') || lower.includes('nnv-023')) {
-        parsed = NAGAMMA_NAYAGAR_VEEDHI_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr22') || lower.includes('qr22') || lower.includes('kgk') || lower.includes('selvaraj') || lower.includes('9361613970') || lower.includes('tn66aq1153') || lower.includes('kmr-022')) {
-        parsed = KGK_MAIN_ROAD_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr21') || lower.includes('qr21') || lower.includes('palani') || lower.includes('aandavar') || lower.includes('karthik') || lower.includes('9080463024') || lower.includes('tn66am0219') || lower.includes('pakv-021')) {
-        parsed = PALANI_AANDAVAR_KOVIL_VEEDHI_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr20') || lower.includes('qr20') || lower.includes('maruthi') || lower.includes('envue') || lower.includes('paneerselvam') || lower.includes('9894051660') || lower.includes('tn66ap0965') || lower.includes('mev-020')) {
-        parsed = MARUTHI_ENVUE_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr19') || lower.includes('qr19') || lower.includes('visaga') || lower.includes('latha') || lower.includes('8148654687') || lower.includes('pushcart8') || lower.includes('vg-019')) {
-        parsed = VISAGA_GARDEN_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr18') || lower.includes('qr18') || lower.includes('meenakshi') || lower.includes('muthulakshmi') || lower.includes('9786741096') || lower.includes('pushcart7') || lower.includes('mn-018')) {
-        parsed = MEENAKSHI_NAGAR_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr17') || lower.includes('qr17') || lower.includes('senthoora') || lower.includes('mani') || lower.includes('9566421341') || lower.includes('sp-017')) {
-        parsed = SENTHOORA_PURAM_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr16') || lower.includes('qr16') || lower.includes('madhura') || lower.includes('arunachalam') || lower.includes('7317634144') || lower.includes('tn66ac1906') || lower.includes('me-016')) {
-        parsed = MADHURA_ENCLAVE_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr15') || lower.includes('qr15') || lower.includes('ramasamy') || lower.includes('koonarcut') || lower.includes('ramkumar') || lower.includes('7317634144') || lower.includes('tn66ap1181') || lower.includes('rkc-015')) {
-        parsed = RAMASAMY_KOONARCUT_ROAD_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr14') || lower.includes('qr14') || lower.includes('baari') || lower.includes('maragadham') || lower.includes('9047038346') || lower.includes('pushcart6') || lower.includes('bn-014')) {
-        parsed = BAARI_NAGAR_VEEDHI_CUT_ROAD_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr13') || lower.includes('qr13') || lower.includes('bajana') || lower.includes('jothi') || lower.includes('pushcart5') || lower.includes('bk-013')) {
-        parsed = BAJANA_KOVIL_VEEDHI_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr12') || lower.includes('qr12') || lower.includes('ranganathan') || lower.includes('senraj') || lower.includes('8489034317') || lower.includes('tn66ac9176') || lower.includes('rk-012')) {
-        parsed = RANGANATHAN_KOVIL_STREET_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr11') || lower.includes('qr11') || lower.includes('kk nagar') || lower.includes('saravana') || lower.includes('9750545466') || lower.includes('tn66aq1287') || lower.includes('kk-011')) {
-        parsed = KK_NAGAR_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr10') || lower.includes('qr10') || lower.includes('mariyamman') || lower.includes('kovil') || lower.includes('udhayakumar') || lower.includes('8056960451') || lower.includes('tn66aq0794') || lower.includes('mk-010')) {
-        parsed = MARIYAMMAN_KOVIL_STREET_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr9') || lower.includes('qr9') || lower.includes('lakshmi') || lower.includes('mills') || lower.includes('vadivukarasi') || lower.includes('7667769132') || lower.includes('pushcart4') || lower.includes('lm-009')) {
-        parsed = LAKSHMI_MILLS_SIGNAL_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr8') || lower.includes('qr8') || lower.includes('kandhasamy') || lower.includes('palanisamy') || lower.includes('9677966465') || lower.includes('pushcart3') || lower.includes('kl-008')) {
-        parsed = KANDHASAMY_LAYOUT_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr7') || lower.includes('qr7') || lower.includes('gokula') || lower.includes('9751099379') || lower.includes('tn66aq1114') || lower.includes('pn-007')) {
-        parsed = PONNI_NAGAR_2_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr6') || lower.includes('qr6') || lower.includes('ponni') || lower.includes('surya') || lower.includes('8870418209') || lower.includes('tn66ad8373') || lower.includes('pn-006')) {
-        parsed = PONNI_NAGAR_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr5') || lower.includes('qr5') || lower.includes('kalyanam') || lower.includes('sundharam') || lower.includes('anadhan') || lower.includes('8098347628') || lower.includes('ks-005')) {
-        parsed = KALYANAM_SUNDHARAM_STREET_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr4') || lower.includes('qr4') || lower.includes('mgr') || lower.includes('priya') || lower.includes('7397587127') || lower.includes('mv-004')) {
-        parsed = MGR_VEEDHI_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr3') || lower.includes('qr3') || lower.includes('thiyagikumar') || lower.includes('susila') || lower.includes('9790598785') || lower.includes('ts-003')) {
-        parsed = THIYAGIKUMAR_STREET_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr2') || lower.includes('qr2') || lower.includes('mageshwari') || lower.includes('yogaraj') || lower.includes('tn66ad6465') || lower.includes('mn-002')) {
-        parsed = MAGESHWARI_NAGAR_SCAN_ROUTE;
-      } else if (lower.includes('ccmc-qr1') || lower.includes('qr1') || lower.includes('sree') || lower.includes('murali') || lower.includes('tn66ae6121') || lower.includes('sn-001')) {
-        parsed = SREE_NAGAR_SCAN_ROUTE;
-      }
+      // Shared resolver handles both "E-SCAN5" and "CCMC-QR5" so the details
+      // always match the QR the worker actually scanned.
+      parsed = getStreetScanRoute(scannedHouseId);
     }
 
     if (parsed && typeof parsed === 'object') {

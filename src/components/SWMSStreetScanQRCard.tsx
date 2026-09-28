@@ -550,10 +550,55 @@ export const CCMC_QR_ROUTES: Record<string, StreetScanRoute> = {
   'CCMC-QR25': MUTHUSAMY_SERKAI_VEEDHI_SCAN_ROUTE,
 };
 
+// The QR management system numbers checkpoints 1..25 and the legacy street cards
+// use the same numbers, so "E-SCAN5" and "CCMC-QR5" are the same street.
+const ZONE_SCAN_PREFIX_TO_CCMC: Record<string, string> = {
+  C: 'CCMC-QR6',
+  E: 'CCMC-QR1',
+  W: 'CCMC-QR11',
+  N: 'CCMC-QR16',
+  S: 'CCMC-QR21',
+};
+
+// Zone block start + ordinal within the zone, matching the E-SCAN/C/E/W/N/S layout.
+const SCAN_ZONE_BLOCKS: { prefix: string; start: number; count: number }[] = [
+  { prefix: 'E', start: 1, count: 5 },
+  { prefix: 'C', start: 6, count: 3 },
+  { prefix: 'W', start: 9, count: 3 },
+  { prefix: 'N', start: 12, count: 3 },
+  { prefix: 'S', start: 15, count: 11 },
+];
+
+/**
+ * Resolve a scanned checkpoint QR id to its street/route details.
+ * Accepts both the QR-management format ("E-SCAN5", "C-SCAN6-P3") and the
+ * legacy street-card format ("CCMC-QR5", "CCMC-QR5-P3"), so a printed card
+ * and a freshly generated QR always resolve to the same street.
+ */
 export function getStreetScanRoute(qrText: string): StreetScanRoute | null {
-  const match = qrText.trim().match(/^CCMC-QR(\d+)(?:-P\d+)?$/i);
-  if (!match) return null;
-  return CCMC_QR_ROUTES[`CCMC-QR${match[1].toUpperCase()}`] || null;
+  const text = (qrText || '').trim();
+
+  // Legacy street-card id: CCMC-QR{n} (-P{k} optional)
+  const ccmc = text.match(/^CCMC-QR(\d+)(?:-P\d+)?$/i);
+  if (ccmc) return CCMC_QR_ROUTES[`CCMC-QR${ccmc[1]}`] || null;
+
+  // QR-management id: {Z}-SCAN{n} (-P{k} optional)
+  const scan = text.match(/^([A-Z])-SCAN(\d+)(?:-P\d+)?$/i);
+  if (!scan) return null;
+
+  const prefix = scan[1].toUpperCase();
+  const n = parseInt(scan[2], 10);
+
+  // Sequential 1..25 numbering shared with the street cards.
+  for (const block of SCAN_ZONE_BLOCKS) {
+    if (block.prefix === prefix && n >= block.start && n < block.start + block.count) {
+      return CCMC_QR_ROUTES[`CCMC-QR${n}`] || null;
+    }
+  }
+
+  // Fall back to the zone anchor when the ordinal is outside the block.
+  const anchor = ZONE_SCAN_PREFIX_TO_CCMC[prefix];
+  return anchor ? CCMC_QR_ROUTES[anchor] || null : null;
 }
 
 export const SWMSStreetScanQRCard: React.FC<{ lang?: 'en' | 'ta' }> = ({ lang = 'en' }) => {
