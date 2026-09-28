@@ -135,27 +135,65 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     }, 350);
   };
 
+  // HD constraints: forces a sharp high-resolution stream instead of the
+  // default blurry 640x480 that can never resolve a printed QR.
+  const hdConstraints = (facing: 'environment' | 'user', deviceId?: string) => ({
+    ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+    facingMode: facing,
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+  });
+
   // Apply continuous autofocus once the video track is live (fixes blurry prints
   // that never decode no matter how long you hold them).
-  const applyFocusFix = async () => {
+  const applyFocusFix = async (refocus = false) => {
     try {
       const videoElem = document.querySelector(`#${readerElementId} video`) as HTMLVideoElement | null;
       const stream = videoElem?.srcObject as MediaStream | undefined;
       const track = stream?.getVideoTracks?.()[0];
-      if (!track) return;
+      if (!track) return false;
       const caps = (track.getCapabilities?.() || {}) as Record<string, unknown>;
+      // Tap-to-focus: kick the lens by flipping manual -> continuous.
+      if (refocus && 'focusMode' in caps) {
+        try {
+          await track.applyConstraints({
+            advanced: [{ focusMode: 'manual' } as unknown as MediaTrackConstraintSet],
+          });
+          await new Promise((r) => setTimeout(r, 250));
+        } catch {
+          // ignore — fall through to continuous
+        }
+      }
       const advanced: MediaTrackConstraintSet[] = [];
       if ('focusMode' in caps) advanced.push({ focusMode: 'continuous' } as unknown as MediaTrackConstraintSet);
       if ('exposureMode' in caps) advanced.push({ exposureMode: 'continuous' } as unknown as MediaTrackConstraintSet);
+      if ('whiteBalanceMode' in caps) advanced.push({ whiteBalanceMode: 'continuous' } as unknown as MediaTrackConstraintSet);
       if (advanced.length > 0) {
         try {
           await track.applyConstraints({ advanced });
+          return true;
         } catch {
-          // ignore — not all devices allow it
+          return false;
         }
       }
+      return false;
     } catch {
-      // ignore
+      return false;
+    }
+  };
+
+  // Tap on the viewfinder forces the lens to refocus (fixes stuck blur).
+  const [focusTick, setFocusTick] = useState(false);
+  const handleViewfinderTap = async () => {
+    setFocusTick(true);
+    setTimeout(() => setFocusTick(false), 600);
+    const ok = await applyFocusFix(true);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(20); } catch { /* ignore */ }
+    }
+    if (!ok) {
+      // Lens has no focus control — restart the stream to re-acquire.
+      startCamera(cameraFacing);
     }
   };
 
@@ -246,7 +284,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
 
         try {
           await html5QrCode.start(
-            chosenCamera.id,
+            hdConstraints(facing, chosenCamera.id),
             qrConfig,
             (decodedText) => handleDecodedCode(decodedText),
             () => {}
@@ -259,10 +297,10 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         }
       }
 
-      // Stage 2: Direct facingMode constraint (best for autofocus on phones)
+      // Stage 2: Direct facingMode constraint with HD ask (best for autofocus on phones)
       try {
         await html5QrCode.start(
-          { facingMode: facing },
+          hdConstraints(facing),
           qrConfig,
           (decodedText) => handleDecodedCode(decodedText),
           () => {}
@@ -289,12 +327,12 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         console.warn('Laptop default video start failed:', errLaptop);
       }
 
-      // Stage 4: Try any camera ID
+      // Stage 4: Try any camera ID with HD ask
       if (cameras && cameras.length > 0) {
         for (const cam of cameras) {
           try {
             await html5QrCode.start(
-              cam.id,
+              hdConstraints(facing, cam.id),
               qrConfig,
               (decodedText) => handleDecodedCode(decodedText),
               () => {}
@@ -537,9 +575,11 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
           }}
         />
 
-        {/* Viewfinder Window */}
+        {/* Viewfinder Window — tap to force refocus when blurry */}
         <div
-          className="z-20 relative w-56 h-56 xs:w-64 xs:h-64 sm:w-72 sm:h-72 my-auto flex-shrink-0 flex items-center justify-center"
+          onClick={handleViewfinderTap}
+          title={lang === 'ta' ? 'Focus செய்ய தட்டவும்' : 'Tap to focus'}
+          className={`z-20 relative w-56 h-56 xs:w-64 xs:h-64 sm:w-72 sm:h-72 my-auto flex-shrink-0 flex items-center justify-center cursor-pointer transition-transform ${focusTick ? 'scale-[0.98]' : ''}`}
         >
           {/* Top-Left Corner */}
           <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-white rounded-tl-xl drop-shadow-[0_0_8px_#10B981] z-20" />
@@ -621,8 +661,8 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
 
         <p className="text-center text-[11px] font-semibold text-white/60 leading-snug">
           {lang === 'ta'
-            ? 'QR-ஐ சட்டகத்தில் நிறுத்தி 10–15 செ.மீ தூரத்தில் பிடிக்கவும்'
-            : 'Hold the QR steady inside the frame, 10–15 cm away'}
+            ? 'QR-ஐ சட்டகத்தில் நிறுத்தி 10–15 செ.மீ தூரத்தில் பிடிக்கவும் • Blur-ஆ இருந்தால் frame-ஐ தட்டவும்'
+            : 'Hold the QR steady inside the frame, 10–15 cm away • Tap the frame if blurry'}
         </p>
 
         {/* Manual QR-ID entry — works even when the lens can't focus */}
