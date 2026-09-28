@@ -66,7 +66,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
     <div className="dash-card overflow-hidden">
       {/* Table Title & Zone Filter Ribbon */}
       <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-        <h2 className="dash-section-title text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+        <h2 className="dash-section-title text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
           {lang === 'ta' ? 'சமீபத்திய சேகரிப்பு மேலோட்டம்' : 'Recent Collection Overview'}
         </h2>
 
@@ -95,7 +95,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
       <div className="dash-table-wrap">
         <table className="w-full text-left border-collapse min-w-[720px]">
           <thead>
-            <tr className="bg-[#e9f5ed] text-emerald-900 text-[13px] sm:text-sm font-bold border-b border-slate-200">
+            <tr className="bg-[#e9f5ed] text-emerald-900 text-sm sm:text-[15px] font-extrabold border-b border-slate-200">
               <th className="px-4 py-3.5 text-center w-[6%] font-bold">{lang === 'ta' ? 'வரிசை' : 'S. No.'}</th>
               <th className="px-4 py-3.5 w-[12%] font-bold">{lang === 'ta' ? 'தேதி' : 'Date'}</th>
               <th className="px-4 py-3.5 w-[14%] font-bold">{lang === 'ta' ? 'மண்டலம்' : 'Zone'}</th>
@@ -108,7 +108,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 text-[14px] sm:text-[15px] font-semibold text-slate-800">
+          <tbody className="divide-y divide-slate-100 text-[15px] sm:text-base font-bold text-slate-900">
             {displayRecords.map((item, index) => {
               const isPushCart = (item.vehicleType || '').toLowerCase().includes('push') || item.vehicleNo === 'PUSHCART';
               const totalScans = isPushCart ? 1 : 5;

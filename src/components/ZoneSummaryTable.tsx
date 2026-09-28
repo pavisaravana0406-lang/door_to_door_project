@@ -35,7 +35,7 @@ export const ZoneSummaryTable: React.FC<ZoneSummaryTableProps> = ({
     <div className="dash-card overflow-hidden">
       {/* Header Title */}
       <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white">
-        <h2 className="dash-section-title text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+        <h2 className="dash-section-title text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
           {lang === 'ta' ? 'மண்டல வாரியான ஒட்டுமொத்த சேகரிப்பு சுருக்கம்' : 'Zone Wise Overall Collection Summary'}
         </h2>
         <span className="dash-badge dash-badge-green w-fit">5 zones</span>
@@ -45,7 +45,7 @@ export const ZoneSummaryTable: React.FC<ZoneSummaryTableProps> = ({
       <div className="dash-table-wrap">
         <table className="w-full text-left border-collapse min-w-[640px]">
           <thead>
-            <tr className="text-[13px] sm:text-sm font-bold divide-x divide-slate-200/60 border-b border-slate-200">
+            <tr className="text-sm sm:text-[15px] font-extrabold divide-x divide-slate-200/60 border-b border-slate-200">
               {/* Zone Header */}
               <th className="bg-[#E9F5ED] text-[#1E7A38] px-6 py-3.5 w-[28%]">
                 <div className="flex items-center gap-2">
@@ -76,7 +76,7 @@ export const ZoneSummaryTable: React.FC<ZoneSummaryTableProps> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 text-[14px] sm:text-[15px] font-semibold text-slate-800">
+          <tbody className="divide-y divide-slate-100 text-[15px] sm:text-base font-bold text-slate-900">
             {summaries.map((row) => (
               <tr
                 key={row.zone}

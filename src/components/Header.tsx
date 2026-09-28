@@ -141,36 +141,36 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-            {/* Municipal Title - Responsive Layout: Desktop single line, Mobile stacked */}
+            {/* Municipal Title — main headings, big and highly visible */}
             <div className="min-w-0 flex flex-col justify-center">
-              {/* Mobile View: Stacked line-by-line (< sm) */}
-              <div className="sm:hidden flex flex-col justify-center leading-none">
-                <div className="text-[12px] font-black tracking-tight text-white truncate leading-tight drop-shadow-xs">
+              {/* Mobile View: stacked, large and readable (< sm) */}
+              <div className="sm:hidden flex flex-col justify-center leading-tight">
+                <div className="text-[17px] font-black tracking-tight text-white leading-snug drop-shadow">
                   Coimbatore City Municipal Corporation
                 </div>
-                <div className="text-[9.5px] font-black tracking-tight text-amber-300 uppercase truncate leading-tight mt-0.5 drop-shadow-xs">
+                <div className="text-[12px] font-black tracking-wide text-amber-300 uppercase leading-snug mt-1 drop-shadow">
                   Integrated Command and Control Center
                 </div>
                 {userRole !== 'admin' && (
-                  <div className="text-[9px] font-bold text-cyan-300 tracking-wide uppercase truncate leading-tight mt-0.5">
+                  <div className="text-[11px] font-bold text-cyan-200 tracking-wide uppercase leading-snug mt-1">
                     {lang === 'ta' ? 'களப் பணியாளர்' : 'SANITARY FIELD WORKER'}
                   </div>
                 )}
               </div>
 
-              {/* Desktop View: Single horizontal line (>= sm) */}
+              {/* Desktop / tablet: big single-block headings (>= sm) */}
               <div className="hidden sm:flex sm:flex-col sm:justify-center leading-tight">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm lg:text-lg font-black tracking-tight text-white whitespace-nowrap drop-shadow-xs">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xl lg:text-[28px] font-black tracking-tight text-white drop-shadow leading-tight">
                     Coimbatore City Municipal Corporation
                   </span>
                   {userRole !== 'admin' && (
-                    <span className="text-xs lg:text-base font-black tracking-wider text-amber-300 uppercase whitespace-nowrap drop-shadow-xs">
+                    <span className="text-sm lg:text-lg font-black tracking-wider text-amber-300 uppercase drop-shadow">
                       • {lang === 'ta' ? 'களப் பணியாளர்' : 'SANITARY FIELD WORKER'}
                     </span>
                   )}
                 </div>
-                <div className="text-[10px] lg:text-sm font-black tracking-wider text-amber-300 uppercase whitespace-nowrap drop-shadow-xs mt-0.5">
+                <div className="text-sm lg:text-[18px] font-black tracking-wider text-amber-300 uppercase drop-shadow mt-1 leading-snug">
                   Integrated Command and Control Center (ICCC)
                 </div>
               </div>

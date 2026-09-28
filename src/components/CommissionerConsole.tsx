@@ -254,10 +254,10 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             <div className="space-y-5 sm:space-y-6 max-w-[1400px] mx-auto w-full">
               <div className="animate-dash-enter flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <h1 className="dash-section-title text-2xl sm:text-[28px] font-extrabold text-slate-900 tracking-tight leading-tight">
+                  <h1 className="dash-section-title text-[26px] sm:text-[32px] lg:text-[36px] font-black text-slate-900 tracking-tight leading-tight">
                     {lang === 'ta' ? 'நிர்வாக ஆய்வுக் கட்டுப்பாட்டகம்' : 'Admin Review Dashboard'}
                   </h1>
-                  <p className="text-sm sm:text-[15px] font-semibold text-slate-500 mt-1">
+                  <p className="text-[15px] sm:text-base lg:text-lg font-bold text-slate-600 mt-1.5">
                     {lang === 'ta' ? 'நேரடி சேகரிப்பு கண்காணிப்பு' : 'Live collection monitoring across zones and wards'}
                   </p>
                 </div>
@@ -395,10 +395,10 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             <div className="space-y-6">
               <div className="bg-emerald-900 text-white rounded-2xl p-5 border border-emerald-800 shadow-xl flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-black">
+                  <h2 className="text-xl sm:text-2xl font-black">
                     SBM Door-to-Door Garbage Audit Panel
                   </h2>
-                  <p className="text-xs text-emerald-200 font-medium mt-0.5">
+                  <p className="text-sm sm:text-[15px] text-emerald-100 font-semibold mt-1">
                     Live solid waste metrics from sanitary supervisors and worker route scanning
                   </p>
                 </div>

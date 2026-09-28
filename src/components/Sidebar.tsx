@@ -116,7 +116,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => handleTabClick('overview')}
             data-active={activeTab === 'overview'}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3.5 rounded-2xl font-extrabold text-base text-left cursor-pointer border ${
               activeTab === 'overview'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 3. Collected Tab */}
           <button
             onClick={() => handleTabClick('collected')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3.5 rounded-2xl font-extrabold text-base text-left cursor-pointer border ${
               activeTab === 'collected'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
@@ -192,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 4. Not Collected Tab */}
           <button
             onClick={() => handleTabClick('not-collected')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3.5 rounded-2xl font-extrabold text-base text-left cursor-pointer border ${
               activeTab === 'not-collected'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 5. Frequently Not Collected Household Tab */}
           <button
             onClick={() => handleTabClick('frequently-not-covered-area')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3.5 rounded-2xl font-extrabold text-base text-left cursor-pointer border ${
               activeTab === 'frequently-not-covered-area'
                 ? 'bg-rose-50 text-rose-800 shadow-xs border border-rose-300'
                 : 'text-gray-700 hover:bg-rose-50/50 hover:text-rose-800'
@@ -246,7 +246,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 6. Municipal Reports Tab */}
           <button
             onClick={() => handleTabClick('reports')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3.5 rounded-2xl font-extrabold text-base text-left cursor-pointer border ${
               activeTab === 'reports'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
@@ -268,7 +268,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 7. QR Management Tab (QR Checkpoint Admin) */}
           <button
             onClick={() => handleTabClick('qr-management')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3.5 py-3.5 rounded-2xl font-extrabold text-base text-left cursor-pointer border ${
               activeTab === 'qr-management'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'

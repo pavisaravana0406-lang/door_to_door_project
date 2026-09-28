@@ -70,7 +70,7 @@ html, body, #root {
 .dash-page {
   background-color: #ffffff;
   color: #1f2937;
-  font-size: 0.9375rem;
+  font-size: 1rem;
 }
 
 .dash-card {
@@ -82,29 +82,43 @@ html, body, #root {
     box-shadow 250ms ease, transform 250ms ease;
 }
 .dash-card:hover {
-  border-color: #bfe0c9;
-  box-shadow: 0 8px 20px -8px rgba(30, 122, 56, 0.18);
+  background-color: #f2f8f3;
+  border-color: #9fd0ae;
+  box-shadow: 0 10px 22px -10px rgba(30, 122, 56, 0.28);
   transform: translateY(-2px);
 }
 
-.dash-card-accent-green { border-top: 4px solid #1e7a38; }
-.dash-card-accent-blue { border-top: 4px solid #1a73e8; }
-.dash-card-accent-amber { border-top: 4px solid #ea8600; }
-.dash-card-accent-red { border-top: 4px solid #d93025; }
+.dash-card-accent-green { border-top: 5px solid #1e7a38; }
+.dash-card-accent-blue { border-top: 5px solid #1a73e8; }
+.dash-card-accent-amber { border-top: 5px solid #ea8600; }
+.dash-card-accent-red { border-top: 5px solid #d93025; }
+
+/* Full-box background fill on hover, per accent color */
+.dash-card-accent-green:hover { background-color: #e9f5ed; border-color: #1e7a38; }
+.dash-card-accent-blue:hover { background-color: #e8f0fe; border-color: #1a73e8; }
+.dash-card-accent-amber:hover { background-color: #fef3e2; border-color: #ea8600; }
+.dash-card-accent-red:hover { background-color: #fdecea; border-color: #d93025; }
 
 .dash-section-title {
   font-weight: 800;
   color: #14231b;
   letter-spacing: -0.01em;
+  font-size: 1.375rem;
+}
+@media (min-width: 640px) {
+  .dash-section-title { font-size: 1.625rem; }
+}
+@media (min-width: 1024px) {
+  .dash-section-title { font-size: 1.875rem; }
 }
 
 .dash-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 0.2rem 0.6rem;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  padding: 0.28rem 0.7rem;
   border-radius: 9999px;
   border: 1px solid transparent;
   white-space: nowrap;
@@ -130,8 +144,10 @@ html, body, #root {
     box-shadow 250ms ease, transform 250ms ease, color 250ms ease;
 }
 .dash-sidebar-item:hover {
+  background-color: #dff0e2;
+  border-color: #1e7a38;
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px -8px rgba(30, 122, 56, 0.25);
+  box-shadow: 0 6px 14px -8px rgba(30, 122, 56, 0.35);
 }
 .dash-sidebar-item:hover .dash-sidebar-icon {
   border-color: #1e7a38;
@@ -141,7 +157,8 @@ html, body, #root {
 
 .dash-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .dash-table-row { transition: background-color 200ms ease; }
-.dash-table-row:hover { background-color: rgba(233, 245, 237, 0.65); }
+.dash-table-row:hover { background-color: #e9f5ed; }
+.dash-table-row:hover td { background-color: #e9f5ed; }
 
 @keyframes dash-fade-up {
   from { opacity: 0; transform: translateY(10px); }
