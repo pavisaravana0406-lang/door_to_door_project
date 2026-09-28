@@ -78,7 +78,11 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
-  const startingRef = useRef(false);
+  // Serializes camera start/stop so overlapping transitions can never collide
+  // ("Cannot transition to a new state, already under transition").
+  const transitionLock = useRef<Promise<void>>(Promise.resolve());
+  const busyRef = useRef(false);
+  const startGenRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [manualQrId, setManualQrId] = useState('');
   const [galleryError, setGalleryError] = useState<string | null>(null);
@@ -191,16 +195,30 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     if (typeof navigator !== 'undefined' && navigator.vibrate) {
       try { navigator.vibrate(20); } catch { /* ignore */ }
     }
-    if (!ok) {
-      // Lens has no focus control — restart the stream to re-acquire.
+    // Restart only when the scanner is truly idle — never mid-transition.
+    if (!ok && !busyRef.current && !scannerRef.current?.isScanning) {
       startCamera(cameraFacing);
     }
   };
 
+  // Wait for any in-flight camera transition, then hold the lock.
+  const acquireCameraTurn = async (): Promise<() => void> => {
+    const prev = transitionLock.current;
+    let release = () => {};
+    const cur = new Promise<void>((res) => { release = res; });
+    transitionLock.current = cur;
+    await prev;
+    busyRef.current = true;
+    return () => {
+      busyRef.current = false;
+      release();
+    };
+  };
+
   // Start Camera with resilient multi-stage fallback for mobile & laptop webcams
   const startCamera = async (facing: 'environment' | 'user' = 'environment') => {
-    if (startingRef.current) return;
-    startingRef.current = true;
+    const myGen = ++startGenRef.current;
+    const release = await acquireCameraTurn();
     setCameraError(null);
     setIsCameraActive(false);
 
@@ -209,6 +227,8 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
     let lastStageError: unknown = null;
 
     try {
+      // A newer start/stop superseded this one while it waited — bail out.
+      if (myGen !== startGenRef.current) return;
       if (scannerRef.current) {
         try {
           if (scannerRef.current.isScanning) {
@@ -281,6 +301,53 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         experimentalFeatures: { useBarCodeDetectorIfSupported: true },
       };
 
+      // One attempt to start the stream. A "transition" collision means a
+      // previous stop/start is still settling — wait and retry once on the
+      // same instance instead of failing the whole camera.
+      const safeStart = async (constraints: unknown): Promise<boolean> => {
+        try {
+          await html5QrCode.start(
+            constraints as never,
+            qrConfig,
+            (decodedText) => handleDecodedCode(decodedText),
+            () => {}
+          );
+          return true;
+        } catch (e) {
+          const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+          if (/transition/i.test(msg)) {
+            console.warn('Camera transition collision, waiting and retrying once:', msg);
+            await new Promise((r) => setTimeout(r, 900));
+            // A newer start/stop took over while waiting — give up quietly.
+            if (myGen !== startGenRef.current) return false;
+            try {
+              await html5QrCode.start(
+                constraints as never,
+                qrConfig,
+                (decodedText) => handleDecodedCode(decodedText),
+                () => {}
+              );
+              return true;
+            } catch (e2) {
+              lastStageError = e2;
+              return false;
+            }
+          }
+          lastStageError = e;
+          return false;
+        }
+      };
+
+      const startOk = async (constraints: unknown): Promise<boolean> => {
+        const ok = await safeStart(constraints);
+        if (ok && myGen === startGenRef.current) {
+          setIsCameraActive(true);
+          void applyFocusFix();
+          return true;
+        }
+        return false;
+      };
+
       // Stage 1: Enumerate device cameras to select camera
       let cameras: Array<{ id: string; label: string }> = [];
       try {
@@ -308,71 +375,23 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
           chosenCamera = frontCam || cameras[0];
         }
 
-        try {
-          await html5QrCode.start(
-            hdConstraints(facing, chosenCamera.id),
-            qrConfig,
-            (decodedText) => handleDecodedCode(decodedText),
-            () => {}
-          );
-          setIsCameraActive(true);
-          void applyFocusFix();
-          return;
-        } catch (err1) {
-          console.warn('Failed to start with enumerated camera ID, trying fallback:', err1);
-          lastStageError = err1;
-        }
+        if (await startOk(hdConstraints(facing, chosenCamera.id))) return;
+        console.warn('Failed to start with enumerated camera ID, trying fallback.');
       }
 
       // Stage 2: Direct facingMode constraint with HD ask (best for autofocus on phones)
-      try {
-        await html5QrCode.start(
-          hdConstraints(facing),
-          qrConfig,
-          (decodedText) => handleDecodedCode(decodedText),
-          () => {}
-        );
-        setIsCameraActive(true);
-        void applyFocusFix();
-        return;
-      } catch (err2) {
-        console.warn('Direct facingMode failed:', err2);
-        lastStageError = err2;
-      }
+      if (await startOk(hdConstraints(facing))) return;
+      console.warn('Direct facingMode failed, trying default.');
 
       // Stage 3: Laptop Webcam / Default video constraint (Works on all Laptops!)
-      try {
-        await html5QrCode.start(
-          {},
-          qrConfig,
-          (decodedText) => handleDecodedCode(decodedText),
-          () => {}
-        );
-        setIsCameraActive(true);
-        void applyFocusFix();
-        return;
-      } catch (errLaptop) {
-        console.warn('Laptop default video start failed:', errLaptop);
-        lastStageError = errLaptop;
-      }
+      if (await startOk({})) return;
+      console.warn('Laptop default video start failed, trying each camera.');
 
       // Stage 4: Try any camera ID with HD ask
       if (cameras && cameras.length > 0) {
         for (const cam of cameras) {
-          try {
-            await html5QrCode.start(
-              hdConstraints(facing, cam.id),
-              qrConfig,
-              (decodedText) => handleDecodedCode(decodedText),
-              () => {}
-            );
-            setIsCameraActive(true);
-            void applyFocusFix();
-            return;
-          } catch (camErr) {
-            lastStageError = camErr;
-            // continue loop
-          }
+          if (await startOk(hdConstraints(facing, cam.id))) return;
+          // continue loop
         }
       }
 
@@ -441,30 +460,38 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
         }
       } catch {}
     } finally {
-      startingRef.current = false;
+      release();
     }
   };
 
   const stopCamera = async () => {
-    if (scannerRef.current) {
-      try {
-        if (scannerRef.current.isScanning) {
-          await scannerRef.current.stop();
-        }
-        await scannerRef.current.clear();
-      } catch {
-        // ignore
-      }
-    }
-    setIsCameraActive(false);
+    // Bumps the generation so any queued start aborts, then stops serially.
+    startGenRef.current++;
+    const release = await acquireCameraTurn();
     try {
-      const container = document.getElementById(readerElementId);
-      if (container) {
-        Array.from(container.children).forEach(child => {
-          if (child.tagName !== 'VIDEO') child.remove();
-        });
+      if (scannerRef.current) {
+        try {
+          if (scannerRef.current.isScanning) {
+            await scannerRef.current.stop();
+          }
+          await scannerRef.current.clear();
+        } catch {
+          // ignore — a colliding transition settles on its own
+        }
+        scannerRef.current = null;
       }
-    } catch {}
+      setIsCameraActive(false);
+      try {
+        const container = document.getElementById(readerElementId);
+        if (container) {
+          Array.from(container.children).forEach(child => {
+            if (child.tagName !== 'VIDEO') child.remove();
+          });
+        }
+      } catch {}
+    } finally {
+      release();
+    }
   };
 
   // Auto start camera on component mount
@@ -475,7 +502,7 @@ export const SWMSScannerView: React.FC<SWMSScannerViewProps> = ({
 
     return () => {
       clearTimeout(timer);
-      stopCamera();
+      void stopCamera();
     };
   }, [cameraFacing]);
 
