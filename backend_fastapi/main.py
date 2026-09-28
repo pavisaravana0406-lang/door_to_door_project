@@ -215,7 +215,7 @@ def _token_expired(token_rec) -> bool:
     created = getattr(token_rec, "created_at", None)
     if not created:
         return False
-    # SQLite returns naive datetimes; treat naive as UTC.
+    # Defensive: treat a naive timestamp as UTC.
     if created.tzinfo is None:
         created = created.replace(tzinfo=timezone.utc)
     return (datetime.now(timezone.utc) - created) > timedelta(hours=SESSION_EXPIRE_HOURS)

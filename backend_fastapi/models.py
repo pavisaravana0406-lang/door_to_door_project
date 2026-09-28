@@ -4,7 +4,7 @@ from database import Base
 
 
 def _utcnow():
-    """Timezone-aware UTC now (naive-compatible for SQLite/Postgres)."""
+    """Timezone-aware UTC now."""
     return datetime.now(timezone.utc)
 
 
