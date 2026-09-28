@@ -328,8 +328,8 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
         </div>
       </header>
 
-      {/* ── BODY ── */}
-      <div className="px-3 sm:px-5 lg:px-8 pt-4 sm:pt-6 space-y-4 sm:space-y-5 max-w-[1100px] mx-auto w-full">
+      {/* ── BODY — full screen width ── */}
+      <div className="px-3 sm:px-5 lg:px-8 pt-4 sm:pt-6 space-y-4 sm:space-y-5 w-full max-w-none mx-0">
         {loading && !dashboard && (
           <div className="dash-card animate-dash-enter flex flex-col items-center justify-center py-16 gap-3">
             <RefreshCw className="w-8 h-8 text-emerald-700 animate-spin" />
