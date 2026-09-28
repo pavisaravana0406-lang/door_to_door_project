@@ -78,6 +78,10 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
   const [scanBusy, setScanBusy] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
 
+  // Backend checkpoint resolve (E-SCAN1 flow) — overlay while resolving
+  const [resolvingCheckpoint, setResolvingCheckpoint] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+
   // Bump to force the dashboard to refetch after saves
   const [dashboardRefreshKey, setDashboardRefreshKey] = useState(0);
 
@@ -159,9 +163,36 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
     }
   };
 
-  // Handle Scan completion: validate vehicle match & route directly to Officer Scan Page
+  // Handle Scan completion: checkpoint QR ids (E-SCAN1) resolve via backend
+  // into the collection form; everything else uses the legacy flows below.
   const handleScanComplete = async (scannedText: string) => {
     setScanError(null);
+
+    const cleanQr = (scannedText || '').trim();
+    if (/-SCAN\d+\s*$/i.test(cleanQr)) {
+      const qrId = cleanQr.toUpperCase().replace(/\s+/g, '');
+      if (!token) {
+        setResolveError(
+          lang === 'ta'
+            ? 'Session காணவில்லை. மீண்டும் login செய்யவும்.'
+            : 'Session missing. Please log in again.'
+        );
+        return;
+      }
+      setResolveError(null);
+      setResolvingCheckpoint(true);
+      try {
+        const res = await resolveCheckpoint(token, qrId);
+        setResolution(res);
+        setActiveTab('collectform');
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setResolveError(msg || 'Unable to resolve this QR checkpoint.');
+      } finally {
+        setResolvingCheckpoint(false);
+      }
+      return;
+    }
 
     const assignedKey = assignment?.vehicleNumber || assignedVehicleId || userName || 'YOGARAJ';
     const assignedRoute = getVehicleRouteDetails(assignedKey);
@@ -235,9 +266,11 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
     setActiveTab('scan');
   };
 
-  // After a collection record is saved → refresh dashboard when the user returns
+  // After a collection record is saved → refresh dashboard and return to it
   const handleCollectionSaved = () => {
     setDashboardRefreshKey(k => k + 1);
+    setResolution(null);
+    setActiveTab('history');
   };
 
   // Handle legacy Form Submission Success → opens Modal & navigates back to front Area History View
@@ -293,6 +326,46 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
                 <Loader2 className="w-12 h-12 text-[#1E7A38] animate-spin" />
                 <div className="text-sm font-black text-white">{lang === 'ta' ? 'சரிபார்க்கிறது...' : 'Resolving checkpoint...'}</div>
                 <div className="text-[12px] text-emerald-300 font-mono">{lang === 'ta' ? 'பாதுகாப்பு & சோனை சரிபார்ப்பு' : 'Security & zone validation'}</div>
+              </div>
+            )}
+
+            {/* ── BACKEND CHECKPOINT RESOLVE OVERLAY (E-SCAN1 flow) ── */}
+            {resolvingCheckpoint && (
+              <div className="absolute inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-8 text-center gap-4">
+                <Loader2 className="w-12 h-12 text-emerald-400 animate-spin" />
+                <div className="text-sm font-black text-white">{lang === 'ta' ? 'Checkpoint சரிபார்க்கப்படுகிறது...' : 'Resolving checkpoint...'}</div>
+                <div className="text-[12px] text-emerald-300 font-mono">{lang === 'ta' ? 'தெரு & பணியாளர் விவரங்கள் ஏற்றப்படுகிறது' : 'Loading street & worker details'}</div>
+              </div>
+            )}
+
+            {resolveError && !resolvingCheckpoint && (
+              <div className="absolute inset-0 z-50 bg-black/90 flex flex-col items-center justify-center p-6 text-center gap-4">
+                <div className="w-16 h-16 rounded-full border-2 border-rose-500 bg-rose-950/80 flex items-center justify-center shadow-lg">
+                  <AlertTriangle className="w-8 h-8 text-rose-400" />
+                </div>
+                <div className="max-w-md w-full bg-rose-950/60 border-2 border-rose-500/60 rounded-2xl p-5 shadow-2xl space-y-3">
+                  <h3 className="text-base font-black text-rose-300 uppercase tracking-wide">
+                    {lang === 'ta' ? 'QR சரிபார்ப்பு தோல்வி' : 'QR Resolve Failed'}
+                  </h3>
+                  <div className="text-xs text-white/90 font-medium leading-relaxed bg-black/60 p-3.5 rounded-xl border border-rose-500/30">
+                    {resolveError}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2.5 w-full max-w-xs mt-2">
+                  <button
+                    onClick={() => setResolveError(null)}
+                    className="w-full flex items-center justify-center gap-2 bg-[#1E7A38] hover:bg-[#166534] text-white font-black text-xs px-4 py-3.5 rounded-xl transition shadow-lg active:scale-95 cursor-pointer border border-emerald-400"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    {lang === 'ta' ? 'மீண்டும் ஸ்கேன் செய்யவும்' : 'Scan Again'}
+                  </button>
+                  <button
+                    onClick={() => { setResolveError(null); setActiveTab('history'); }}
+                    className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-black text-xs px-4 py-3 rounded-xl transition active:scale-95 cursor-pointer"
+                  >
+                    {lang === 'ta' ? 'டாஷ்போர்டு திரைக்கு செல்' : 'Back to Dashboard'}
+                  </button>
+                </div>
               </div>
             )}
 
