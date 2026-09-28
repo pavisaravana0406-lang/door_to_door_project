@@ -10,9 +10,10 @@ if _backend_dir not in sys.path:
 import io
 import base64
 import hashlib
+import json
 import secrets
 import zipfile
-from datetime import datetime, date
+from datetime import datetime, date, timezone, timedelta
 from typing import List, Optional
 from fastapi import FastAPI, Depends, HTTPException, status, Header
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,13 +41,27 @@ app = FastAPI(
     version="2.1.0"
 )
 
-# CORS Middleware configuration to allow React Vite frontend requests
+# CORS Middleware — explicit whitelist (never "*" + credentials).
+# Set ALLOWED_ORIGINS env as comma-separated list, e.g.
+# "https://your-app.vercel.app,http://localhost:5173"
+def _allowed_origins() -> List[str]:
+    raw = os.getenv("ALLOWED_ORIGINS", "").strip()
+    if raw:
+        return [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+    # Safe defaults for local dev + common deploy targets
+    return [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:8001",
+        "http://127.0.0.1:8001",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -135,19 +150,48 @@ def _hash_token(raw: str) -> str:
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 
+# Session lifetime for issued bearer tokens (no schema change needed —
+# expiry is enforced from AuthTokenModel.created_at).
+SESSION_EXPIRE_HOURS = int(os.getenv("SESSION_EXPIRE_HOURS", "12"))
+
+
 def issue_token(db: Session, user_id: int) -> str:
-    raw = secrets.token_hex(24)
+    raw = secrets.token_hex(32)
     db.add(models.AuthTokenModel(token_hash=_hash_token(raw), user_id=user_id))
     db.commit()
     return raw
 
 
+def revoke_token(db: Session, token: Optional[str]) -> bool:
+    if not token:
+        return False
+    rec = db.query(models.AuthTokenModel).filter(
+        models.AuthTokenModel.token_hash == _hash_token(token)
+    ).first()
+    if not rec:
+        return False
+    db.delete(rec)
+    db.commit()
+    return True
+
+
 def get_bearer_token(authorization: Optional[str]) -> Optional[str]:
     if not authorization:
         return None
-    if authorization.lower().startswith("bearer "):
-        return authorization[7:].strip()
+    parts = authorization.strip().split(None, 1)
+    if len(parts) == 2 and parts[0].lower() == "bearer" and parts[1].strip():
+        return parts[1].strip()
     return None
+
+
+def _token_expired(token_rec) -> bool:
+    created = getattr(token_rec, "created_at", None)
+    if not created:
+        return False
+    # SQLite returns naive datetimes; treat naive as UTC.
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=timezone.utc)
+    return (datetime.now(timezone.utc) - created) > timedelta(hours=SESSION_EXPIRE_HOURS)
 
 
 def get_current_user(db: Session, token: Optional[str]) -> models.UserModel:
@@ -158,6 +202,14 @@ def get_current_user(db: Session, token: Optional[str]) -> models.UserModel:
     ).first()
     if not token_rec:
         raise HTTPException(status_code=401, detail="Invalid or expired session. Please log in again.")
+    if _token_expired(token_rec):
+        # Clean up expired token so it can never be reused.
+        try:
+            db.delete(token_rec)
+            db.commit()
+        except Exception:
+            db.rollback()
+        raise HTTPException(status_code=401, detail="Session expired. Please log in again.")
     user = db.query(models.UserModel).filter(models.UserModel.id == token_rec.user_id).first()
     if not user:
         raise HTTPException(status_code=401, detail="User account not found.")
@@ -784,7 +836,7 @@ def health_check(db: Session = Depends(get_db)):
             "status": "healthy",
             "database": db_type,
             "connected": True,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         return {
@@ -801,12 +853,14 @@ def health_check(db: Session = Depends(get_db)):
 
 @app.post("/api/auth/login", response_model=schemas.LoginResponse)
 def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
-    """Authenticate a field user and return a session token + automatic vehicle/worker assignment."""
+    """Strict authentication: bcrypt password must match. No fallback passwords."""
     raw_user = (data.username or "").strip()
     raw_pass = (data.password or "").strip()
 
     if not raw_user:
         raise HTTPException(status_code=400, detail="Username or Vehicle Number is required.")
+    if not raw_pass:
+        raise HTTPException(status_code=400, detail="Password is required.")
 
     clean_user = raw_user.upper().replace(" ", "").replace("-", "")
     # Normalize vehicle plate character O vs 0 (e.g. TN66PO982 -> TN66P0982)
@@ -822,7 +876,7 @@ def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
         .first()
     )
 
-    # 2. Search by lower username or full_name
+    # 2. Search by lower username or full_name (exact match only, no generic fallback)
     if not user:
         user = (
             db.query(models.UserModel)
@@ -833,32 +887,17 @@ def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
             .first()
         )
 
-    # 3. Handle generic pushcart login if 'PUSHCART' or 'PUSH CART' entered
-    if not user and ("PUSHCART" in clean_user or "PUSHKART" in clean_user or "CART" in clean_user):
-        user = (
-            db.query(models.UserModel)
-            .filter(models.UserModel.role == "worker")
-            .first()
-        )
-
+    # Generic 'PUSHCART' login removed: every worker must use their own
+    # assigned username (e.g. PUSHCART241). Picking "first worker" was an
+    # account-confusion vulnerability.
     if not user:
         raise HTTPException(
             status_code=401,
             detail=f"Vehicle Number or User '{raw_user}' not found in SWMS database."
         )
 
-    # Verify password (flexible for field drivers/workers)
-    pw_ok = verify_password(raw_pass, user.password_hash)
-
-    # Fallback password match rules: last 4 digits of vehicle/username, '1234', '0001', vehicle number itself, or 'admin123'
-    if not pw_ok:
-        last4 = clean_user[-4:] if len(clean_user) >= 4 else clean_user
-        last4_norm = norm_user[-4:] if len(norm_user) >= 4 else norm_user
-        valid_fallbacks = {'1234', '0001', '6121', '6465', '0948', '8373', '1114', '0794', '0219', '1153', '0982', '982', '1287', '9176', '1181', '1906', '0270', '0965', 'admin123', clean_user.lower(), norm_user.lower(), raw_user.lower(), last4.lower(), last4_norm.lower()}
-        if raw_pass.lower() in valid_fallbacks:
-            pw_ok = True
-
-    if not pw_ok:
+    # Strict bcrypt verification only — no last-4 / 1234 / admin123 bypass.
+    if not verify_password(raw_pass, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid password for this account.")
 
     token = issue_token(db, user.id)
@@ -867,6 +906,17 @@ def login(data: schemas.LoginRequest, db: Session = Depends(get_db)):
         user=build_assignment(db, user),
         message="Login successful",
     )
+
+
+@app.post("/api/auth/logout")
+def logout(authorization: Optional[str] = Header(default=None), db: Session = Depends(get_db)):
+    """Revoke the current bearer token so it can never be reused."""
+    token = get_bearer_token(authorization)
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication required. Please log in.")
+    if not revoke_token(db, token):
+        raise HTTPException(status_code=401, detail="Invalid or expired session.")
+    return {"success": True, "message": "Logged out successfully."}
 
 
 
@@ -999,7 +1049,7 @@ def submit_collection(
         worker_id=assignment.workerId,
         status=data.status,
         remarks=remarks,
-        scanned_at=datetime.utcnow(),
+        scanned_at=datetime.now(timezone.utc),
         latitude=data.latitude,
         longitude=data.longitude,
         collection_date=cdate,
@@ -1051,7 +1101,7 @@ def upload_scan_photo(
         raise HTTPException(status_code=422, detail="Photo is too large. Please re-capture.")
 
     ext = "png" if "png" in (data.contentType or "").lower() else "jpg"
-    stamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     fname = f"{date.today().isoformat()}_{stamp}_{secrets.token_hex(4)}_{user.id}.{ext}"
 
     file_path = os.path.join(PHOTO_STORAGE_DIR, fname)

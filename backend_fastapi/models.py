@@ -1,6 +1,11 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey
-from datetime import datetime
+from datetime import datetime, timezone
 from database import Base
+
+
+def _utcnow():
+    """Timezone-aware UTC now (naive-compatible for SQLite/Postgres)."""
+    return datetime.now(timezone.utc)
 
 
 class HouseholdRecordModel(Base):
@@ -26,7 +31,7 @@ class HouseholdRecordModel(Base):
     not_covered_reason = Column(String, nullable=True)
     remarks = Column(Text, nullable=True)
     submitted_at = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
@@ -50,7 +55,7 @@ class VehicleAssignmentModel(Base):
     vehicle_name = Column(String, nullable=False)
     ward = Column(String, nullable=True)
     zone = Column(String, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 # ---------------------------------------------------------------------------------------
@@ -66,7 +71,7 @@ class VehicleModel(Base):
     vehicle_type = Column(String, nullable=False, index=True)     # e.g. "Auto Tipper", "Compactor", "Pushcart"
     vehicle_number = Column(String, nullable=True)                # NULL for Pushcart
     vehicle_name = Column(String, nullable=True)                  # optional friendly name
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class WorkerModel(Base):
@@ -77,7 +82,7 @@ class WorkerModel(Base):
     worker_code = Column(String, unique=True, index=True, nullable=False)   # e.g. "PC-001"
     worker_name = Column(String, nullable=False)                            # e.g. "Kumar"
     worker_phone = Column(String, nullable=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class UserModel(Base):
@@ -93,7 +98,7 @@ class UserModel(Base):
     worker_id = Column(Integer, ForeignKey("swms_workers.id"), nullable=True)
     zone = Column(String, nullable=True)                            # assigned zone restriction
     ward = Column(String, nullable=True)                            # assigned ward restriction
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
 
 class StreetModel(Base):
@@ -105,7 +110,7 @@ class StreetModel(Base):
     zone = Column(String, nullable=False, index=True)
     ward = Column(String, nullable=False, index=True)
     area = Column(String, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
 
 class StaffModel(Base):
@@ -117,7 +122,7 @@ class StaffModel(Base):
     staff_name = Column(String, nullable=False)
     staff_phone = Column(String, nullable=True)
     role = Column(String, nullable=False, index=True)                      # "SI" | "SS" | "CSS"
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at = Column(DateTime, default=_utcnow, onupdate=_utcnow)
 
 
 class QRCheckpointModel(Base):
@@ -144,7 +149,7 @@ class QRCheckpointModel(Base):
     css_name = Column(String, nullable=True)
     css_contact = Column(String, nullable=True)
     status = Column(String, nullable=False, default="Active")           # "Active" | "Inactive"
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)
 
 
 class CollectionRecordModel(Base):
@@ -160,7 +165,7 @@ class CollectionRecordModel(Base):
     worker_id = Column(Integer, ForeignKey("swms_workers.id"), nullable=True)
     status = Column(String, nullable=False, index=True)          # "Collected" | "Not Collected"
     remarks = Column(Text, nullable=True)                        # NULL for Collected
-    scanned_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    scanned_at = Column(DateTime, nullable=False, default=_utcnow)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     collection_date = Column(String, nullable=False, index=True)  # "YYYY-MM-DD" cycle key
@@ -174,4 +179,4 @@ class AuthTokenModel(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     token_hash = Column(String, unique=True, index=True, nullable=False)
     user_id = Column(Integer, ForeignKey("swms_users.id"), nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=_utcnow)

@@ -77,49 +77,27 @@ export const authLogin = async (username: string, password: string): Promise<Log
   const uClean = (username || '').trim();
   const pClean = (password || '').trim();
 
-  // 1. Attempt live API authentication with backend server
-  try {
-    const res = await apiFetch<LoginResult>('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username: uClean, password: pClean }),
-    });
-    if (res && res.token) {
-      return res;
-    }
-  } catch (err: any) {
-    console.warn('Live API login failed or backend unreachable, activating fallback session:', err?.message);
+  if (!uClean) throw new Error('Please enter your Username / Officer ID.');
+  if (!pClean) throw new Error('Please enter your Password.');
+
+  // Strict live authentication only — fail closed, never fabricate a session.
+  const res = await apiFetch<LoginResult>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ username: uClean, password: pClean }),
+  });
+  if (!res || !res.token) {
+    throw new Error('Server did not return a session token. Please try again.');
   }
-
-  // 2. Seamless Fallback Authentication (Ensures zero-friction login)
-  const isPushcart = uClean.toUpperCase().includes('PUSHCART');
-  const isAdmin = uClean.toLowerCase().includes('admin') || uClean.toLowerCase().includes('commissioner');
-  const role = isAdmin ? 'admin' : 'worker';
-
-  return {
-    success: true,
-    token: `swms_session_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
-    user: {
-      userId: Date.now(),
-      username: uClean,
-      role: role,
-      fullName: isAdmin ? 'Coimbatore Municipal Commissioner' : `Field Worker (${uClean})`,
-      vehicleId: null,
-      vehicleType: isPushcart ? 'PUSHCART' : 'TATA ACE',
-      vehicleName: isPushcart ? 'Pushcart' : 'TATA ACE',
-      vehicleNumber: uClean,
-      workerId: null,
-      workerName: isAdmin ? 'Commissioner' : 'Sanitary Field Worker',
-      workerCode: uClean,
-      workerPhone: null,
-      isPushcart: isPushcart,
-      zone: uClean.includes('WEST') ? 'West Zone' : uClean.includes('SOUTH') ? 'South Zone' : uClean.includes('NORTH') ? 'North Zone' : uClean.includes('CENTRAL') ? 'Central Zone' : 'East Zone',
-      ward: 'Ward 24',
-    },
-    message: 'Login successful',
-  };
+  return res;
 };
 
 export const authMe = (token: string) => apiFetch<LoginResult>('/api/auth/me', { token });
+
+export const authLogout = (token: string) =>
+  apiFetch<{ success: boolean; message?: string }>('/api/auth/logout', {
+    method: 'POST',
+    token,
+  });
 
 // ── Dashboard / Checkpoints ──────────────────────────────────────────────────────────────
 
@@ -191,12 +169,9 @@ export const getFallbackDashboard = (): any => {
 };
 
 export const fetchDashboard = async (token: string): Promise<any> => {
-  try {
-    return await apiFetch<any>('/api/swms/dashboard', { token });
-  } catch (err: any) {
-    console.warn('Live dashboard API unavailable, returning fallback dashboard:', err?.message);
-    return getFallbackDashboard();
-  }
+  // Fail closed: auth errors (401/403) must propagate so the UI logs out.
+  // No synthetic fallback dashboard — it masked auth failures with wrong shape.
+  return apiFetch<any>('/api/swms/dashboard', { token });
 };
 
 /** Fetch ALL live SWMS household records + stats from Neon PostgreSQL (/api/swms/data). */
@@ -204,7 +179,10 @@ export const fetchSWMSData = async (token: string): Promise<any> => {
   try {
     return await apiFetch<any>('/api/swms/data', { token });
   } catch (err: any) {
-    console.warn('Live SWMS data API unavailable, returning empty records cache:', err?.message);
+    const msg = String(err?.message || '');
+    // 401/403 = session invalid → must propagate so App can force logout.
+    if (/401|403|session|expired|auth/i.test(msg)) throw err;
+    console.warn('Live SWMS data API unavailable, returning empty records cache:', msg);
     return { records: [], stats: null };
   }
 };
@@ -292,13 +270,13 @@ export const adminQRGenerateZone = (token: string, zone: string): Promise<QRCrea
     token,
   });
 
-/** Absolute URL for the dynamically generated QR PNG. The image encodes ONLY the QR id (public). */
-export const qrImageUrl = (qrId: string, size = 300) =>
-  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(qrId)}`;
+/** Absolute URL for the dynamically generated QR PNG (backend source of truth). */
+export const qrImageUrl = (qrId: string, size = 14) =>
+  `${API_BASE}/api/admin/qr/image?qrId=${encodeURIComponent(qrId)}&size=${size}`;
 
 /** Absolute URL that downloads the QR PNG (use with an anchor/link click). */
-export const qrImageDownloadUrl = (qrId: string, size = 400) =>
-  `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(qrId)}`;
+export const qrImageDownloadUrl = (qrId: string, size = 14) =>
+  `${API_BASE}/api/admin/qr/image?qrId=${encodeURIComponent(qrId)}&size=${size}&download=1`;
 
 /** ZIP download of every QR image in a zone (admin). */
 export const adminQRDownloadAll = (token: string, zone: string): Promise<Blob> =>

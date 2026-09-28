@@ -3,14 +3,12 @@ import { SWMSHouseholdRecord, SWMSDashboardStats, SWMSAssignment } from './types
 import { SWMSWorkerApp } from './components/SWMSWorkerApp';
 import { AIAssistantModal } from './components/AIAssistantModal';
 import { LanguageSelectionModal } from './components/LanguageSelectionModal';
-import { VehicleAreaAssignmentView } from './components/VehicleAreaAssignmentView';
 import { CheckCircle2 } from 'lucide-react';
 import { LoginScreen } from './components/LoginScreen';
 import { CommissionerConsole } from './components/CommissionerConsole';
-import { Header } from './components/Header';
-import { INITIAL_MUNICIPAL_ALERTS } from './data/alertsData';
 import { INITIAL_SWMS_RECORDS } from './data/mockData';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { fetchSWMSData, authMe, authLogout } from './api/client';
 
 
 export default function App() {
@@ -87,9 +85,6 @@ export default function App() {
   });
   // Initial Language Selection Modal opens automatically after login
   const [isLangModalOpen, setIsLangModalOpen] = useState(false);
-  // Post-Language Vehicle & Area Assignment View
-  const [showVehicleAssignment, setShowVehicleAssignment] = useState(false);
-  const [liveConnection, setLiveConnection] = useState(true);
 
   // User Session State - Default to null so initial link load always opens the Login Screen first
   const [user, setUser] = useState<{ role: 'worker' | 'admin'; name: string } | null>(null);
@@ -145,11 +140,10 @@ export default function App() {
       setIsLangModalOpen(true);
     } else {
       setIsLangModalOpen(false);
-      setShowVehicleAssignment(false);
     }
   };
 
-  const handleLogout = () => {
+  const clearSession = useCallback(() => {
     setUser(null);
     setWorkerInfo(null);
     setToken(null);
@@ -159,9 +153,20 @@ export default function App() {
     localStorage.removeItem('ccmc_session_token');
     localStorage.removeItem('ccmc_assignment');
     setIsLangModalOpen(false);
-    setShowVehicleAssignment(false);
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    const t = localStorage.getItem('ccmc_session_token');
+    if (t) {
+      try {
+        await authLogout(t);
+      } catch {
+        // Server revoke is best-effort; always clear locally.
+      }
+    }
+    clearSession();
     showToast('Session logged out.');
-  };
+  }, [clearSession]);
 
   const handleSetLang = (newLang: 'en' | 'ta') => {
     setLang(newLang);
@@ -177,6 +182,8 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('swms_household_stats', JSON.stringify(stats));
   }, [stats]);
+
+  const isAuthError = (e: any) => /401|403|session|expired|auth/i.test(String(e?.message || ''));
 
   const fetchSwmsData = useCallback(async () => {
     if (!token) {
@@ -201,12 +208,51 @@ export default function App() {
         localStorage.setItem('swms_household_stats', JSON.stringify(live.stats));
       }
       showToast('Live SWMS data synced from Neon DB.');
-    } catch {
+    } catch (e: any) {
+      if (isAuthError(e)) {
+        clearSession();
+        showToast('Session expired. Please log in again.');
+      }
       setIsLoading(false);
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [token, clearSession]);
+
+  // Validate restored token on startup — never trust localStorage alone.
+  useEffect(() => {
+    const savedToken = localStorage.getItem('ccmc_session_token');
+    const savedSession = localStorage.getItem('ccmc_session');
+    if (!savedToken || !savedSession) {
+      clearSession();
+      return;
+    }
+    try {
+      const parsed = JSON.parse(savedSession);
+      if (!parsed?.role || !parsed?.name) {
+        clearSession();
+        return;
+      }
+      setUser({ role: parsed.role, name: parsed.name });
+    } catch {
+      clearSession();
+      return;
+    }
+    authMe(savedToken)
+      .then((res) => {
+        if (res?.user) {
+          setAssignment(res.user);
+          localStorage.setItem('ccmc_assignment', JSON.stringify(res.user));
+          setToken(savedToken);
+        } else {
+          clearSession();
+        }
+      })
+      .catch(() => {
+        // Invalid/expired token → force login screen.
+        clearSession();
+      });
+  }, [clearSession]);
 
   useEffect(() => {
     fetchSwmsData();
@@ -248,36 +294,13 @@ export default function App() {
   const handleSelectLanguage = (selectedLang: 'en' | 'ta') => {
     setLang(selectedLang);
     setIsLangModalOpen(false);
-    setShowVehicleAssignment(false);
     showToast(selectedLang === 'ta' ? 'தமிழ் மொழி தேர்ந்தெடுக்கப்பட்டது' : 'English Language Selected');
   };
 
-  const handleToggleLang = () => {
-    const nextLang = lang === 'en' ? 'ta' : 'en';
-    setLang(nextLang);
-    showToast(nextLang === 'ta' ? 'தமிழ் மொழி மாற்றப்பட்டது' : 'Language changed to English');
-  };
-
-  const handleSwitchToWorker = () => {
-    const workerUser = {
-      role: 'worker' as const,
-      name: 'Karthik Muthusamy',
-    };
-    setUser(workerUser);
-    localStorage.setItem('ccmc_session', JSON.stringify(workerUser));
-    showToast('Switched to Field Worker Portal.');
-  };
-
-  const handleSwitchToAdmin = () => {
-    const adminUser = {
-      role: 'admin' as const,
-      name: 'Thiru. Katta Ravi Teja, IAS',
-    };
-    setUser(adminUser);
-    setIsLangModalOpen(false);
-    setShowVehicleAssignment(false);
-    localStorage.setItem('ccmc_session', JSON.stringify(adminUser));
-    showToast('Switched to Commissioner Command Center.');
+  // Role switching without re-login removed (was an auth bypass).
+  // To use a different role, log out and log in with that role's credentials.
+  const handleRequireReloginForRoleSwitch = () => {
+    showToast('Please log out and log in with the other role.');
   };
 
   if (!user) {
@@ -297,7 +320,7 @@ export default function App() {
           sbmStats={stats}
           onRefreshSbmData={fetchSwmsData}
           onLogout={handleLogout}
-          onSwitchRole={handleSwitchToWorker}
+          onSwitchRole={handleRequireReloginForRoleSwitch}
           lang={lang}
           onSetLang={handleSetLang}
           token={token}
@@ -316,7 +339,6 @@ export default function App() {
           onSelectLanguage={handleSelectLanguage}
           onClose={() => {
             setIsLangModalOpen(false);
-            setShowVehicleAssignment(false);
           }}
         />
       </ErrorBoundary>
