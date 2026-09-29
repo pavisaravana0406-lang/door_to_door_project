@@ -27,6 +27,20 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
 }) => {
   const [selectedZone, setSelectedZone] = useState<string>('All');
   const [previewPhotoRecord, setPreviewPhotoRecord] = useState<CollectionRecord | null>(null);
+
+  /**
+   * The worker captures two mandatory proof photos (before + after). Older
+   * records may only carry a single proofPhoto, so resolve both slots with
+   * sensible fallbacks instead of assuming proofPhoto always exists.
+   */
+  const resolveProof = (r: CollectionRecord): { before: string | null; after: string | null } => {
+    const rec = r as unknown as { beforePhoto?: string | null; afterPhoto?: string | null };
+    const list = r.photos || [];
+    const before = rec.beforePhoto || list[0] || null;
+    const after =
+      rec.afterPhoto || list[1] || (list.length === 0 ? r.proofPhoto || null : null);
+    return { before, after };
+  };
   const [showAllRecords, setShowAllRecords] = useState<boolean>(false);
 
   // Compute diverse set of records representing all 5 zones or filter by selected zone
@@ -236,22 +250,28 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                         }`}>
                           {scannedCount}/{totalScans} Scanned
                         </span>
-                        {item.proofPhoto && (
-                          <button
-                            type="button"
-                            onClick={() => setPreviewPhotoRecord(item)}
-                            className="inline-flex items-center gap-1 bg-[#00875A] hover:bg-[#00704A] text-white text-[8px] font-black px-2 py-0.5 rounded-md shadow-2xs transition active:scale-95 cursor-pointer border border-emerald-500/40"
-                            title={lang === 'ta' ? 'படத்தைப் பார்க்க கிளிக் செய்யவும்' : 'Click to view captured proof photo'}
-                          >
-                            <Camera className="w-3 h-3 text-emerald-100" />
-                            <span>Photo</span>
-                            <img
-                              src={item.proofPhoto}
-                              alt="Proof Thumbnail"
-                              className="w-4 h-4 rounded-xs object-cover border border-white/60 ml-0.5"
-                            />
-                          </button>
-                        )}
+                        {(() => {
+                          const proof = resolveProof(item);
+                          const hasAny = proof.before || proof.after;
+                          if (!hasAny) return null;
+                          const count = (proof.before ? 1 : 0) + (proof.after ? 1 : 0);
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewPhotoRecord(item)}
+                              className="inline-flex items-center gap-1 bg-[#00875A] hover:bg-[#00704A] text-white text-[10px] font-black px-2 py-1 rounded-md shadow-2xs transition active:scale-95 cursor-pointer border border-emerald-500/40"
+                              title={lang === 'ta'
+                                ? 'சான்று படங்களைப் பார்க்க கிளிக் செய்யவும்'
+                                : `Click to view ${count} proof photo${count > 1 ? 's' : ''}`}
+                            >
+                              <Camera className="w-3.5 h-3.5 text-emerald-100" />
+                              <span>Photo</span>
+                              <span className="font-mono text-[9px] bg-emerald-900/60 rounded px-1">
+                                {count}/2
+                              </span>
+                            </button>
+                          );
+                        })()}
                         <div className="flex gap-0.5">
                           {dotStatusList.map((isScanned, i) => (
                             <div
@@ -291,14 +311,32 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                     )}
                   </td>
 
-                  <td className="px-3 py-3.5 text-center">
-                    <button
-                      onClick={() => onInspectRecord(item)}
-                      title={lang === 'ta' ? 'விரிவான விவரங்களை பார்க்க' : 'View Detailed Ward & Worker Telemetry'}
-                      className="inline-flex items-center justify-center p-1.5 rounded-full text-[#1E7A38] hover:bg-emerald-100/80 transition-colors focus:outline-none cursor-pointer"
-                    >
-                      <Eye className="w-5 h-5 text-[#1E7A38]" />
-                    </button>
+                  <td className="px-3 py-3.5">
+                    <div className="flex items-center justify-center gap-1">
+                      {(() => {
+                        const proof = resolveProof(item);
+                        if (proof.before || proof.after) {
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewPhotoRecord(item)}
+                              title={lang === 'ta' ? 'சான்று படங்கள்' : 'View proof photos'}
+                              className="inline-flex items-center justify-center p-1.5 rounded-full text-[#00875A] hover:bg-emerald-100/80 transition-colors focus:outline-none cursor-pointer"
+                            >
+                              <Camera className="w-5 h-5 text-[#00875A]" />
+                            </button>
+                          );
+                        }
+                        return null;
+                      })()}
+                      <button
+                        onClick={() => onInspectRecord(item)}
+                        title={lang === 'ta' ? 'விரிவான விவரங்களை பார்க்க' : 'View Detailed Ward & Worker Telemetry'}
+                        className="inline-flex items-center justify-center p-1.5 rounded-full text-[#1E7A38] hover:bg-emerald-100/80 transition-colors focus:outline-none cursor-pointer"
+                      >
+                        <Eye className="w-5 h-5 text-[#1E7A38]" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -352,22 +390,45 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
               </button>
             </div>
 
-            {/* High-res Image Preview */}
-            <div className="rounded-2xl overflow-hidden border border-slate-700 bg-black flex items-center justify-center relative">
-              <img
-                src={previewPhotoRecord.proofPhoto}
-                alt="Waste Collection Proof Photo"
-                className="w-full h-64 sm:h-80 object-cover"
-              />
-              <div className="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur-xs text-white text-[9px] p-2 rounded-xl border border-white/20 flex items-center justify-between">
-                <span className="font-bold text-emerald-300 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  Worker: {previewPhotoRecord.workerName}
-                </span>
-                <span className="font-mono text-[8px] text-slate-300">
-                  {previewPhotoRecord.date || previewPhotoRecord.time}
-                </span>
-              </div>
+            {/* High-res BEFORE / AFTER preview */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {([
+                ['BEFORE', resolveProof(previewPhotoRecord).before, 'Before collection'],
+                ['AFTER', resolveProof(previewPhotoRecord).after, 'After collection'],
+              ] as const).map(([tag, photo, alt]) => (
+                <div key={tag} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded ${
+                      photo ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    }`}>
+                      {tag}
+                    </span>
+                    {photo && (
+                      <span className="text-[8px] font-mono text-slate-300">
+                        {previewPhotoRecord.date || previewPhotoRecord.time}
+                      </span>
+                    )}
+                  </div>
+                  {photo ? (
+                    <div className="rounded-2xl overflow-hidden border border-slate-700 bg-black">
+                      <img
+                        src={photo}
+                        alt={alt}
+                        className="w-full h-56 sm:h-72 object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-700 h-56 sm:h-72 flex items-center justify-center text-slate-500 text-[10px] font-bold">
+                      No {tag.toLowerCase()} photo
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="bg-black/60 backdrop-blur-xs text-white text-[9px] px-2 py-1.5 rounded-xl border border-white/20 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              Worker: {previewPhotoRecord.workerName}
             </div>
 
             {/* Actions */}
