@@ -384,7 +384,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             target,
             covered,
             `${pct}%`,
-            v.distanceCoveredKm,
             translateStatus(v.gpsStatus || 'GPS Active', lang),
             translateStatus(v.status, lang),
           ];
@@ -425,7 +424,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               'Target Houses',
               'Covered Houses',
               'Coverage %',
-              'Distance (km)',
               'GPS Tracking Status',
               'Operational Status',
             ];
@@ -448,7 +446,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             target,
             covered,
             `${pct}%`,
-            v.distanceCoveredKm,
             translateStatus(v.gpsStatus || 'GPS Active', lang),
             translateStatus(v.status, lang),
           ];
@@ -1606,7 +1603,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
             {lang === 'ta' ? 'வாகனப் பயணங்கள்' : 'Vehicle Trips'}
           </div>
           <p className={`text-[10px] mt-0.5 ${activeReportType === 'vehicle' ? 'text-emerald-100' : 'text-gray-400'}`}>
-            {lang === 'ta' ? 'பயணங்கள் & கி.மீ விவரங்கள்' : 'Trips & distance covered'}
+            {lang === 'ta' ? 'பயணங்கள் & கி.மீ விவரங்கள்' : 'Trips & GPS details'}
           </p>
         </button>
       </div>
@@ -2314,7 +2311,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       <th className="p-3.5 whitespace-nowrap">Driver / Crew Leader</th>
                       <th className="p-3.5 whitespace-nowrap">Target vs Covered</th>
                       <th className="p-3.5 whitespace-nowrap">Shift Timing & GPS</th>
-                      <th className="p-3.5 text-center whitespace-nowrap">Distance (km)</th>
                       <th className="p-3.5 text-center whitespace-nowrap">Status</th>
                     </tr>
                   </thead>
@@ -2438,13 +2434,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                             <div className="inline-flex items-center gap-1 text-[10px] text-emerald-800 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 mt-0.5">
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
                               <span className="truncate max-w-[130px]">{v.gpsStatus || 'Live GPS Active'}</span>
-                            </div>
-                          </td>
-
-                          {/* Distance Covered */}
-                          <td className="p-3.5 text-center whitespace-nowrap">
-                            <div className="font-extrabold text-emerald-900 text-xs">
-                              {v.distanceCoveredKm} km
                             </div>
                           </td>
 
@@ -2658,7 +2647,6 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                     <th className="p-3">Vehicle Type & Specs</th>
                     <th className="p-3">Driver Name & Contact</th>
                     <th className="p-3">Zone & Ward</th>
-                    <th className="p-3 text-right">Distance (km)</th>
                     <th className="p-3 text-center">Status</th>
                   </tr>
                 </thead>
@@ -2678,11 +2666,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                         <div className="font-bold text-gray-900">{v.driverName}</div>
                         <div className="text-[11px] text-gray-500 font-mono">{v.driverPhone}</div>
                       </td>
-                      <td className="p-3 text-gray-700">
+                      <td className="p-3">
                         <div className="font-bold text-gray-900">{v.ward}</div>
                         <div className="text-[11px] text-gray-500">{v.zone}</div>
                       </td>
-                      <td className="p-3 text-right font-bold text-gray-900">{v.distanceCoveredKm} km</td>
                       <td className="p-3 text-center">
                         <div className="relative inline-flex items-center">
                           <select
