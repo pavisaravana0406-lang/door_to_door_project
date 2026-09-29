@@ -248,7 +248,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
 
         {/* 3. Main content body — 1px breathing room on all sides so the page
             sits just off the header/nav bar without a wide gutter. */}
-        <div className="flex-1 overflow-y-auto p-px pb-8 bg-white w-full min-w-0">
+        <div className="flex-1 overflow-y-auto p-[2px] pb-8 bg-white w-full min-w-0">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
