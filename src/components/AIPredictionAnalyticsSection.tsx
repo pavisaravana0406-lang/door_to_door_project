@@ -995,12 +995,30 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
               {lang === 'ta' ? 'வார வாரியான சேகரிப்பு அறிக்கை' : 'Week Wise Collection Report'}
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-            <TrendingUp className="w-3 h-3 text-emerald-600" />
-            +{weeklyCollectionData[weeklyCollectionData.length - 1].collectionRate - weeklyCollectionData[0].collectionRate}% Growth
-          </span>
+          {/* Growth needs at least two weeks of real data to compare. */}
+          {weeklyCollectionData.length >= 2 && (
+            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3 text-emerald-600" />
+              {(() => {
+                const first = weeklyCollectionData[0].collectionRate;
+                const last = weeklyCollectionData[weeklyCollectionData.length - 1].collectionRate;
+                const delta = +(last - first).toFixed(1);
+                return `${delta >= 0 ? '+' : ''}${delta}% Growth`;
+              })()}
+            </span>
+          )}
         </div>
 
+        {weeklyCollectionData.length === 0 ? (
+          <div className="h-60 flex flex-col items-center justify-center gap-2 text-center">
+            <AlertTriangle className="w-7 h-7 text-amber-500" />
+            <p className="text-xs font-bold text-slate-600">
+              {lang === 'ta'
+                ? 'இந்த வார வார அறிக்கைக்கான தரவு இல்லை.'
+                : 'No dated collection records yet for this chart.'}
+            </p>
+          </div>
+        ) : (
         <ResponsiveContainer width="100%" height={240}>
           <LineChart
             data={weeklyCollectionData}
@@ -1033,6 +1051,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             </Line>
           </LineChart>
         </ResponsiveContainer>
+        )}
 
         <div className="flex items-center justify-center gap-2 pt-3 mt-1 border-t border-slate-100 text-xs font-bold text-slate-600">
           <span className="w-3 h-0.5 rounded-xs bg-[#1E7A38] inline-block" />
