@@ -246,8 +246,9 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           lang={lang}
         />
 
-        {/* 3. Main content body */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-7 pb-8 bg-white w-full min-w-0">
+        {/* 3. Main content body — no top padding so the page starts flush
+            against the header/nav bar instead of leaving a gap. */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-7 pt-0 pb-8 bg-white w-full min-w-0">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
