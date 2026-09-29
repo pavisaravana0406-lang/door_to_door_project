@@ -109,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* ========================================================================= */}
       {/* 1. DESKTOP SIDEBAR (Visible on lg and up)                                 */}
       {/* ========================================================================= */}
-      <aside className="hidden lg:flex w-72 lg:w-80 bg-[#eef3ee] border-r border-[#dfe7df] min-h-[calc(100vh-80px)] flex-col justify-between px-4 pt-2 pb-4 flex-shrink-0 select-none sticky top-20 self-start">
+      <aside className="hidden lg:flex w-72 lg:w-80 bg-[#eef3ee] border-r border-[#dfe7df] min-h-[calc(100vh-80px)] flex-col justify-between px-4 py-3 flex-shrink-0 select-none sticky top-20 self-start">
         {/* Top Navigation Items */}
         <div className="space-y-2.5">
           {/* 1. Overview Tab */}
