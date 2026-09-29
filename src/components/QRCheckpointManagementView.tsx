@@ -88,127 +88,34 @@ const QRImageContainer: React.FC<{ qrId: string; sizeClassName?: string }> = ({ 
   );
 };
 
-const MOCK_ZONES_DATA: QRAdminListResult = {
-  success: true,
-  zones: [
-    { zone: 'East Zone', zoneCode: 'E', streets: 3, checkpoints: 2, generatedQrs: ['E-SCAN1', 'E-SCAN2'] },
-    { zone: 'Central Zone', zoneCode: 'C', streets: 2, checkpoints: 0, generatedQrs: [] },
-    { zone: 'West Zone', zoneCode: 'W', streets: 1, checkpoints: 0, generatedQrs: [] },
-    { zone: 'North Zone', zoneCode: 'N', streets: 1, checkpoints: 0, generatedQrs: [] },
-    { zone: 'South Zone', zoneCode: 'S', streets: 1, checkpoints: 0, generatedQrs: [] },
-  ],
-  checkpoints: [
-    {
-      id: 1,
-      qrId: 'E-SCAN1',
-      zone: 'East Zone',
-      zoneCode: 'E',
-      ward: 'Ward 12',
-      streetName: 'Sree Nagar Main Road',
-      doorNo: null,
-      area: null,
-      checkpointNumber: 1,
-      households: 120,
-      workerName: 'Karthik M',
-      workerCode: 'PC-088',
-      workerContact: '9876543210',
-      siName: 'Sundaram SI',
-      siContact: '9842100001',
-      ssName: 'Manoharan SS',
-      ssContact: '9842100002',
-      cssName: 'Rajendran CSS',
-      cssContact: '9842100003',
-      status: 'Active',
-      position: 1,
-      createdAt: '2026-09-23 08:30:00',
-      imageUrl: '/api/admin/qr/image?qrId=E-SCAN1',
-    },
-    {
-      id: 2,
-      qrId: 'E-SCAN2',
-      zone: 'East Zone',
-      zoneCode: 'E',
-      ward: 'Ward 12',
-      streetName: 'Mageshwari Nagar 1st Street',
-      doorNo: null,
-      area: null,
-      checkpointNumber: 2,
-      households: 95,
-      workerName: 'Murugan P',
-      workerCode: 'PC-089',
-      workerContact: '9876543211',
-      siName: 'Sundaram SI',
-      siContact: '9842100001',
-      ssName: 'Manoharan SS',
-      ssContact: '9842100002',
-      cssName: 'Rajendran CSS',
-      cssContact: '9842100003',
-      status: 'Active',
-      position: 2,
-      createdAt: '2026-09-23 08:45:00',
-      imageUrl: '/api/admin/qr/image?qrId=E-SCAN2',
-    },
-  ],
-};
+const EMPTY_ZONES_DATA: QRAdminListResult = { success: true, zones: [], checkpoints: [] };
 
-const MOCK_OPTIONS_DATA: QROptionsResult = {
+const EMPTY_OPTIONS_DATA: QROptionsResult = {
   success: true,
-  zones: [
-    { zone: 'East Zone', zoneCode: 'E' },
-    { zone: 'Central Zone', zoneCode: 'C' },
-    { zone: 'West Zone', zoneCode: 'W' },
-    { zone: 'North Zone', zoneCode: 'N' },
-    { zone: 'South Zone', zoneCode: 'S' },
-  ],
-  streets: [
-    { id: 101, zone: 'East Zone', ward: 'Ward 12', streetName: 'Sree Nagar Main Road', area: null },
-    { id: 102, zone: 'East Zone', ward: 'Ward 12', streetName: 'Mageshwari Nagar 1st Street', area: null },
-    { id: 103, zone: 'East Zone', ward: 'Ward 12', streetName: 'Kamaraj Nagar', area: null },
-    { id: 201, zone: 'Central Zone', ward: 'Ward 49', streetName: 'Cross Cut Road', area: null },
-    { id: 202, zone: 'Central Zone', ward: 'Ward 49', streetName: 'DB Road RS Puram', area: null },
-    { id: 301, zone: 'West Zone', ward: 'Ward 35', streetName: 'Thadagam Road', area: null },
-    { id: 401, zone: 'North Zone', ward: 'Ward 5', streetName: 'Sathy Road Ganapathy', area: null },
-    { id: 501, zone: 'South Zone', ward: 'Ward 78', streetName: 'Pollachi Main Road', area: null },
-  ],
-  workers: [
-    { id: 1, workerCode: 'PC-088', workerName: 'Karthik M', workerPhone: '9876543210' },
-    { id: 2, workerCode: 'PC-089', workerName: 'Murugan P', workerPhone: '9876543211' },
-    { id: 3, workerCode: 'PC-090', workerName: 'Selvam K', workerPhone: '9876543212' },
-  ],
-  staff: {
-    SI: [
-      { id: 1, staffCode: 'SI-01', staffName: 'Sundaram SI', staffPhone: '9842100001', role: 'SI' },
-      { id: 2, staffCode: 'SI-02', staffName: 'Ramesh SI', staffPhone: '9842100004', role: 'SI' },
-    ],
-    SS: [
-      { id: 1, staffCode: 'SS-01', staffName: 'Manoharan SS', staffPhone: '9842100002', role: 'SS' },
-      { id: 2, staffCode: 'SS-02', staffName: 'Venkatesh SS', staffPhone: '9842100005', role: 'SS' },
-    ],
-    CSS: [
-      { id: 1, staffCode: 'CSS-01', staffName: 'Rajendran CSS', staffPhone: '9842100003', role: 'CSS' },
-      { id: 2, staffCode: 'CSS-02', staffName: 'Ganesan CSS', staffPhone: '9842100006', role: 'CSS' },
-    ],
-  },
+  zones: [],
+  streets: [],
+  workers: [],
+  staff: { SI: [], SS: [], CSS: [] },
 };
 
 export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
-  const [zonesData, setZonesData] = useState<QRAdminListResult>(MOCK_ZONES_DATA);
-  const [options, setOptions] = useState<QROptionsResult | null>(MOCK_OPTIONS_DATA);
+  const [zonesData, setZonesData] = useState<QRAdminListResult>(EMPTY_ZONES_DATA);
+  const [options, setOptions] = useState<QROptionsResult | null>(EMPTY_OPTIONS_DATA);
   const [selectedZone, setSelectedZone] = useState<string>('East Zone');
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Create-checkpoint form state
-  const [ward, setWard] = useState('Ward 12');
-  const [streetInput, setStreetInput] = useState('Sree Nagar Main Road');
+  // Create-checkpoint form state — starts empty; values come from the API lists.
+  const [ward, setWard] = useState('');
+  const [streetInput, setStreetInput] = useState('');
   const [generationMode, setGenerationMode] = useState<'street' | 'door'>('street');
   const [doorNo, setDoorNo] = useState('');
   const [households, setHouseholds] = useState('100');
-  const [workerInput, setWorkerInput] = useState('Karthik M');
-  const [ssInput, setSsInput] = useState('Manoharan SS');
-  const [cssInput, setCssInput] = useState('Rajendran CSS');
-  const [siInput, setSiInput] = useState('Sundaram SI');
+  const [workerInput, setWorkerInput] = useState('');
+  const [ssInput, setSsInput] = useState('');
+  const [cssInput, setCssInput] = useState('');
+  const [siInput, setSiInput] = useState('');
 
   const [viewQr, setViewQr] = useState<QRCheckpointAdmin | null>(null);
   const [downloading, setDownloading] = useState(false);
@@ -228,15 +135,16 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
       ]);
       if (z && z.zones && z.zones.length > 0) setZonesData(z);
       if (o && o.streets && o.streets.length > 0) setOptions(o);
-      const activeZones = (z?.zones && z.zones.length > 0) ? z.zones : MOCK_ZONES_DATA.zones;
+      const activeZones = (z?.zones && z.zones.length > 0) ? z.zones : EMPTY_ZONES_DATA.zones;
       const zoneNames = ZONE_ORDER.filter((zn) => activeZones.some((zz) => zz.zone === zn));
       if (!zoneNames.includes(selectedZone) && activeZones.length > 0) {
         setSelectedZone(activeZones[0].zone);
       }
-    } catch (_e: any) {
-      // Fallback silently to mock data without throwing scary "Not Found" error banner
-      setZonesData(MOCK_ZONES_DATA);
-      setOptions(MOCK_OPTIONS_DATA);
+    } catch (e: any) {
+      // Surface the real failure instead of masking it with invented data.
+      setZonesData(EMPTY_ZONES_DATA);
+      setOptions(EMPTY_OPTIONS_DATA);
+      setError(e?.message || 'Could not load QR checkpoints from the server.');
     } finally {
       setBusy(null);
     }
@@ -269,8 +177,8 @@ export const QRCheckpointManagementView: React.FC<Props> = ({ token }) => {
   const handleZoneChange = (zone: string) => {
     setSelectedZone(zone);
     const firstStreet = (options?.streets || []).find((s) => s.zone === zone);
-    setWard(firstStreet?.ward || 'Ward 12');
-    setStreetInput(firstStreet?.streetName || 'Main Road');
+    setWard(firstStreet?.ward || '');
+    setStreetInput(firstStreet?.streetName || '');
   };
 
   const resetForm = () => {

@@ -64,9 +64,9 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
   onShowToast,
   onDispatchAction
 }) => {
-  // Filters matching screenshot
-  const [selectedZone, setSelectedZone] = useState<string>('Zone 3');
-  const [selectedWard, setSelectedWard] = useState<string>('Ward 12');
+  // Filters default to "All" so nothing is pre-selected to a non-existent value.
+  const [selectedZone, setSelectedZone] = useState<string>('All Zones');
+  const [selectedWard, setSelectedWard] = useState<string>('All Wards');
   const [selectedStreet, setSelectedStreet] = useState<string>('All Streets');
   const [datePreset, setDatePreset] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState<string>('');
@@ -214,25 +214,33 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
       .slice(0, 6);
   }, [streetAnalyses]);
 
-  // Zone-wise Collected vs Not Collected aggregation
+  // Weekly trend is bucketed from the real records, never hardcoded.
   const weeklyCollectionData = useMemo(() => {
-    return [
-      { week: 'Week 1', taWeek: 'வாரம் 1', collectionRate: 82 },
-      { week: 'Week 2', taWeek: 'வாரம் 2', collectionRate: 88 },
-      { week: 'Week 3', taWeek: 'வாரம் 3', collectionRate: 91 },
-      { week: 'Week 4', taWeek: 'வாரம் 4', collectionRate: 96 },
-    ];
-  }, []);
+    const buckets = new Map<number, { visits: number; missed: number }>();
+    for (const r of filteredRecords) {
+      const when = r.submittedAt ? new Date(r.submittedAt) : null;
+      if (!when || Number.isNaN(when.getTime())) continue;
+      const daysAgo = Math.floor((Date.now() - when.getTime()) / 86_400_000);
+      const week = Math.floor(daysAgo / 7) + 1;
+      const b = buckets.get(week) || { visits: 0, missed: 0 };
+      b.visits += 1;
+      if (r.coverageStatus !== 'Covered') b.missed += 1;
+      buckets.set(week, b);
+    }
+    return [...buckets.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([week, b]) => ({
+        week: `Week ${week}`,
+        taWeek: `வாரம் ${week}`,
+        collectionRate: b.visits > 0
+          ? +(((b.visits - b.missed) / b.visits) * 100).toFixed(1)
+          : 0,
+      }));
+  }, [filteredRecords]);
 
   const zoneCollectionData = useMemo(() => {
-    // Display-name mapping for the chart only: Zone 1..5 → cardinal zone names
-    const ZONE_LABELS: Record<string, string> = {
-      'Zone 1': lang === 'ta' ? 'மேற்கு' : 'West',
-      'Zone 2': lang === 'ta' ? 'மத்திய' : 'Central',
-      'Zone 3': lang === 'ta' ? 'கிழக்கு' : 'East',
-      'Zone 4': lang === 'ta' ? 'வடக்கு' : 'North',
-      'Zone 5': lang === 'ta' ? 'தெற்கு' : 'South',
-    };
+    // Zone names come from the records themselves, so no display mapping is
+    // needed — the real taxonomy is Central/East/West/North/South.
     const grouped = new Map<string, { zone: string; collected: number; notCollected: number }>();
     streetAnalyses.forEach((s) => {
       const key = s.zone;
@@ -243,8 +251,8 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
     });
     return Array.from(grouped.values())
       .map((z) => ({
-        name: ZONE_LABELS[z.zone] || z.zone,
-        displayName: ZONE_LABELS[z.zone] || z.zone,
+        name: z.zone,
+        displayName: z.zone,
         collected: z.collected,
         notCollected: z.notCollected,
         sortKey: z.zone,
@@ -568,11 +576,11 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
               className="w-full appearance-none bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-bold py-2 pl-3 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="All Zones">All Zones</option>
-              <option value="Zone 1">Zone 1 (North)</option>
-              <option value="Zone 2">Zone 2 (West)</option>
-              <option value="Zone 3">Zone 3 (Central)</option>
-              <option value="Zone 4">Zone 4 (East)</option>
-              <option value="Zone 5">Zone 5 (South)</option>
+              {[...new Set(filteredRecords.map((r) => r.zone).filter(Boolean))]
+                .sort()
+                .map((z) => (
+                  <option key={z} value={z}>{z}</option>
+                ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -608,11 +616,11 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
               className="w-full appearance-none bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-bold py-2 pl-3 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="All Streets">All Streets</option>
-              <option value="Gandhi Street">Gandhi Street</option>
-              <option value="MG Road">MG Road</option>
-              <option value="Anna Nagar">Anna Nagar</option>
-              <option value="RS Puram">RS Puram</option>
-              <option value="Kasturibai Street">Kasturibai Street</option>
+              {[...new Set(filteredRecords.map((r) => r.streetName).filter(Boolean))]
+                .sort()
+                .map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -1041,7 +1049,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           <span>
             {lang === 'ta'
               ? 'முன்கணிப்புகள் அனைத்தும் கடந்த கால வரலாற்றுத் தரவு மற்றும் தொடர் விடுபடல் அமைப்புகளை அடிப்படையாகக் கொண்டவை.'
-              : 'Predictions are derived strictly from empirical historical collection logs & consecutive missed patterns. No synthetic data is invented.'}
+              : 'Every figure on this page is computed from the collection records you have logged. Nothing is estimated or invented.'}
           </span>
         </div>
         <div className="flex items-center gap-1.5 font-bold text-emerald-800">

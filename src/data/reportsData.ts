@@ -1,7 +1,4 @@
-import {
-  DailyReportSummary,
-  MonthlySummaryData,
-} from '../types';
+import { DailyReportSummary } from '../types';
 
 export const INITIAL_DAILY_REPORT_SUMMARY: DailyReportSummary = {
   date: new Date().toISOString().split('T')[0],
@@ -13,19 +10,4 @@ export const INITIAL_DAILY_REPORT_SUMMARY: DailyReportSummary = {
   totalTonnageCollected: 0,
   totalActiveVehicles: 0,
   totalFieldWorkers: 0,
-};
-
-export const MOCK_MONTHLY_SUMMARIES: Record<string, MonthlySummaryData> = {
-  '2026-05': {
-    month: 'May',
-    year: 2026,
-    totalTonnage: 0,
-    avgDailyCoveragePercent: 0,
-    totalHousesAudited: 0,
-    totalFleetTrips: 0,
-    segregationCompliancePercent: 0,
-    complaintsResolvedPercent: 0,
-    zoneRankings: [],
-    dailyTrends: [],
-  },
 };

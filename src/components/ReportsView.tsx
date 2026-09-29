@@ -48,7 +48,6 @@ import {
 } from '../types';
 import {
   INITIAL_DAILY_REPORT_SUMMARY,
-  MOCK_MONTHLY_SUMMARIES,
 } from '../data/reportsData';
 import {
   getVehicleReportItems,
@@ -88,8 +87,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   lang = 'en',
 }) => {
   const [activeReportType, setActiveReportType] = useState<ReportType>('vehicle-assignment');
-  const [selectedDate, setSelectedDate] = useState<string>('2026-05-13');
-  const [selectedMonth, setSelectedMonth] = useState<string>('2026-05');
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
+  const [selectedMonth, setSelectedMonth] = useState<string>(new Date().toISOString().slice(0, 7));
   const [selectedZone, setSelectedZone] = useState<string>('All');
   const [selectedWard, setSelectedWard] = useState<string>('All');
   const [selectedVehicleType, setSelectedVehicleType] = useState<string>('all');
@@ -100,6 +99,70 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>('');
   const [vehicleReports, setVehicleReports] = useState<VehicleReportItem[]>(() => getVehicleReportItems());
+
+  // Monthly figures are computed from the real records for the selected month.
+  // Previously this rendered a hardcoded all-zero "May 2026" placeholder.
+  const monthlySummary = useMemo(() => {
+    const month = selectedMonth || '';
+    const monthOf = (r: CollectionRecord) => {
+      const raw = r.scannedAt || r.timestamp || r.date;
+      if (!raw) return null;
+      const d = new Date(raw);
+      return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 7);
+    };
+    const inMonth = records.filter((r) => monthOf(r) === month);
+    const covered = inMonth.filter((r) => r.status === 'Collected');
+    const audited = inMonth.length;
+    const days = new Set(
+      inMonth
+        .map((r) => {
+          const raw = r.scannedAt || r.timestamp || r.date;
+          if (!raw) return '';
+          const d = new Date(raw);
+          return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+        })
+        .filter(Boolean)
+    ).size;
+
+    const label = month
+      ? new Date(`${month}-01T00:00:00`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      : '—';
+
+    return {
+      label,
+      audited,
+      covered: covered.length,
+      missed: audited - covered.length,
+      coveragePercent: audited > 0 ? +((covered.length / audited) * 100).toFixed(1) : 0,
+      activeDays: days,
+    };
+  }, [records, selectedMonth]);
+
+  // Per-zone monthly standing, ranked by coverage. Derived from the same records.
+  // NOTE: this module imports lucide's `Map` icon, which shadows the global Map,
+  // so the tally is built as a plain record.
+  const monthlyZoneRankings = useMemo(() => {
+    const month = selectedMonth || '';
+    const byZone: Record<string, { audited: number; covered: number }> = {};
+    for (const r of records) {
+      const raw = r.scannedAt || r.timestamp || r.date;
+      if (!raw) continue;
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 7) !== month) continue;
+      const zone = r.zone || 'Unassigned';
+      const b = byZone[zone] || (byZone[zone] = { audited: 0, covered: 0 });
+      b.audited += 1;
+      if (r.status === 'Collected') b.covered += 1;
+    }
+    return Object.entries(byZone)
+      .map(([zone, b]) => ({
+        zone,
+        audited: b.audited,
+        covered: b.covered,
+        coverage: b.audited > 0 ? +((b.covered / b.audited) * 100).toFixed(1) : 0,
+      }))
+      .sort((a, b) => b.coverage - a.coverage);
+  }, [records, selectedMonth]);
 
   useEffect(() => {
     const handleUpdate = () => {
@@ -1781,36 +1844,38 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200">
                   <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider">
-                    Monthly Tonnage ({MOCK_MONTHLY_SUMMARIES[selectedMonth]?.month || 'May'} {MOCK_MONTHLY_SUMMARIES[selectedMonth]?.year || 2026})
+                    Households Audited ({monthlySummary.label})
                   </div>
                   <div className="text-2xl font-black text-emerald-950 mt-1">
-                    {(MOCK_MONTHLY_SUMMARIES[selectedMonth] || MOCK_MONTHLY_SUMMARIES['2026-05']).totalTonnage.toLocaleString()} MT
+                    {monthlySummary.audited.toLocaleString()}
                   </div>
-                  <p className="text-[11px] text-emerald-700 mt-0.5">Processed at Vellalore Facility</p>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">Collection records logged</p>
                 </div>
 
                 <div className="p-4 bg-emerald-100/60 rounded-2xl border border-emerald-300">
-                  <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Avg. Daily Coverage</div>
+                  <div className="text-xs font-bold text-emerald-800 uppercase tracking-wider">Coverage</div>
                   <div className="text-2xl font-black text-[#1E7A38] mt-1">
-                    {(MOCK_MONTHLY_SUMMARIES[selectedMonth] || MOCK_MONTHLY_SUMMARIES['2026-05']).avgDailyCoveragePercent}%
+                    {monthlySummary.coveragePercent}%
                   </div>
-                  <p className="text-[11px] text-emerald-800 font-bold mt-0.5">Across 100 Municipal Wards</p>
+                  <p className="text-[11px] text-emerald-800 font-bold mt-0.5">
+                    {monthlySummary.covered} of {monthlySummary.audited} covered
+                  </p>
                 </div>
 
                 <div className="p-4 bg-blue-50 rounded-2xl border border-blue-200">
-                  <div className="text-xs font-bold text-blue-800 uppercase tracking-wider">Monthly Fleet Trips</div>
+                  <div className="text-xs font-bold text-blue-800 uppercase tracking-wider">Not Collected</div>
                   <div className="text-2xl font-black text-blue-900 mt-1">
-                    {(MOCK_MONTHLY_SUMMARIES[selectedMonth] || MOCK_MONTHLY_SUMMARIES['2026-05']).totalFleetTrips.toLocaleString()}
+                    {monthlySummary.missed.toLocaleString()}
                   </div>
-                  <p className="text-[11px] text-blue-700 mt-0.5">Compactor dump runs</p>
+                  <p className="text-[11px] text-blue-700 mt-0.5">Missed collections</p>
                 </div>
 
                 <div className="p-4 bg-purple-50 rounded-2xl border border-purple-200">
-                  <div className="text-xs font-bold text-purple-800 uppercase tracking-wider">Segregation Compliance</div>
+                  <div className="text-xs font-bold text-purple-800 uppercase tracking-wider">Active Days</div>
                   <div className="text-2xl font-black text-purple-900 mt-1">
-                    {(MOCK_MONTHLY_SUMMARIES[selectedMonth] || MOCK_MONTHLY_SUMMARIES['2026-05']).segregationCompliancePercent}%
+                    {monthlySummary.activeDays.toLocaleString()}
                   </div>
-                  <p className="text-[11px] text-purple-700 mt-0.5">Wet, dry & sanitary separation</p>
+                  <p className="text-[11px] text-purple-700 mt-0.5">Days with collection activity</p>
                 </div>
               </div>
             ) : (
@@ -1862,22 +1927,28 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 font-medium">
-                      {(MOCK_MONTHLY_SUMMARIES[selectedMonth] || MOCK_MONTHLY_SUMMARIES['2026-05']).zoneRankings.map(
-                        (zr, idx) => (
-                          <tr key={zr.zone} className="hover:bg-gray-50">
-                            <td className="p-3 text-center font-bold text-gray-500">#{idx + 1}</td>
-                            <td className="p-3 font-bold text-gray-900">{zr.zone}</td>
-                            <td className="p-3 text-right font-black text-emerald-900">{zr.score} / 100</td>
-                            <td className="p-3 text-right font-bold text-gray-800">{zr.tonnage} MT</td>
-                            <td className="p-3 text-right font-extrabold text-[#1E7A38]">{zr.coverage}%</td>
-                            <td className="p-3 text-center">
-                              <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold text-[10px]">
-                                Grade A
-                              </span>
-                            </td>
-                          </tr>
-                        )
-                      )}
+                      {monthlyZoneRankings.map((zr, idx) => (
+                        <tr key={zr.zone} className="hover:bg-gray-50">
+                          <td className="p-3 text-center font-bold text-gray-500">#{idx + 1}</td>
+                          <td className="p-3 font-bold text-gray-900">{zr.zone}</td>
+                          <td className="p-3 text-right font-black text-emerald-900">{zr.coverage}%</td>
+                          <td className="p-3 text-right font-bold text-gray-800">{zr.audited}</td>
+                          <td className="p-3 text-right font-extrabold text-[#1E7A38]">{zr.covered}</td>
+                          <td className="p-3 text-center">
+                            <span
+                              className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                                zr.coverage >= 90
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : zr.coverage >= 60
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-rose-100 text-rose-800'
+                              }`}
+                            >
+                              {zr.coverage >= 90 ? 'Grade A' : zr.coverage >= 60 ? 'Grade B' : 'Grade C'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
