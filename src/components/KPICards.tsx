@@ -51,21 +51,21 @@ export const KPICards: React.FC<KPICardsProps> = ({
             <TotalHouseholdsLogo className="w-full h-full object-contain" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[15px] sm:text-base font-extrabold text-blue-950 flex items-center justify-between gap-2">
+            <div className="text-[13px] sm:text-sm font-extrabold text-blue-950 flex items-center justify-between gap-2">
               <span className="truncate">{lang === 'ta' ? 'மொத்த வீடுகள்' : 'Total Households'}</span>
               <span className="dash-badge dash-badge-blue flex-shrink-0">
                 {lang === 'ta' ? 'அனைத்தும்' : 'All'}
               </span>
             </div>
-            <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
+            <div className="text-[42px] sm:text-[48px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalCollectedToday} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <div className="flex items-center gap-1 text-sm font-bold text-slate-700 min-w-0">
+              <div className="flex items-center gap-1 text-[12px] font-bold text-slate-700 min-w-0">
                 <TrendingUp className="w-3.5 h-3.5 text-blue-700 flex-shrink-0 transition-colors duration-250 group-hover:text-blue-800" />
                 <span className="truncate">{lang === 'ta' ? 'பதிவு செய்யப்பட்டவை' : 'Registered'}</span>
               </div>
-              <span className="text-xs text-blue-800 font-bold flex items-center gap-0.5 flex-shrink-0">
+              <span className="text-[10px] text-blue-800 font-bold flex items-center gap-0.5 flex-shrink-0">
                 {lang === 'ta' ? 'விவரங்கள்' : 'View details'} <ArrowRight className="w-3 h-3" />
               </span>
             </div>
@@ -85,18 +85,18 @@ export const KPICards: React.FC<KPICardsProps> = ({
             <CollectedTruckLogo className="w-full h-full object-contain" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[15px] sm:text-base font-extrabold text-slate-900 flex items-center justify-between gap-2">
+            <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
               <span className="truncate">{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}</span>
               <span className="dash-badge dash-badge-green flex-shrink-0">
                 <CheckCircle2 className="w-3 h-3" /> {typeof coveredPercent === 'string' && coveredPercent.includes('%') ? coveredPercent : `${coveredPercent}%`}
               </span>
             </div>
-            <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
+            <div className="text-[42px] sm:text-[48px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalCoveredCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-sm font-bold text-slate-700 truncate">{lang === 'ta' ? 'சேகரிப்பு முடிவு' : 'Serviced doors'}</span>
-              <span className="text-xs text-emerald-800 font-bold flex items-center gap-0.5 flex-shrink-0">
+              <span className="text-[12px] font-bold text-slate-700 truncate">{lang === 'ta' ? 'சேகரிப்பு முடிவு' : 'Serviced doors'}</span>
+              <span className="text-[10px] text-emerald-800 font-bold flex items-center gap-0.5 flex-shrink-0">
                 {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'View collected'} <ArrowRight className="w-3 h-3" />
               </span>
             </div>
@@ -116,18 +116,18 @@ export const KPICards: React.FC<KPICardsProps> = ({
             <NotCollectedDustbinLogo className="w-full h-full object-contain" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[15px] sm:text-base font-extrabold text-slate-900 flex items-center justify-between gap-2">
+            <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
               <span className="truncate">{lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}</span>
               <span className="dash-badge dash-badge-amber flex-shrink-0">
                 <AlertTriangle className="w-3 h-3" /> {typeof notCoveredPercent === 'string' && notCoveredPercent.includes('%') ? notCoveredPercent : `${notCoveredPercent}%`}
               </span>
             </div>
-            <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
+            <div className="text-[42px] sm:text-[48px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalNotCoveredCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-sm font-bold text-slate-700 truncate">{lang === 'ta' ? 'மீண்டும் செல்ல வேண்டும்' : 'Requires re-visit'}</span>
-              <span className="text-xs text-amber-800 font-bold flex items-center gap-0.5 flex-shrink-0">
+              <span className="text-[12px] font-bold text-slate-700 truncate">{lang === 'ta' ? 'மீண்டும் செல்ல வேண்டும்' : 'Requires re-visit'}</span>
+              <span className="text-[10px] text-amber-800 font-bold flex items-center gap-0.5 flex-shrink-0">
                 {lang === 'ta' ? 'அறிக்கைகள்' : 'View reports'} <ArrowRight className="w-3 h-3" />
               </span>
             </div>
@@ -157,18 +157,18 @@ export const KPICards: React.FC<KPICardsProps> = ({
             />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-[15px] sm:text-base font-extrabold text-slate-900 flex items-center justify-between gap-2">
+            <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
               <span className="truncate">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed'}</span>
               <span className="dash-badge dash-badge-red flex-shrink-0">
                 <AlertOctagon className="w-3 h-3" /> {typeof frequentlyPercent === 'string' && frequentlyPercent.includes('%') ? frequentlyPercent : `${frequentlyPercent}%`}
               </span>
             </div>
-            <div className="text-5xl sm:text-[52px] font-black text-slate-900 tracking-tight my-2 font-num leading-none flex items-baseline gap-1.5">
+            <div className="text-[42px] sm:text-[48px] font-black text-slate-900 tracking-tight my-2 font-num leading-none flex items-baseline gap-1.5">
               <AnimatedCounter value={frequentlyCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-sm font-bold text-slate-700 truncate">{lang === 'ta' ? 'பூட்டப்பட்டது & விடுபட்டவை' : 'Locked houses'}</span>
-              <span className="text-xs text-red-800 font-bold flex items-center gap-0.5 flex-shrink-0">
+              <span className="text-[12px] font-bold text-slate-700 truncate">{lang === 'ta' ? 'பூட்டப்பட்டது & விடுபட்டவை' : 'Locked houses'}</span>
+              <span className="text-[10px] text-red-800 font-bold flex items-center gap-0.5 flex-shrink-0">
                 {lang === 'ta' ? 'வீட்டு வாரியான பார்வை' : 'Household view'} <ArrowRight className="w-3 h-3" />
               </span>
             </div>

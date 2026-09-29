@@ -66,20 +66,20 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
     <div className="dash-card overflow-hidden">
       {/* Table Title & Zone Filter Ribbon */}
       <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-        <h2 className="dash-section-title text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+        <h2 className="dash-section-title text-lg sm:text-xl font-black text-slate-900 tracking-tight">
           {lang === 'ta' ? 'சமீபத்திய சேகரிப்பு மேலோட்டம்' : 'Recent Collection Overview'}
         </h2>
 
         {/* Zone Filter Dropdown */}
         <div className="flex items-center gap-2">
           <Filter className="w-4 h-4 text-emerald-700" />
-          <span className="text-xs font-bold text-gray-700">
+          <span className="text-[10px] font-bold text-gray-700">
             {lang === 'ta' ? 'மண்டலம்:' : 'Zone:'}
           </span>
           <select
             value={selectedZone}
             onChange={(e) => setSelectedZone(e.target.value)}
-            className="bg-emerald-50 border border-emerald-300 text-emerald-950 font-bold text-xs rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
+            className="bg-emerald-50 border border-emerald-300 text-emerald-950 font-bold text-[10px] rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer shadow-2xs"
           >
             <option value="All">{lang === 'ta' ? 'அனைத்து மண்டலங்களும் (All Zones)' : 'All Zones (அனைத்து மண்டலங்களும்)'}</option>
             <option value="East Zone">{lang === 'ta' ? 'கிழக்கு மண்டலம் (East Zone)' : 'East Zone (கிழக்கு மண்டலம்)'}</option>
@@ -95,7 +95,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
       <div className="dash-table-wrap">
         <table className="w-full text-left border-collapse min-w-[820px]">
           <thead>
-            <tr className="bg-[#e9f5ed] text-emerald-900 text-sm sm:text-[15px] font-extrabold border-b border-slate-200">
+            <tr className="bg-[#e9f5ed] text-emerald-900 text-[10px] sm:text-[13px] font-extrabold border-b border-slate-200">
               <th className="px-4 py-3.5 text-center w-[7%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வரிசை' : 'S. No.'}</th>
               <th className="px-4 py-3.5 w-[11%] font-bold whitespace-nowrap">{lang === 'ta' ? 'தேதி' : 'Date'}</th>
               <th className="px-4 py-3.5 w-[13%] font-bold whitespace-nowrap">{lang === 'ta' ? 'மண்டலம்' : 'Zone'}</th>
@@ -108,7 +108,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100 text-[15px] sm:text-base font-bold text-slate-900">
+          <tbody className="divide-y divide-slate-100 text-[13px] sm:text-[12px] font-bold text-slate-900">
             {displayRecords.map((item, index) => {
               const isPushCart = (item.vehicleType || '').toLowerCase().includes('push') || item.vehicleNo === 'PUSHCART';
               const totalScans = isPushCart ? 1 : 5;
@@ -192,19 +192,19 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                     {index + 1}
                   </td>
 
-                  <td className="px-4 py-3.5 whitespace-nowrap text-gray-700 font-semibold text-xs">
+                  <td className="px-4 py-3.5 whitespace-nowrap text-gray-700 font-semibold text-[10px]">
                     {!isShiftPending ? (
                       <span className="font-semibold text-emerald-950">
                         {item.date && item.date !== 'Shift Pending' ? item.date : (item.scannedAt && item.scannedAt !== 'Shift Pending' ? item.scannedAt : 'Today, Logged')}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded font-bold text-[11px]">
+                      <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-800 border border-rose-200 px-2 py-0.5 rounded font-bold text-[9px]">
                         🕒 {lang === 'ta' ? 'இன்று உள்நுழையவில்லை' : 'Not Logged In Today'}
                       </span>
                     )}
                   </td>
 
-                  <td className="px-4 py-3.5 font-bold text-xs">
+                  <td className="px-4 py-3.5 font-bold text-[10px]">
                     {(() => {
                       const z = item.zone || 'Central Zone';
                       const badge = z.includes('East') ? 'dash-badge-blue' : z.includes('Central') ? 'dash-badge-green' : z.includes('West') ? 'dash-badge-amber' : z.includes('North') ? 'dash-badge-gray' : 'dash-badge-red';
@@ -212,7 +212,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                     })()}
                   </td>
 
-                  <td className="px-4 py-3.5 font-semibold text-gray-700 text-xs">
+                  <td className="px-4 py-3.5 font-semibold text-gray-700 text-[10px]">
                     {item.ward}
                   </td>
 
@@ -223,11 +223,11 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                   {/* Vehicle No & 5-Scan Status Cell */}
                   <td className="px-4 py-3.5">
                     <div className="flex flex-col gap-1">
-                      <span className="font-mono font-bold text-xs bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md w-max border border-slate-200">
+                      <span className="font-mono font-bold text-[10px] bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md w-max border border-slate-200">
                         {(item.vehicleNo && !item.vehicleNo.includes('38 PV 9001')) ? item.vehicleNo : ((item.street?.toLowerCase().includes('mageshwari') || item.streetName?.toLowerCase().includes('mageshwari')) ? 'TN66AD6465' : (item.vehicleNo || 'TN66AD6465'))}
                       </span>
                       <div className="flex items-center gap-1">
-                        <span className={`text-[11px] font-black px-1.5 py-0.5 rounded-md ${
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
                           !isShiftPending && scannedCount >= minScansForCollected
                             ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                             : !isShiftPending && scannedCount > 0
@@ -240,7 +240,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                           <button
                             type="button"
                             onClick={() => setPreviewPhotoRecord(item)}
-                            className="inline-flex items-center gap-1 bg-[#00875A] hover:bg-[#00704A] text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-2xs transition active:scale-95 cursor-pointer border border-emerald-500/40"
+                            className="inline-flex items-center gap-1 bg-[#00875A] hover:bg-[#00704A] text-white text-[8px] font-black px-2 py-0.5 rounded-md shadow-2xs transition active:scale-95 cursor-pointer border border-emerald-500/40"
                             title={lang === 'ta' ? 'படத்தைப் பார்க்க கிளிக் செய்யவும்' : 'Click to view captured proof photo'}
                           >
                             <Camera className="w-3 h-3 text-emerald-100" />
@@ -267,25 +267,25 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                     </div>
                   </td>
 
-                  <td className="px-4 py-3.5 font-semibold text-gray-800 text-xs">
+                  <td className="px-4 py-3.5 font-semibold text-gray-800 text-[10px]">
                     {item.workerName}
                   </td>
 
                   <td className="px-3 py-3.5 text-center whitespace-nowrap">
                     {isShiftPending ? (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-[#FCE8E6] text-[#C5221F] border border-rose-200/80">
+                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-[#FCE8E6] text-[#C5221F] border border-rose-200/80">
                         {lang === 'ta' ? 'இன்று உள்நுழையவில்லை' : 'Not Logged In Today'}
                       </span>
                     ) : (scannedCount >= minScansForCollected || item.status === 'Collected') ? (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-[#E6F4EA] text-[#1E7A38] border border-emerald-200/80">
+                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-[#E6F4EA] text-[#1E7A38] border border-emerald-200/80">
                         {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
                       </span>
                     ) : scannedCount > 0 ? (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-300">
+                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
                         {lang === 'ta' ? 'பகுதி சேகரிப்பு' : 'Partial Scan'}
                       </span>
                     ) : (
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-900 border border-blue-300">
+                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-300">
                         {lang === 'ta' ? 'உள்நுழைந்தது' : 'Logged In'}
                       </span>
                     )}
@@ -309,7 +309,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
 
       {/* Footer View All Records Button */}
       <div className="p-4 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="text-xs font-bold text-gray-500">
+        <div className="text-[10px] font-bold text-gray-500">
           {lang === 'ta'
             ? `காண்பிக்கப்படும் பதிவுகள்: ${displayRecords.length} / ${records.length}`
             : `Showing ${displayRecords.length} of ${records.length} total records`}
@@ -318,7 +318,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
           onClick={() => {
             setShowAllRecords(prev => !prev);
           }}
-          className="px-7 py-2 border-2 border-[#1E7A38] bg-[#1E7A38] text-white hover:bg-[#166534] font-bold rounded-xl text-sm transition-all focus:outline-none cursor-pointer active:scale-95 shadow-xs"
+          className="px-7 py-2 border-2 border-[#1E7A38] bg-[#1E7A38] text-white hover:bg-[#166534] font-bold rounded-xl text-[12px] transition-all focus:outline-none cursor-pointer active:scale-95 shadow-xs"
         >
           {showAllRecords
             ? (lang === 'ta' ? 'குறைவாகக் காண்க (Show Less)' : 'Show Less')
@@ -335,10 +335,10 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
               <div className="flex items-center gap-2">
                 <Camera className="w-5 h-5 text-emerald-400 animate-pulse" />
                 <div>
-                  <h3 className="text-sm font-black text-white leading-tight">
+                  <h3 className="text-[12px] font-black text-white leading-tight">
                     {previewPhotoRecord.street} — {previewPhotoRecord.ward}
                   </h3>
-                  <p className="text-[11px] text-emerald-300 font-mono">
+                  <p className="text-[9px] text-emerald-300 font-mono">
                     {previewPhotoRecord.zone} • {previewPhotoRecord.vehicleNo}
                   </p>
                 </div>
@@ -359,12 +359,12 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                 alt="Waste Collection Proof Photo"
                 className="w-full h-64 sm:h-80 object-cover"
               />
-              <div className="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur-xs text-white text-[11px] p-2 rounded-xl border border-white/20 flex items-center justify-between">
+              <div className="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur-xs text-white text-[9px] p-2 rounded-xl border border-white/20 flex items-center justify-between">
                 <span className="font-bold text-emerald-300 flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   Worker: {previewPhotoRecord.workerName}
                 </span>
-                <span className="font-mono text-[10px] text-slate-300">
+                <span className="font-mono text-[8px] text-slate-300">
                   {previewPhotoRecord.date || previewPhotoRecord.time}
                 </span>
               </div>
@@ -379,7 +379,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                   setPreviewPhotoRecord(null);
                   onInspectRecord(rec);
                 }}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black px-4 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
               >
                 <Eye className="w-4 h-4" />
                 <span>Inspect Full Telemetry</span>
@@ -387,7 +387,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
               <button
                 type="button"
                 onClick={() => setPreviewPhotoRecord(null)}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer active:scale-95"
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold px-4 py-2 rounded-xl transition cursor-pointer active:scale-95"
               >
                 Close Preview
               </button>
