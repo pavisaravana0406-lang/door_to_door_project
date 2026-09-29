@@ -246,13 +246,13 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           lang={lang}
         />
 
-        {/* 3. Main content body — no top padding so the page starts flush
-            against the header/nav bar instead of leaving a gap. */}
-        <div className="flex-1 overflow-y-auto px-3 sm:px-5 lg:px-7 pt-0 pb-8 bg-white w-full min-w-0">
+        {/* 3. Main content body — flush on all sides so the page starts directly
+            against the header/nav bar with no left/right gutter. */}
+        <div className="flex-1 overflow-y-auto p-0 pb-8 bg-white w-full min-w-0">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
-            <div className="space-y-5 sm:space-y-6 max-w-[1400px] mx-auto w-full">
+            <div className="space-y-5 sm:space-y-6 w-full">
               <div className="animate-dash-enter flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="min-w-0">
                   <h1 className="dash-section-title text-[24px] sm:text-[30px] lg:text-[34px] font-black text-slate-900 tracking-tight leading-tight">
