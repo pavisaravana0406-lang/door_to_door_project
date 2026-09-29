@@ -157,16 +157,21 @@ export default function App() {
 
   const handleLogout = useCallback(async () => {
     const t = localStorage.getItem('ccmc_session_token');
+
+    // Clear the session and return to the login screen immediately. Revoking
+    // the token on the server is best-effort and must never block the user —
+    // awaiting it first left the UI frozen whenever the server was slow.
+    clearSession();
+    showToast('Session logged out.');
+
     if (t) {
       try {
         await authLogout(t);
       } catch {
-        // Server revoke is best-effort; always clear locally.
+        // Token expires on its own; nothing else to do.
       }
     }
-    clearSession();
-    showToast('Session logged out.');
-  }, [clearSession]);
+  }, [clearSession, showToast]);
 
   const handleSetLang = (newLang: 'en' | 'ta') => {
     setLang(newLang);

@@ -26,6 +26,8 @@ export interface ApiError {
 
 interface RequestOptions extends RequestInit {
   token?: string | null;
+  /** Abort the request after this many ms. Default 20000. */
+  timeoutMs?: number;
 }
 
 export async function apiFetch<T = any>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -36,13 +38,24 @@ export async function apiFetch<T = any>(path: string, options: RequestOptions = 
   }
 
   let res: Response;
+  const controller = new AbortController();
+  // Guard against a stalled server: without this a single request can hang the
+  // UI indefinitely (e.g. logout waiting on an unreachable backend).
+  const timeoutMs = (options as RequestOptions & { timeoutMs?: number }).timeoutMs ?? 20000;
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     res = await fetch(`${API_BASE}${path}`, {
       ...options,
       headers,
+      signal: controller.signal,
     });
-  } catch {
+  } catch (e: any) {
+    if (e?.name === 'AbortError') {
+      throw new Error('The server took too long to respond. Please try again.');
+    }
     throw new Error('Unable to reach the SWMS server. Please check your connection and try again.');
+  } finally {
+    clearTimeout(timer);
   }
 
   let data: any = {};
@@ -97,6 +110,9 @@ export const authLogout = (token: string) =>
   apiFetch<{ success: boolean; message?: string }>('/api/auth/logout', {
     method: 'POST',
     token,
+    // Revoking is fire-and-forget after the user is already logged out locally,
+    // so cap it hard rather than letting it sit on the default timeout.
+    timeoutMs: 5000,
   });
 
 // ── Dashboard / Checkpoints ──────────────────────────────────────────────────────────────
