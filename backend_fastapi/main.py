@@ -251,6 +251,45 @@ def get_current_user(db: Session, token: Optional[str]) -> models.UserModel:
     return user
 
 
+def assigned_streets_for_user(db: Session, user: models.UserModel) -> list:
+    """
+    Streets the signed-in user is allowed to scan, resolved from the database.
+
+    Order of resolution:
+      1. checkpoints linked to the user's worker (authoritative — a worker may
+         legitimately cover more than one street)
+      2. checkpoints in the user's assigned zone (used when the user has no
+         worker row, which is the case for several BOV / pushcart accounts)
+      3. empty — the caller then must not enforce a street-level restriction
+    """
+    street_ids = set()
+
+    if user.worker_id:
+        for (sid,) in db.query(models.QRCheckpointModel.street_id).filter(
+            models.QRCheckpointModel.worker_id == user.worker_id,
+            models.QRCheckpointModel.street_id.isnot(None),
+        ):
+            street_ids.add(sid)
+
+    if not street_ids and user.zone:
+        zone_q = db.query(models.QRCheckpointModel.street_id).join(
+            models.StreetModel, models.StreetModel.id == models.QRCheckpointModel.street_id
+        ).filter(
+            func.lower(models.StreetModel.zone) == user.zone.lower(),
+            models.QRCheckpointModel.street_id.isnot(None),
+        )
+        for (sid,) in zone_q:
+            street_ids.add(sid)
+
+    if not street_ids:
+        return []
+
+    rows = db.query(models.StreetModel.id, models.StreetModel.street_name).filter(
+        models.StreetModel.id.in_(street_ids)
+    ).all()
+    return [name for _id, name in rows if name]
+
+
 def build_assignment(db: Session, user: models.UserModel) -> schemas.AssignmentSchema:
     vehicle = None
     worker = None
@@ -278,6 +317,7 @@ def build_assignment(db: Session, user: models.UserModel) -> schemas.AssignmentS
         isPushcart=is_pushcart,
         zone=user.zone,
         ward=user.ward,
+        streetNames=assigned_streets_for_user(db, user),
     )
 
 

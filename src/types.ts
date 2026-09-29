@@ -492,6 +492,8 @@ export interface SWMSAssignment {
   isPushcart: boolean;
   zone?: string | null;
   ward?: string | null;
+  /** Streets this user is authorised to scan, from the backend (Neon). */
+  streetNames?: string[];
 }
 
 export type CheckpointStatus = 'Collected' | 'Not Collected' | 'Pending';

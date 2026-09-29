@@ -28,6 +28,10 @@ class AssignmentSchema(BaseModel):
     isPushcart: bool = False
     zone: Optional[str] = None
     ward: Optional[str] = None
+    # Streets this user is authorised to scan, derived from the checkpoints
+    # linked to their worker. The worker app uses this for the QR mismatch
+    # check so it never has to guess from a hardcoded table.
+    streetNames: List[str] = []
 
     class Config:
         from_attributes = True

@@ -28,6 +28,7 @@ import type {
   SWMSHouseholdRecord,
 } from '../types';
 import { AnimatedCounter } from './AnimatedCounter';
+import { CCMC_QR_ROUTES, type StreetScanRoute } from './SWMSStreetScanQRCard';
 
 interface SWMSCollectionDashboardViewProps {
   lang?: 'en' | 'ta';
@@ -45,81 +46,143 @@ interface SWMSCollectionDashboardViewProps {
   refreshKey?: number;
 }
 
-export const getVehicleRouteDetails = (inputStr?: string) => {
-  const clean = (inputStr || '').replace(/[\s\-_]/g, '').toUpperCase();
-  if (clean.includes('AD6465') || clean.includes('YOGARAJ')) {
-    return { streetName: 'MAGESHWARI NAGAR', vehicleType: 'TATA ACE', vehicleNo: 'TN66AD6465' };
+/**
+ * Normalise an identity for comparison.
+ * - uppercases and strips spaces / dashes / underscores
+ * - folds the letter O to digit 0 inside plate-like tokens, because the
+ *   roster contains both "TN66PO982" and "TN66P0982" for the same vehicle.
+ */
+const normId = (v?: string | null): string =>
+  (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+const normPlate = (v?: string | null): string => {
+  const s = normId(v);
+  // Only fold O->0 when the token looks like a TN plate, never for words.
+  return s.replace(/TN(\d{2})([A-Z0-9]{4})/g, (_m, a, b) => `TN${a}${b.replace(/O/g, '0')}`);
+};
+
+export interface ResolvedRoute {
+  streetName: string;
+  vehicleType: string;
+  vehicleNo: string;
+  /** false when the input could not be matched to a known street. */
+  known: boolean;
+}
+
+// Built from the single source of truth (the 25 street routes) so this can
+// never drift out of sync the way the previous hand-written table did.
+const ROUTE_LIST: StreetScanRoute[] = Object.values(CCMC_QR_ROUTES);
+
+const byWorker = new Map<string, StreetScanRoute>();
+const byVehicle = new Map<string, StreetScanRoute>();
+const byStreet = new Map<string, StreetScanRoute>();
+for (const r of ROUTE_LIST) {
+  const w = normId(r.workerName);
+  if (w && !byWorker.has(w)) byWorker.set(w, r);
+  const v = normPlate(r.vehicleNo);
+  if (v && !byVehicle.has(v)) byVehicle.set(v, r);
+  const s = normId(r.streetName);
+  if (s && !byStreet.has(s)) byStreet.set(s, r);
+}
+
+// The live roster (Neon swms_users) signs workers in with cart codes such as
+// PUSHCART241, which do not appear on the street cards. Map each one to the
+// card that represents its street so pushcart workers are not mis-assigned.
+const USERNAME_ALIASES: Record<string, string> = {
+  PUSHCART041: 'MEENAKSHI NAGAR',
+  PUSHCART042: 'VISAGA GARDEN',
+  PUSHCART10SOUTH: 'ALAGAACHI THOTTAM',
+  PUSHCART241: 'SREE NAGAR',
+  PUSHCART242: 'MAGESHWARI NAGAR',
+  PUSHCART351: 'BAJANA KOVIL VEEDHI',
+  PUSHCART352: 'BAARI NAGAR VEEDHI CUT ROAD',
+  PUSHCART491: 'KANDHASAMY LAYOUT',
+  PUSHCART492: 'LAKSHMI MILLS SIGNAL',
+  PUSHCART881: 'MEENAKSHI NAGAR',
+  PUSHCART882: 'ALAGAACHI THOTTAM',
+};
+
+const UNKNOWN: ResolvedRoute = {
+  streetName: '',
+  vehicleType: '',
+  vehicleNo: '',
+  known: false,
+};
+
+const toResolved = (r: StreetScanRoute): ResolvedRoute => ({
+  streetName: r.streetName,
+  vehicleType: r.vehicleType,
+  vehicleNo: r.vehicleNo,
+  known: true,
+});
+
+/**
+ * Resolve a vehicle plate, cart code, worker name or street name to its route.
+ * Returns `known: false` when nothing matches — never a fabricated default,
+ * which previously made BOV and pushcart workers appear to be assigned a
+ * TATA ACE on the wrong street.
+ */
+export const getVehicleRouteDetails = (inputStr?: string): ResolvedRoute => {
+  const key = normId(inputStr);
+  if (!key) return { ...UNKNOWN };
+
+  const alias = USERNAME_ALIASES[key];
+  if (alias) {
+    const hit = byStreet.get(normId(alias));
+    if (hit) return toResolved(hit);
   }
-  if (clean.includes('AE6121')) {
-    return { streetName: 'sree nagar', vehicleType: 'TATA ACE', vehicleNo: 'TN66AE6121' };
+
+  const plate = normPlate(inputStr);
+  // Cart codes: match the full code first so PUSHCART241 never collapses
+  // into the PUSHCART2 branch.
+  const cart = plate.match(/^PUSHCART(\d+)/);
+  if (cart) {
+    const exact = byWorker.get(key);
+    if (exact) return toResolved(exact);
+    const hit = byVehicle.get(key) || byVehicle.get(`PUSHCART${cart[1]}`);
+    if (hit) return toResolved(hit);
+    return { ...UNKNOWN };
   }
-  if (clean.includes('AM0219') || clean.includes('KARTHIK')) {
-    return { streetName: 'PALANI AANDAVAR KOVIL VEEDHI', vehicleType: 'TATA ACE', vehicleNo: 'TN66AM0219' };
-  }
-  if (clean.includes('AQ1153') || clean.includes('SELVARAJ')) {
-    return { streetName: 'KGK MAIN ROAD', vehicleType: 'TATA ACE', vehicleNo: 'TN66AQ1153' };
-  }
-  if (clean.includes('PO982') || clean.includes('SATHYA')) {
-    return { streetName: 'MUTHUSAMY SERKAI VEEDHI', vehicleType: 'TATA ACE', vehicleNo: 'TN66PO982' };
-  }
-  if (clean.includes('AP0965') || clean.includes('PANEERSELVAM')) {
-    return { streetName: 'MARUTHI ENVUE', vehicleType: 'BOV', vehicleNo: 'TN66AP0965' };
-  }
-  if (clean.includes('AC1906') || clean.includes('ARUNACHALAM')) {
-    return { streetName: 'MADHURA ENCLAVE', vehicleType: 'TATA ACE', vehicleNo: 'TN66AC1906' };
-  }
-  if (clean.includes('AQ1287')) {
-    return { streetName: 'KK NAGAR', vehicleType: 'TATA ACE', vehicleNo: 'TN66AQ1287' };
-  }
-  if (clean.includes('AC9176')) {
-    return { streetName: 'RANGANATHAN KOVIL STREET', vehicleType: 'TATA ACE', vehicleNo: 'TN66AC9176' };
-  }
-  if (clean.includes('AD8373')) {
-    return { streetName: 'ponni nagar', vehicleType: 'TATA ACE', vehicleNo: 'TN66AD8373' };
-  }
-  if (clean.includes('AQ1114')) {
-    return { streetName: 'ponni nagar', vehicleType: 'TATA ACE', vehicleNo: 'TN66AQ1114' };
-  }
-  if (clean.includes('AQ0794')) {
-    return { streetName: 'MARIYAMMAN KOVIL STREET', vehicleType: 'BOV', vehicleNo: 'TN66AQ0794' };
-  }
-  if (clean.includes('AP1181')) {
-    return { streetName: 'RAMASAMY KOONARCUT ROAD', vehicleType: 'BOV', vehicleNo: 'TN66AP1181' };
-  }
-  if (clean.includes('PUSHCART10')) {
-    return { streetName: 'ALAGAACHI THOTTAM', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART10_SOUTH' };
-  }
-  if (clean.includes('PUSHCART9')) {
-    return { streetName: 'NAGAMMA NAYAGAR VEEDHI', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART9_SOUTH' };
-  }
-  if (clean.includes('PUSHCART8')) {
-    return { streetName: 'VISAGA GARDEN', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART8' };
-  }
-  if (clean.includes('PUSHCART7')) {
-    return { streetName: 'MEENAKSHI NAGAR', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART7' };
-  }
-  if (clean.includes('PUSHCART6')) {
-    return { streetName: 'BAARI NAGAR VEEDHI CUT ROAD', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART6' };
-  }
-  if (clean.includes('PUSHCART5')) {
-    return { streetName: 'BAJANA KOVIL VEEDHI', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART5' };
-  }
-  if (clean.includes('PUSHCART4')) {
-    return { streetName: 'LAKSHMI MILLS SIGNAL', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART4' };
-  }
-  if (clean.includes('PUSHCART3')) {
-    return { streetName: 'KANDHASAMY LAYOUT', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART3' };
-  }
-  if (clean.includes('PUSHCART2')) {
-    return { streetName: 'M.G.R.VEEDHI', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART2' };
-  }
-  if (clean.includes('PUSHCART')) {
-    return { streetName: 'THIYAGIKUMAR STREET', vehicleType: 'PUSH CART', vehicleNo: 'PUSHCART' };
-  }
-  if (clean.includes('BOV')) {
-    return { streetName: 'KALYANAM SUNDHARAM STREET', vehicleType: 'BOV', vehicleNo: 'BOV' };
-  }
-  return { streetName: 'MAGESHWARI NAGAR', vehicleType: 'TATA ACE', vehicleNo: 'TN66AD6465' };
+
+  const byVeh = byVehicle.get(plate);
+  if (byVeh) return toResolved(byVeh);
+
+  const byWk = byWorker.get(key);
+  if (byWk) return toResolved(byWk);
+
+  const bySt = byStreet.get(key);
+  if (bySt) return toResolved(bySt);
+
+  return { ...UNKNOWN };
+};
+
+/**
+ * Decide whether a scanned checkpoint belongs to the worker's assignment.
+ * Push carts have no registration plate, so for those the street is the only
+ * reliable signal; comparing vehicle numbers for a cart always failed.
+ */
+export const isAssignedRoute = (
+  assigned: ResolvedRoute,
+  scanned: { vehicleNo?: string | null; streetName?: string | null },
+): boolean => {
+  if (!assigned?.known) return true; // nothing to enforce
+  if (!scanned) return false;
+
+  const aStreet = normId(assigned.streetName);
+  const sStreet = normId(scanned.streetName);
+  const aVeh = normPlate(assigned.vehicleNo);
+  const sVeh = normPlate(scanned.vehicleNo);
+
+  const streetMatch = !!aStreet && !!sStreet &&
+    (aStreet === sStreet || aStreet.includes(sStreet) || sStreet.includes(aStreet));
+  if (streetMatch) return true;
+
+  // A cart or generic asset has no usable plate, so street is the whole test.
+  const plateLess = !aVeh || aVeh === 'PUSHCART' || aVeh === 'BOV';
+  if (plateLess) return false;
+
+  return !!aVeh && !!sVeh &&
+    (aVeh === sVeh || aVeh.includes(sVeh) || sVeh.includes(aVeh));
 };
 
 export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewProps> = ({
