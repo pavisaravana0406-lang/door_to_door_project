@@ -1,8 +1,5 @@
 import {
   DailyReportSummary,
-  WorkerReportItem,
-  VehicleReportItem,
-  StreetReportItem,
   MonthlySummaryData,
 } from '../types';
 
@@ -17,12 +14,6 @@ export const INITIAL_DAILY_REPORT_SUMMARY: DailyReportSummary = {
   totalActiveVehicles: 0,
   totalFieldWorkers: 0,
 };
-
-export const MOCK_WORKER_REPORTS: WorkerReportItem[] = [];
-
-export const MOCK_VEHICLE_REPORTS: VehicleReportItem[] = [];
-
-export const MOCK_STREET_REPORTS: StreetReportItem[] = [];
 
 export const MOCK_MONTHLY_SUMMARIES: Record<string, MonthlySummaryData> = {
   '2026-05': {

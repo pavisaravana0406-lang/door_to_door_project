@@ -48,9 +48,6 @@ import {
 } from '../types';
 import {
   INITIAL_DAILY_REPORT_SUMMARY,
-  MOCK_WORKER_REPORTS,
-  MOCK_VEHICLE_REPORTS,
-  MOCK_STREET_REPORTS,
   MOCK_MONTHLY_SUMMARIES,
 } from '../data/reportsData';
 import {
@@ -1241,7 +1238,7 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
       }
 
       // Check if worker logged in today for this vehicle/street
-      const isVehicleWorkerLoggedIn = matchedRecord ? true : (isGlobalWorkerLoggedIn || true);
+      const isVehicleWorkerLoggedIn = matchedRecord ? true : isGlobalWorkerLoggedIn;
 
       let computedStatus = 'Not Logged In Today';
       if (!isVehicleWorkerLoggedIn) {

@@ -61,25 +61,20 @@ export const AIAssistantModal: React.FC<AIAssistantModalProps> = ({
     setChatMessages(prev => [...prev, { sender: 'user', text: userQ }]);
     setChatInput('');
 
-    // Simulate SWMS Copilot User Feed Analytics Predictor
+    // No model is wired up yet, so the assistant must not invent numbers.
+    // It reports what it can actually know and says plainly that prediction
+    // is unavailable, rather than fabricating a risk score and claiming to
+    // have dispatched vehicles.
     setTimeout(() => {
-      const riskScore = Math.floor(78 + Math.random() * 18);
-      const hoursWindow = Math.floor(8 + Math.random() * 10);
-      const houses = Math.floor(35 + Math.random() * 55);
-
       const aiText = lang === 'ta'
-        ? `🤖 [AI ANALYTICS AND PREDICTION கணிப்பு Report]\n` +
-          `• பெறப்பட்ட பயனர் தகவல்: "${userQ}"\n` +
-          `• முன்னறிவிக்கப்பட்ட அபாய அளவு (Risk Score): ${riskScore}% [HIGH CRITICAL]\n` +
-          `• கழிவு தேக்கக் கணிப்பு காலம்: அடுத்த ${hoursWindow} மணி நேரத்தில் கழிவு வழிதல் அபாயம்\n` +
-          `• பாதிக்கப்பட்ட வீடுகள் மதிப்பீடு: ~${houses} வீடுகள்\n` +
-          `• AI பரிந்துரைக்கப்பட்ட தீர்வு: 2 BOV மின்சார ஆட்டோக்கள் மற்றும் வாகன மாற்றுப் பாதை ஒதுக்கீடு தூண்டப்பட்டது.`
-        : `🤖 [AI ANALYTICS AND PREDICTION Prediction Report]\n` +
-          `• Received User Feed: "${userQ}"\n` +
-          `• Predicted Risk Score: ${riskScore}% [HIGH CRITICAL]\n` +
-          `• Overflow Bottleneck Window: High accumulation risk within next ${hoursWindow} hours\n` +
-          `• Estimated Impact: ~${houses} Households affected\n` +
-          `• AI Action Strategy: Auto-dispatch 2 BOV Rickshaws + compactor re-route assigned.`;
+        ? `🤖 [SWMS உதவியாளர்]\n` +
+          `• உங்கள் கேள்வி பதிவு செய்யப்பட்டது: "${userQ}"\n` +
+          `• முன்னறிவிப்பு (Prediction) தற்போது கிடைப்பதில்லை. ` +
+          `இது செயற்பாட்டில் இல்லை — முன்னறிவு இயக்கப்பட்டதும் தரப்படும்.`
+        : `🤖 [SWMS Assistant]\n` +
+          `• Your question was received: "${userQ}"\n` +
+          `• Predictive analytics are not available right now. ` +
+          `This is not operational yet — it will report findings once the prediction service is connected.`;
 
       setChatMessages(prev => [
         ...prev,

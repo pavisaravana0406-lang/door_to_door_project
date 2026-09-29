@@ -700,7 +700,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
         <div className="mt-2 pt-1.5 border-t border-emerald-800/60 flex flex-wrap items-center justify-between gap-1.5 text-[10px] sm:text-[11px] font-bold min-w-0">
           <div className="bg-[#02381C] text-white px-2.5 py-0.5 rounded-full border border-emerald-600/40 flex items-center gap-1 min-w-0 max-w-full">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
-            <span className="truncate">Field Officer: Karthik Muthusamy</span>
+            <span className="truncate">
+              Field Officer: {formData.driverWorkerName || assignedVehicleId || '—'}
+            </span>
           </div>
 
           <div className="bg-white text-[#044D29] px-3 py-0.5 rounded-full shadow-sm font-black text-[11px] sm:text-xs uppercase tracking-wider font-mono truncate max-w-[150px] sm:max-w-none">

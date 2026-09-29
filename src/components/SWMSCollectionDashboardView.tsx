@@ -328,9 +328,9 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
             </div>
           </div>
           <div className="flex items-center gap-1.5 min-w-0 flex-shrink-0">
-            <span className="text-[9.5px] font-bold text-emerald-100 whitespace-nowrap">East Zone</span>
+            <span className="text-[9.5px] font-bold text-emerald-100 whitespace-nowrap">{assignment?.zone || '—'}</span>
             <span className="w-1 h-1 rounded-full bg-amber-300 flex-shrink-0"></span>
-            <span className="text-[9.5px] font-bold text-amber-300 whitespace-nowrap">Ward 24</span>
+            <span className="text-[9.5px] font-bold text-amber-300 whitespace-nowrap">{assignment?.ward || '—'}</span>
           </div>
         </div>
       </header>

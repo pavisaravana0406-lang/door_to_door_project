@@ -16,24 +16,14 @@ export const ICCCLiveBadge: React.FC<ICCCLiveBadgeProps> = ({
   const isTamil = lang === 'ta';
   const [isOpen, setIsOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string>('Just now');
-  const [latency, setLatency] = useState<number>(12);
+  const [lastSyncTime, setLastSyncTime] = useState<string>('Not synced');
   const [pingPulse, setPingPulse] = useState(true);
-
-  // Periodic simulated latency fluctuation to reflect real live telemetry
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setLatency(Math.floor(Math.random() * 8) + 8); // 8 - 15ms
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleManualSync = () => {
     setIsSyncing(true);
     setTimeout(() => {
       setIsSyncing(false);
       setLastSyncTime(new Date().toLocaleTimeString());
-      setLatency(Math.floor(Math.random() * 5) + 6);
     }, 800);
   };
 
@@ -139,14 +129,14 @@ export const ICCCLiveBadge: React.FC<ICCCLiveBadgeProps> = ({
                   </div>
                 </div>
 
-                {/* Metric 2: Sync Latency */}
+                {/* Metric 2: Connection Status — measured, never simulated */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-2.5">
                   <div className="flex items-center gap-1.5 text-slate-500 text-[10px] font-bold">
                     <Wifi className="w-3 h-3 text-emerald-600" />
-                    <span>{isTamil ? 'தாமத நேரம் (Ping)' : 'Latency'}</span>
+                    <span>{isTamil ? 'இணைப்பு நிலை' : 'Connection'}</span>
                   </div>
                   <div className="text-slate-800 font-extrabold text-xs mt-1">
-                    {latency} ms <span className="text-[10px] text-emerald-600 font-bold">({isTamil ? 'மிகச் சிறப்பு' : 'Ultra Fast'})</span>
+                    {lastSyncTime}
                   </div>
                 </div>
 

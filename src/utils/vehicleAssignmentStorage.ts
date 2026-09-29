@@ -1,5 +1,42 @@
-import { AreaOption, VehicleOption } from '../components/VehicleAreaAssignmentView';
 import { VehicleReportItem } from '../types';
+
+// These shapes used to live in the (now deleted) VehicleAreaAssignmentView
+// component, which was never rendered. They are kept here because the live
+// ReportsView / CommissionerConsole assignment data still uses them.
+export interface VehicleOption {
+  id: string;
+  name: string;
+  type: string;
+  capacity: string;
+  colorHex: string;
+  colorName: string;
+  imageUrl?: string;
+  bgGradient: string;
+  cardBorder: string;
+  cardBg: string;
+  iconBg: string;
+  iconColor: string;
+  titleColor: string;
+  textColor: string;
+  dotColor: string;
+  activeRing: string;
+  shadowColor: string;
+}
+
+export interface AreaOption {
+  id: string;
+  name: string;
+  nameTa?: string;
+  zone?: string;
+  ward?: string;
+  streets?: string[];
+  streetsCount: number;
+  qrPoints: number;
+  assignedVehicleId?: string;
+  assignedVehicleName?: string;
+  assignedColorHex?: string;
+  assignedBgColor?: string;
+}
 
 export const VEHICLE_ASSIGNMENT_STORAGE_KEY = 'ccmc_vehicle_area_assignments';
 export const VEHICLE_ASSIGNMENT_EVENT = 'ccmc-vehicle-assignments-updated';
