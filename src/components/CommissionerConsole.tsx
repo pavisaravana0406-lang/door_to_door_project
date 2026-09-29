@@ -115,6 +115,9 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           completedScansCount: isRealSubmission ? r.completedScansCount : 0,
           streetScans: isRealSubmission ? r.streetScans : [],
           proofPhoto: r.proofPhoto,
+          beforePhoto: r.beforePhoto,
+          afterPhoto: r.afterPhoto,
+          photos: r.photos,
           coverageStatus: isRealSubmission ? r.coverageStatus : ('Not Covered' as any)
         };
       });

@@ -27,7 +27,20 @@ export const RecordDetailModal: React.FC<RecordDetailModalProps> = ({
   onStatusChange,
   onViewOnMap,
 }) => {
+  const [lightbox, setLightbox] = React.useState<{ src: string; tag: string; alt: string } | null>(null);
+
   if (!record) return null;
+
+  // The worker form records the two mandatory proof photos. Older records may
+  // only have a single proofPhoto or a photos[] array, so fall back to those.
+  const photos = record.photos || [];
+  const rec = record as unknown as {
+    beforePhoto?: string | null;
+    afterPhoto?: string | null;
+  };
+  const beforePhoto = rec.beforePhoto || photos[0] || null;
+  const afterPhoto =
+    rec.afterPhoto || photos[1] || (photos.length === 1 ? record.proofPhoto || null : null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -108,25 +121,51 @@ export const RecordDetailModal: React.FC<RecordDetailModalProps> = ({
             </div>
           </div>
 
-          {/* 4. Picture */}
-          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-700 text-white space-y-2 shadow-md">
+          {/* 4. Before / After Proof Pictures */}
+          <div className="p-4 bg-slate-900 rounded-2xl border border-slate-700 text-white space-y-3 shadow-md">
             <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400">
               <Camera className="w-4 h-4 text-emerald-400" />
-              <span>Field Proof Picture</span>
+              <span>Field Proof Pictures</span>
             </div>
-            {record.proofPhoto ? (
-              <div className="rounded-xl overflow-hidden border border-slate-700 max-h-64 bg-black flex items-center justify-center">
-                <img
-                  src={record.proofPhoto}
-                  alt="Field Proof Picture"
-                  className="w-full h-56 object-cover"
-                />
-              </div>
-            ) : (
-              <div className="rounded-xl border border-dashed border-slate-600 h-32 flex items-center justify-center text-slate-400 text-xs font-semibold">
-                No picture uploaded
-              </div>
-            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {([
+                ['BEFORE', beforePhoto, 'Before collection'],
+                ['AFTER', afterPhoto, 'After collection'],
+              ] as const).map(([tag, photo, alt]) => (
+                <div key={tag} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded ${
+                      photo ? 'bg-emerald-500 text-slate-950' : 'bg-slate-700 text-slate-300'
+                    }`}>
+                      {tag}
+                    </span>
+                    {photo && (
+                      <button
+                        type="button"
+                        onClick={() => setLightbox({ src: photo, tag, alt })}
+                        className="text-[10px] font-bold text-emerald-300 hover:text-emerald-200 cursor-pointer"
+                      >
+                        View full
+                      </button>
+                    )}
+                  </div>
+                  {photo ? (
+                    <button
+                      type="button"
+                      onClick={() => setLightbox({ src: photo, tag, alt })}
+                      className="w-full rounded-xl overflow-hidden border border-slate-700 max-h-56 bg-black cursor-pointer hover:border-emerald-500 transition"
+                    >
+                      <img src={photo} alt={alt} className="w-full h-48 object-cover" />
+                    </button>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-slate-600 h-32 flex items-center justify-center text-slate-400 text-xs font-semibold">
+                      No {tag.toLowerCase()} picture uploaded
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -140,6 +179,33 @@ export const RecordDetailModal: React.FC<RecordDetailModalProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Full-size photo viewer */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm"
+          onClick={() => setLightbox(null)}
+        >
+          <div className="max-w-3xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-black text-emerald-300">{lightbox.tag} PROOF</span>
+              <button
+                type="button"
+                onClick={() => setLightbox(null)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer"
+                aria-label="Close photo"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <img
+              src={lightbox.src}
+              alt={lightbox.alt}
+              className="w-full max-h-[80vh] object-contain rounded-2xl border border-slate-700"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

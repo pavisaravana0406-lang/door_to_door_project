@@ -169,6 +169,9 @@ export interface CollectionRecord {
   coordinates?: { lat: number; lng: number };
   locationName?: string;
   proofPhoto?: string;
+  /** Mandatory worker proof photos: bin before and after collection. */
+  beforePhoto?: string;
+  afterPhoto?: string;
   photos?: string[];
   proofTimestamp?: string;
   reasonIfNotCollected?: string;
