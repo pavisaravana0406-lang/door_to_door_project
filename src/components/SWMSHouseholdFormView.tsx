@@ -308,9 +308,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
         return sc;
       });
 
-      // The proof-photo panel always follows the checkpoint that was just
-      // scanned, so each of the 5 scans gets its own before/after pair.
-      setActivePhotoScanId(targetPoint || 1);
+      // Move to the page for the checkpoint that was just scanned, so its
+      // before/after pair is what the worker is looking at.
+      setCurrentScanPage(targetPoint || 1);
 
       try {
         const raw = localStorage.getItem(SCAN_KEY);
@@ -335,14 +335,6 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   // Compute vehicle coverage state
   const completedScansCount = streetScans.filter(s => s.isScanned).length;
 
-  // Which checkpoint's before/after pair the photo panel is currently showing.
-  // Defaults to the first checkpoint that is scanned but not yet fully photographed.
-  const [activePhotoScanId, setActivePhotoScanId] = useState<number>(1);
-  const activePhotoScan = useMemo(
-    () => streetScans.find(s => s.id === activePhotoScanId) || streetScans[0],
-    [streetScans, activePhotoScanId]
-  );
-
   /** A checkpoint is only complete once scanned AND both photos are captured. */
   const isScanComplete = (s: StreetScanPoint): boolean =>
     s.isScanned && !!s.beforePhoto && !!s.afterPhoto;
@@ -350,9 +342,21 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const completedScansWithPhotos = streetScans.filter(isScanComplete).length;
 
   /**
-   * The highest checkpoint the worker may scan next. Checkpoints must be done
-   * strictly in order with photos in between, so this is the first incomplete
-   * one — every later checkpoint stays locked until it is finished.
+   * TATA ACE runs as 5 separate pages: scan N, photograph N, submit, then move
+   * to the next page. This is the page the worker is currently on.
+   */
+  const [currentScanPage, setCurrentScanPage] = useState<number>(1);
+  const TOTAL_SCAN_PAGES = 5;
+
+  const activePhotoScanId = isSingleScanVehicle ? 1 : currentScanPage;
+  const activePhotoScan = useMemo(
+    () => streetScans.find(s => s.id === activePhotoScanId) || streetScans[0],
+    [streetScans, activePhotoScanId]
+  );
+
+  /**
+   * The page the worker must be on: the first checkpoint that is not complete.
+   * Used to reject an out-of-order QR scan and to keep the page indicator honest.
    */
   const nextAllowedScanId = useMemo(() => {
     const ordered = [...streetScans].sort((a, b) => a.id - b.id);
@@ -361,6 +365,26 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     }
     return 0; // everything complete
   }, [streetScans]);
+
+  /**
+   * True when a QR for a checkpoint other than the current page is scanned. The
+   * worker is taken to that page instead, so the QR always drives the UI.
+   */
+  const outOfOrderScanId = useMemo(() => {
+    if (isSingleScanVehicle) return 0;
+    const found = streetScans.find(s => s.isScanned && s.id !== currentScanPage && !isScanComplete(s));
+    return found ? found.id : 0;
+  }, [streetScans, currentScanPage, isSingleScanVehicle]);
+
+  // Warn once if a QR is scanned for a later page while an earlier one is open.
+  useEffect(() => {
+    if (!outOfOrderScanId) return;
+    setScanWarnMsg(lang === 'ta'
+      ? `⚠️ ஸ்கேன் ${outOfOrderScanId} QR — முதலில் ஸ்கேன் ${currentScanPage} ஐ முடித்து சேமியுங்கள்.`
+      : `⚠️ That is the Scan ${outOfOrderScanId} QR. Finish and save Scan ${currentScanPage} first.`);
+    const t = setTimeout(() => setScanWarnMsg(null), 5000);
+    return () => clearTimeout(t);
+  }, [outOfOrderScanId, currentScanPage, lang]);
 
   // Reset all 5 checkpoints to Pending X
   const handleResetAllScans = () => {
@@ -542,10 +566,13 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   };
 
   const handleScanCardClick = (scan: StreetScanPoint) => {
-    // Clicking a checkpoint selects it for the photo panel, so the worker can
-    // review or recapture an earlier scan's photos.
+    // Tapping a finished scan reopens its page so the worker can review or
+    // recapture its photos. Forward jumps are not allowed.
     if (scan.isScanned) {
-      setActivePhotoScanId(scan.id);
+      if (isSingleScanVehicle || scan.id <= currentScanPage) {
+        setCurrentScanPage(scan.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
       return;
     }
     playChimeTone('warning');
@@ -592,6 +619,47 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const [gpsAccuracy, setGpsAccuracy] = useState<number>(3.2);
   const [gpsLocationName, setGpsLocationName] = useState<string>('Kamaraj Salai, Coimbatore');
   const [gpsStatus, setGpsStatus] = useState<'acquiring' | 'locked' | 'live'>('locked');
+
+  /**
+   * TATA ACE: the bottom button advances one page at a time. Scan N must be
+   * scanned and photographed before it moves to page N+1, and the record is only
+   * published on the final page.
+   */
+  const handlePageSubmit = async (e?: React.FormEvent) => {
+    if (e?.preventDefault) e.preventDefault();
+    if (isSubmitting) return;
+
+    const pageScan = streetScans.find(s => s.id === currentScanPage);
+
+    if (!pageScan?.isScanned) {
+      setScanWarnMsg(lang === 'ta'
+        ? `⚠️ ஸ்கேன் ${currentScanPage} QR ஐ முதலில் ஸ்கேன் செய்யவும்.`
+        : `⚠️ Scan the Scan ${currentScanPage} QR first, then take its photos.`);
+      setTimeout(() => setScanWarnMsg(null), 5000);
+      return;
+    }
+    if (!pageScan.beforePhoto || !pageScan.afterPhoto) {
+      setScanWarnMsg(lang === 'ta'
+        ? `⚠️ ஸ்கேன் ${currentScanPage} க்கு முன் & பிறகு படங்கள் இரண்டும் தேவை.`
+        : `⚠️ Scan ${currentScanPage} needs its BEFORE and AFTER photos.`);
+      setTimeout(() => setScanWarnMsg(null), 5000);
+      return;
+    }
+
+    if (currentScanPage < TOTAL_SCAN_PAGES) {
+      // Commit this page and move to the next one.
+      playChimeTone('success');
+      setStreetScans(prev => prev.map(s =>
+        s.id === currentScanPage ? { ...s, photosCapturedAt: s.photosCapturedAt || getLiveScanTimeStr() } : s
+      ));
+      setCurrentScanPage(currentScanPage + 1);
+      setIsCameraModalOpen(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    await handleSubmit(e);
+  };
 
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e && e.preventDefault) {
@@ -1060,7 +1128,11 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-1.5 border-t border-slate-100 pt-2.5 min-w-0">
               <div className="flex items-center space-x-1.5 text-[11px] sm:text-xs font-black text-slate-800 min-w-0">
                 <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00875A] flex-shrink-0" />
-                <span className="truncate">5 Checkpoints ({completedScansWithPhotos}/5 Scanned + Photographed)</span>
+                <span className="truncate">
+                  {isSingleScanVehicle
+                    ? 'Checkpoint (1 photo pair)'
+                    : `Scan ${currentScanPage} of ${TOTAL_SCAN_PAGES} (${completedScansWithPhotos} complete)`}
+                </span>
               </div>
               <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0 ml-auto">
                 <button
@@ -1090,82 +1162,139 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
               </div>
             )}
 
-            {/* 5 Checkpoints Grid — stays 5-up (it's the design) but tightens
-                gutters and text below the xs breakpoint so nothing clips. */}
-            <div className="grid grid-cols-5 gap-0.5 xs:gap-1 sm:gap-2.5 w-full">
-              {streetScans.map((scan) => {
-                const isDone = isScanComplete(scan);
-                const scannedOnly = scan.isScanned && !isDone;
-                const isActive = activePhotoScan?.id === scan.id;
-                const isLocked = !isSingleScanVehicle
-                  && nextAllowedScanId > 0
-                  && scan.id > nextAllowedScanId
-                  && !isDone;
-                return (
-                  <div
-                    key={scan.id}
-                    onClick={() => handleScanCardClick(scan)}
-                    className={`flex flex-col items-center justify-center py-1.5 xs:py-2 sm:py-3 px-0 rounded-xl sm:rounded-2xl border sm:border-2 text-center select-none cursor-pointer transition active:scale-95 min-w-0 ${
-                      isDone
-                        ? 'bg-[#E6F4EA] border-[#00D084] text-slate-900 shadow-2xs'
-                        : scannedOnly
-                        ? 'bg-amber-50 border-amber-300 text-amber-900'
-                        : isLocked
-                        ? 'bg-slate-50 border-slate-200 text-slate-400'
-                        : 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
-                    } ${isActive ? 'ring-2 ring-offset-1 ring-emerald-500' : ''}`}
-                    title={isDone
-                      ? `Scan ${scan.id}: scanned with both proof photos ✓`
-                      : scannedOnly
-                      ? `Scan ${scan.id}: scanned — BEFORE and AFTER photos still required`
-                      : isLocked
-                      ? `Scan ${scan.id}: locked until Scan ${nextAllowedScanId} is completed with photos`
-                      : `Scan ${scan.id}: QR Camera scan required`}
-                  >
-                    <div className={`w-5 h-5 xs:w-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-black mb-0.5 sm:mb-1 shadow-2xs flex-shrink-0 ${
-                      isDone
-                        ? 'bg-[#00A86B] text-white'
-                        : scannedOnly
-                        ? 'bg-amber-500 text-white'
-                        : 'bg-[#EF4444] text-white'
-                    }`}>
-                      {isDone ? (
-                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
-                      ) : scannedOnly ? (
-                        <Camera className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                      ) : isLocked ? (
-                        <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
-                      ) : (
-                        <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
-                      )}
-                    </div>
-                    <span className="text-[9px] xs:text-[10px] sm:text-xs font-black truncate w-full leading-tight text-slate-900">
-                      Scan {scan.id}
-                    </span>
-                    <span className={`text-[8px] xs:text-[9px] sm:text-[11px] font-bold mt-0.5 leading-tight truncate w-full ${
-                      isDone ? 'text-[#00A86B] font-mono' : scannedOnly ? 'text-amber-700' : isLocked ? 'text-slate-400' : 'text-[#DC2626]'
-                    }`}>
-                      {isDone
-                        ? (scan.scannedAt || 'Done ✓')
-                        : scannedOnly
-                        ? (lang === 'ta' ? 'படம் தேவை' : 'Photos due')
-                        : isLocked
-                        ? (lang === 'ta' ? 'பூட்டப்பட்டது' : 'Locked')
-                        : 'Pending X'}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            {/* TATA ACE runs one page at a time: only the current page's
+                checkpoint is shown and editable, so photos cannot be mixed up
+                between scans. The strip underneath is progress, not navigation. */}
+            {!isSingleScanVehicle && (
+              <div className="space-y-3">
+                {/* Page progress strip — read-only */}
+                <div className="grid grid-cols-5 gap-0.5 xs:gap-1 sm:gap-2.5 w-full">
+                  {streetScans.map((scan) => {
+                    const isDone = isScanComplete(scan);
+                    const isCurrent = scan.id === currentScanPage;
+                    return (
+                      <div
+                        key={scan.id}
+                        className={`flex flex-col items-center justify-center py-1.5 xs:py-2 px-0 rounded-xl sm:rounded-2xl border sm:border-2 text-center select-none min-w-0 ${
+                          isDone
+                            ? 'bg-[#E6F4EA] border-[#00D084] text-slate-900'
+                            : isCurrent
+                            ? 'bg-amber-50 border-amber-400 text-amber-900'
+                            : 'bg-slate-50 border-slate-200 text-slate-400'
+                        } ${isCurrent ? 'ring-2 ring-offset-1 ring-emerald-500' : ''}`}
+                        title={isDone
+                          ? `Scan ${scan.id}: complete ✓`
+                          : isCurrent
+                          ? `Scan ${scan.id}: current page`
+                          : `Scan ${scan.id}: not started`}
+                      >
+                        <div className={`w-5 h-5 xs:w-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-black mb-0.5 sm:mb-1 shadow-2xs flex-shrink-0 ${
+                          isDone ? 'bg-[#00A86B] text-white' : isCurrent ? 'bg-amber-500 text-white' : 'bg-slate-300 text-white'
+                        }`}>
+                          {isDone ? (
+                            <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+                          ) : (
+                            <span className="text-[10px] sm:text-xs">{scan.id}</span>
+                          )}
+                        </div>
+                        <span className="text-[9px] xs:text-[10px] sm:text-xs font-black truncate w-full leading-tight text-slate-900">
+                          Scan {scan.id}
+                        </span>
+                        <span className={`text-[8px] xs:text-[9px] sm:text-[11px] font-bold mt-0.5 leading-tight truncate w-full ${
+                          isDone ? 'text-[#00A86B] font-mono' : isCurrent ? 'text-amber-700' : 'text-slate-400'
+                        }`}>
+                          {isDone ? (scan.scannedAt || 'Done ✓') : isCurrent ? (lang === 'ta' ? 'தற்போது' : 'Current') : '—'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
 
-            {/* Sequential rule reminder, so the worker knows why later scans are blocked */}
-            {!isSingleScanVehicle && nextAllowedScanId > 0 && (
+                {/* The single card for this page */}
+                <div
+                  onClick={() => {
+                    const s = streetScans.find(x => x.id === currentScanPage);
+                    if (s) handleScanCardClick(s);
+                  }}
+                  className={`w-full rounded-2xl border-2 p-4 sm:p-5 flex items-center gap-4 cursor-pointer transition active:scale-[0.99] ${
+                    isScanComplete(activePhotoScan)
+                      ? 'bg-[#E6F4EA] border-[#00D084]'
+                      : activePhotoScan?.isScanned
+                      ? 'bg-amber-50 border-amber-400'
+                      : 'bg-[#FEF2F2] border-[#FCA5A5]'
+                  }`}
+                  title={
+                    isScanComplete(activePhotoScan)
+                      ? `Scan ${currentScanPage} complete`
+                      : `Scan ${currentScanPage}: QR Camera scan required`
+                  }
+                >
+                  <div className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-black text-white text-lg flex-shrink-0 ${
+                    isScanComplete(activePhotoScan) ? 'bg-[#00A86B]' : activePhotoScan?.isScanned ? 'bg-amber-500' : 'bg-[#EF4444]'
+                  }`}>
+                    {isScanComplete(activePhotoScan) ? <Check className="w-6 h-6 stroke-[3]" /> : currentScanPage}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm sm:text-base font-black text-slate-900 truncate">
+                      {lang === 'ta' ? `ஸ்கேன் ${currentScanPage} — ${activePhotoScan?.locationName || ''}` : `Scan ${currentScanPage} — ${activePhotoScan?.locationName || 'Point QR'}`}
+                    </div>
+                    <div className={`text-[11px] sm:text-xs font-bold mt-0.5 ${
+                      isScanComplete(activePhotoScan) ? 'text-[#00A86B]' : activePhotoScan?.isScanned ? 'text-amber-700' : 'text-[#DC2626]'
+                    }`}>
+                      {isScanComplete(activePhotoScan)
+                        ? (lang === 'ta' ? 'ஸ்கேன் + படங்கள் முடிந்தது ✓' : `Scanned ${activePhotoScan?.scannedAt || ''} with photos ✓`)
+                        : activePhotoScan?.isScanned
+                        ? (lang === 'ta' ? 'ஸ்கேன் செய்தது — படங்கள் எடுக்கவும்' : 'QR scanned — now take the BEFORE and AFTER photos')
+                        : (lang === 'ta' ? 'QR கேமரா மூலம் ஸ்கேன் செய்யவும்' : 'Tap and scan this QR with the camera')}
+                    </div>
+                  </div>
+                  {isScanComplete(activePhotoScan) ? (
+                    <Check className="w-5 h-5 text-[#00A86B] flex-shrink-0" />
+                  ) : (
+                    <Camera className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Single-scan vehicles keep the original 5-up grid */}
+            {isSingleScanVehicle && (
+              <div className="grid grid-cols-5 gap-0.5 xs:gap-1 sm:gap-2.5 w-full">
+                {streetScans.map((scan) => {
+                  const isDone = isScanComplete(scan);
+                  const scannedOnly = scan.isScanned && !isDone;
+                  return (
+                    <div
+                      key={scan.id}
+                      onClick={() => handleScanCardClick(scan)}
+                      className={`flex flex-col items-center justify-center py-1.5 xs:py-2 sm:py-3 px-0 rounded-xl sm:rounded-2xl border sm:border-2 text-center select-none cursor-pointer transition active:scale-95 min-w-0 ${
+                        isDone ? 'bg-[#E6F4EA] border-[#00D084] text-slate-900' : scannedOnly ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
+                      }`}
+                    >
+                      <div className={`w-5 h-5 xs:w-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-black mb-0.5 sm:mb-1 shadow-2xs flex-shrink-0 ${
+                        isDone ? 'bg-[#00A86B] text-white' : scannedOnly ? 'bg-amber-500 text-white' : 'bg-[#EF4444] text-white'
+                      }`}>
+                        {isDone ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" /> : scannedOnly ? <Camera className="w-3 h-3" /> : <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />}
+                      </div>
+                      <span className="text-[9px] xs:text-[10px] sm:text-xs font-black truncate w-full leading-tight text-slate-900">Scan {scan.id}</span>
+                      <span className={`text-[8px] xs:text-[9px] sm:text-[11px] font-bold mt-0.5 leading-tight truncate w-full ${isDone ? 'text-[#00A86B] font-mono' : scannedOnly ? 'text-amber-700' : 'text-[#DC2626]'}`}>
+                        {isDone ? (scan.scannedAt || 'Done ✓') : scannedOnly ? (lang === 'ta' ? 'படம் தேவை' : 'Photos due') : 'Pending X'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Page guidance for the current scan */}
+            {!isSingleScanVehicle && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-start gap-2 text-[11px] sm:text-xs font-bold text-amber-900">
                 <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
                 <span>
                   {lang === 'ta'
-                    ? `அடுத்து ஸ்கேன் ${nextAllowedScanId} மட்டுமே ஸ்கேன் செய்யலாம் — அதன் முன் & பிறகு படங்கள் இரண்டையும் பதிவிடுங்கள். (${completedScansWithPhotos}/5 முடிந்தது)`
-                    : `Scan ${nextAllowedScanId} is the next one — upload its BEFORE and AFTER photos to unlock the rest. (${completedScansWithPhotos}/5 complete)`}
+                    ? `ஸ்கேன் ${currentScanPage} / ${TOTAL_SCAN_PAGES} — QR ஐ ஸ்கேன் செய்து, முன் & பிறகு படங்களை எடுத்து, சேமி பொத்தியவரை அடுத்து ஸ்கேனுக்குச் செல்லவும்.`
+                    : `Scan ${currentScanPage} of ${TOTAL_SCAN_PAGES} — scan this QR, take its BEFORE and AFTER photos, then save to move to the next scan.`}
+                  <span className="ml-1 font-mono">({completedScansWithPhotos}/{TOTAL_SCAN_PAGES} complete)</span>
                 </span>
               </div>
             )}
@@ -1329,16 +1458,19 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
         </div>
 
         {/* STICKY BOTTOM BUTTON (Image 2 Exact Layout) */}
-        <div className="pt-2 sticky bottom-0 z-30 pb-3 bg-white/90 backdrop-blur-xs">
+        <div className="pt-2 sticky bottom-0 z-30 pb-3 bg-white/90 backdrop-blur-xs space-y-2">
           <button
             type="submit"
             onClick={(e) => {
               e.preventDefault();
-              handleSubmit(e);
+              if (isSingleScanVehicle) handleSubmit(e);
+              else handlePageSubmit(e);
             }}
             disabled={isSubmitting}
             className={`w-full text-white font-black py-4 px-4 rounded-2xl text-sm sm:text-base transition shadow-xl flex items-center justify-center space-x-2 border active:scale-98 cursor-pointer disabled:opacity-60 ${
-              (isSingleScanVehicle ? formData.coverageStatus === 'Covered' : completedScansWithPhotos === 5)
+              (isSingleScanVehicle
+                ? formData.coverageStatus === 'Covered'
+                : isScanComplete(activePhotoScan))
                 ? 'bg-[#00875A] hover:bg-[#00704A] border-emerald-500/40'
                 : 'bg-[#B91C1C] hover:bg-[#991B1B] border-red-500/40'
             }`}
@@ -1351,21 +1483,70 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             <span className="font-black text-white text-base">
               {isSubmitting
                 ? (lang === 'ta' ? 'சமர்ப்பிக்கப்படுகிறது...' : 'Submitting Status...')
+                : isSingleScanVehicle
+                ? (!beforePhoto || !afterPhoto)
+                  ? (!beforePhoto && !afterPhoto
+                    ? (lang === 'ta' ? '📷 முன் & பிறகு படங்கள் எடுக்கவும்' : '📷 Take BEFORE & AFTER Photos')
+                    : !beforePhoto
+                      ? (lang === 'ta' ? '📷 முன் படம் எடுக்கவும்' : '📷 Take BEFORE Photo')
+                      : (lang === 'ta' ? '📷 பிறகு படம் எடுக்கவும்' : '📷 Take AFTER Photo'))
+                  : formData.coverageStatus === 'Covered'
+                    ? (lang === 'ta' ? 'சேகரிக்கப்பட்டது நிலை சமர்ப்பி (Submit Covered)' : 'Submit Covered Status')
+                    : (lang === 'ta' ? '⚠️ சேகரிக்கப்படவில்லை நிலை சமர்ப்பி' : '⚠️ Submit Not Covered Status')
+                /* TATA ACE: one button per page — save this scan, move to the next */
+                : !activePhotoScan?.isScanned
+                ? (lang === 'ta' ? `📷 ஸ்கேன் ${currentScanPage} QR ஐ ஸ்கேன் செய்யவும்` : `📷 Scan the Scan ${currentScanPage} QR first`)
                 : (!beforePhoto || !afterPhoto)
                 ? (!beforePhoto && !afterPhoto
                   ? (lang === 'ta' ? '📷 முன் & பிறகு படங்கள் எடுக்கவும்' : '📷 Take BEFORE & AFTER Photos')
                   : !beforePhoto
                     ? (lang === 'ta' ? '📷 முன் படம் எடுக்கவும்' : '📷 Take BEFORE Photo')
                     : (lang === 'ta' ? '📷 பிறகு படம் எடுக்கவும்' : '📷 Take AFTER Photo'))
-                : isSingleScanVehicle
-                ? formData.coverageStatus === 'Covered'
-                  ? (lang === 'ta' ? 'சேகரிக்கப்பட்டது நிலை சமர்ப்பி (Submit Covered)' : 'Submit Covered Status ()')
-                  : (lang === 'ta' ? '⚠️ சேகரிக்கப்படவில்லை நிலை சமர்ப்பி' : '⚠️ Submit Not Covered Status (Pushcart)')
-                : completedScansWithPhotos === 5
-                ? 'Submit Street Covered Status (5/5 Done)'
-                : `⚠️ Submit Not Covered Status (${completedScansCount}/5 Done)`}
+                : currentScanPage < TOTAL_SCAN_PAGES
+                ? (lang === 'ta'
+                  ? `✅ ஸ்கேன் ${currentScanPage} சேமி — அடுத்து ஸ்கேன் ${currentScanPage + 1}க்கு செல்லவும்`
+                  : `Save Scan ${currentScanPage} — Go to Scan ${currentScanPage + 1} →`)
+                : (lang === 'ta'
+                  ? '✅ உடையவை முழுமையாக சேமி (5/5)'
+                  : 'Save All 5 Scans (5/5 Done) →')}
             </span>
           </button>
+
+          {/* Step chips — let the worker jump back to a finished page, never forward */}
+          {!isSingleScanVehicle && (
+            <div className="flex items-center justify-center gap-1.5">
+              {streetScans.map((s) => {
+                const done = isScanComplete(s);
+                const isCurrent = s.id === currentScanPage;
+                const canOpen = done || s.id === currentScanPage;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    disabled={!canOpen}
+                    onClick={() => {
+                      setCurrentScanPage(s.id);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className={`w-9 h-9 rounded-xl text-[11px] font-black border transition ${
+                      isCurrent
+                        ? 'bg-[#00875A] text-white border-emerald-600/40'
+                        : done
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
+                        : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                    }`}
+                    title={done
+                      ? `Scan ${s.id}: complete — tap to review its photos`
+                      : isCurrent
+                      ? `Scan ${s.id}: current page`
+                      : `Scan ${s.id}: locked until the earlier scans are saved`}
+                  >
+                    {done ? <Check className="w-4 h-4 mx-auto stroke-[3]" /> : s.id}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
       </form>
