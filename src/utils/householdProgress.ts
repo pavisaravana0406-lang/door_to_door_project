@@ -27,6 +27,49 @@ export interface HouseholdProgress {
 
 const norm = (v?: string | null): string => (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
+/**
+ * Keep only the records belonging to the signed-in worker.
+ *
+ * The dashboard is fed every household record in the system, so without this
+ * a cart worker saw other workers' doors in their own history. Records are
+ * matched on vehicle number where present, otherwise on the worker name.
+ */
+export const filterToOwnRecords = (
+  records: SWMSHouseholdRecord[],
+  me?: { vehicleNumber?: string | null; vehicleType?: string | null; fullName?: string | null; username?: string | null; workerName?: string | null } | null,
+): SWMSHouseholdRecord[] => {
+  if (!me) return records || [];
+  const vNum = norm(me.vehicleNumber);
+  const vType = (me.vehicleType || '').toUpperCase();
+  const name = norm(me.fullName || me.workerName || me.username);
+
+  // Prefer an exact plate match; a cart's plate is its code, e.g. PUSHCART881.
+  if (vNum) {
+    const byPlate = (records || []).filter(r => norm(r.vehicleNo) === vNum);
+    if (byPlate.length) return byPlate;
+  }
+
+  // Otherwise fall back to the worker's name on the record.
+  if (name) {
+    const byName = (records || []).filter(r => norm(r.driverWorkerName) === name);
+    if (byName.length) return byName;
+  }
+
+  // A cart has neither a plate nor a consistent driver name on older records.
+  // Keep only carts, since this helper is for the cart dashboard.
+  if (vType) {
+    const isCart = /PUSH|BOV|COMPACTOR|OBL/.test(vType);
+    if (isCart) {
+      return (records || []).filter(r => {
+        const rt = (r.vehicleType || '').toUpperCase();
+        return /PUSH|BOV|COMPACTOR|OBL/.test(rt);
+      });
+    }
+  }
+
+  return records || [];
+};
+
 const isCollected = (r: SWMSHouseholdRecord): boolean => r.coverageStatus === 'Covered';
 
 export const buildHouseholdProgress = (records: SWMSHouseholdRecord[]): HouseholdProgress[] => {

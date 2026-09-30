@@ -519,6 +519,7 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
               onSetLanguage={onSetLanguage}
               onToggleLang={toggleLanguage}
               assignedVehicleId={assignedVehicleId}
+              assignedVehicleNumber={assignment?.vehicleNumber || assignment?.username || ''}
               onBackToScanner={() => setActiveTab('scan')}
               onSubmitSuccess={handleFormSubmitSuccess}
             />

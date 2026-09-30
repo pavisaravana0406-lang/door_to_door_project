@@ -7,6 +7,7 @@ import {
 import { KpiSquare } from './KpiSquare';
 import {
   buildHouseholdProgress, summariseHouseholds, matchesHouseholdSearch, householdKey,
+  filterToOwnRecords,
   type HouseholdProgress, type HouseholdStatus,
 } from '../utils/householdProgress';
 import { writeQrRemark } from '../utils/streetProgress';
@@ -50,10 +51,17 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
 
   useEffect(() => { setBump(b => b + 1); }, [records]);
 
-  const allRows = useMemo(
-    () => buildHouseholdProgress(records || []),
+  // Only this worker's doors, never another worker's.
+  const myRecords = useMemo(
+    () => filterToOwnRecords(records || [], assignment),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [records, bump]
+    [records, assignment, bump]
+  );
+
+  const allRows = useMemo(
+    () => buildHouseholdProgress(myRecords),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [myRecords, bump]
   );
 
   const summary = useMemo(() => summariseHouseholds(allRows), [allRows]);

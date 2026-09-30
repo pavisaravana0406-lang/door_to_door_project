@@ -72,6 +72,8 @@ interface SWMSHouseholdFormViewProps {
   onSetLanguage?: (lang: 'en' | 'ta') => void;
   onToggleLang?: () => void;
   assignedVehicleId?: string;
+  /** The worker's real plate or cart code, used to stamp the record. */
+  assignedVehicleNumber?: string;
   onBackToScanner: () => void;
   onSubmitSuccess: (record: SWMSHouseholdRecord, status: CoverageStatus) => void;
 }
@@ -97,6 +99,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   onSetLanguage,
   onToggleLang,
   assignedVehicleId = 'v-obl-pvt',
+  assignedVehicleNumber = '',
   onBackToScanner,
   onSubmitSuccess
 }) => {
@@ -136,7 +139,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     householderName: 'murali (140 Households)',
     householderContact: '9677971375',
     streetName: 'sree nagar',
-    doorNo: assignedVehicleId === 'v-push-cart' ? '' : '45',
+    // Left blank so the worker types the real door number. A prefilled value
+    // was silently submitted as if the worker had entered it.
+    doorNo: '',
     coverageStatus: 'Not Covered' as CoverageStatus,
     notCoveredReason: 'Other' as NotCoveredReason,
     remarks: ''
@@ -644,14 +649,18 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       ? formData.coverageStatus
       : 'Covered';
 
-    let finalDoorNo = formData.doorNo ? formData.doorNo.trim() : '';
-    if (!finalDoorNo) {
-      if (isSingleScanVehicle) {
-        finalDoorNo = lang === 'ta' ? 'விருப்பத்திற்குரியது (Pushcart)' : 'Optional ()';
-      } else {
-        finalDoorNo = "45";
-      }
+    // The door number is mandatory for every vehicle. It used to fall back to a
+    // placeholder for carts, which is how "Door Optional ()" ended up in the
+    // history as if it were a real door.
+    const typedDoorNo = (formData.doorNo || '').trim();
+    if (!typedDoorNo) {
+      setScanWarnMsg(lang === 'ta'
+        ? '⚠️ கதவு எண் கட்டாயம் — முதலில் கதவு எண்ணை உள்ளிடவும்.'
+        : '⚠️ Door number is required — enter the door number first.');
+      setTimeout(() => setScanWarnMsg(null), 5000);
+      return;
     }
+    const finalDoorNo = typedDoorNo;
 
     // Freeze the photos onto this checkpoint before the record is built, so the
     // submitted record definitely carries the pair the worker just captured.
@@ -687,7 +696,12 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       gpsAccuracy: gpsAccuracy,
       gpsTimestamp: timestampStr,
       assignedVehicleId: assignedVehicleId || 'v-tata-ace',
-      vehicleNo: formData.vehicleNo || (formData.vehicleType ? (assignedVehicleId || 'TN66AD6465') : 'TN66AD6465'),
+      // Prefer the worker's real vehicle identity over the internal
+      // 'v-push-cart' placeholder, so the record can be matched back to the
+      // worker who made it.
+      vehicleNo: formData.vehicleNo
+        || assignedVehicleNumber
+        || (formData.vehicleType ? (assignedVehicleId || 'TN66AD6465') : 'TN66AD6465'),
       vehicleType: formData.vehicleType || 'TATA ACE',
       completedScansCount: completedScansCount,
       streetScans: finalScans,
@@ -881,11 +895,11 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                 <span className="text-xs font-mono font-extrabold text-[#044D29] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                   Door #{formData.doorNo}
                 </span>
-              ) : isSingleScanVehicle ? (
+              ) : (
                 <span className="text-[10px] sm:text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80">
-                  {lang === 'ta' ? 'கதவு எண்: விருப்பத்திற்குரியது (Pushcart)' : 'Door No: Optional (Pushcart)'}
+                  {lang === 'ta' ? 'கதவு எண் தேவை' : 'Door No: required'}
                 </span>
-              ) : null}
+              )}
             </div>
             <p className="text-xs text-slate-600 font-medium flex items-center gap-1 flex-wrap min-w-0">
               <User className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
@@ -1674,28 +1688,16 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1">
                       {lang === 'ta' ? 'கதவு எண் (Door No)' : 'Door No'}{' '}
-                      {isSingleScanVehicle ? (
-                        <span className="text-amber-600 font-extrabold">
-                          ({lang === 'ta' ? 'விருப்பத்திற்குரியது - Pushcart' : 'Optional - Pushcart'})
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 font-normal">
-                          ({lang === 'ta' ? 'கட்டாயம்' : 'Required'})
-                        </span>
-                      )}
+                      <span className="text-rose-600 font-extrabold">
+                        ({lang === 'ta' ? 'கட்டாயம்' : 'Required'})
+                      </span>
                     </label>
                     <input
                       type="text"
                       value={formData.doorNo}
                       onChange={(e) => setFormData({ ...formData, doorNo: e.target.value })}
-                      className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-xs font-bold text-slate-900 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none ${
-                        isSingleScanVehicle ? 'border-amber-300 focus:ring-amber-500' : 'border-slate-300'
-                      }`}
-                      placeholder={
-                        isSingleScanVehicle
-                          ? (lang === 'ta' ? 'விருப்பத்திற்குரியது (Pushcart)...' : 'Optional for ' + singleScanLabel + '...')
-                          : 'e.g. 45 or 12A'
-                      }
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                      placeholder={lang === 'ta' ? 'எ.கா. 45 அல்லது 12A' : 'e.g. 45 or 12A'}
                     />
                   </div>
                 </div>
