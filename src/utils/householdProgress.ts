@@ -39,35 +39,37 @@ export const filterToOwnRecords = (
   me?: { vehicleNumber?: string | null; vehicleType?: string | null; fullName?: string | null; username?: string | null; workerName?: string | null } | null,
 ): SWMSHouseholdRecord[] => {
   if (!me) return records || [];
-  const vNum = norm(me.vehicleNumber);
-  const vType = (me.vehicleType || '').toUpperCase();
+  // A placeholder vehicle such as 'v-push-cart' is shared by every cart, so it
+  // cannot identify this worker. Fall back to the name in that case.
+  const vNum = isPlaceholderVehicle(me.vehicleNumber) ? '' : norm(me.vehicleNumber);
   const name = norm(me.fullName || me.workerName || me.username);
 
-  // Prefer an exact plate match; a cart's plate is its code, e.g. PUSHCART881.
+  // Prefer an exact plate match, but require the driver name to agree too.
+  // Carts in the same zone share one vehicle code (PUSHCART_CENTRAL_01), so a
+  // plate-only match would still leak one cart worker's doors into another's.
   if (vNum) {
-    const byPlate = (records || []).filter(r => norm(r.vehicleNo) === vNum);
-    if (byPlate.length) return byPlate;
+    return (records || []).filter(r => {
+      if (isPlaceholderVehicle(r.vehicleNo) || norm(r.vehicleNo) !== vNum) return false;
+      return !name || !norm(r.driverWorkerName) || norm(r.driverWorkerName) === name;
+    });
   }
 
   // Otherwise fall back to the worker's name on the record.
   if (name) {
-    const byName = (records || []).filter(r => norm(r.driverWorkerName) === name);
-    if (byName.length) return byName;
+    return (records || []).filter(r => norm(r.driverWorkerName) === name);
   }
 
-  // A cart has neither a plate nor a consistent driver name on older records.
-  // Keep only carts, since this helper is for the cart dashboard.
-  if (vType) {
-    const isCart = /PUSH|BOV|COMPACTOR|OBL/.test(vType);
-    if (isCart) {
-      return (records || []).filter(r => {
-        const rt = (r.vehicleType || '').toUpperCase();
-        return /PUSH|BOV|COMPACTOR|OBL/.test(rt);
-      });
-    }
-  }
+  // No usable identity. Showing everything would leak one cart worker's doors
+  // into another's dashboard, so show nothing rather than the wrong records.
+  // A shared placeholder like 'v-push-cart' cannot identify an owner either,
+  // because every cart recorded it.
+  return [];
+};
 
-  return records || [];
+/** True when a record's vehicle value is a shared placeholder, not a real identity. */
+export const isPlaceholderVehicle = (v?: string | null): boolean => {
+  const n = norm(v);
+  return !n || n.startsWith('V') || n === 'PUSHCART' || n === 'BOV' || n === 'PUSHCARTCART';
 };
 
 const isCollected = (r: SWMSHouseholdRecord): boolean => r.coverageStatus === 'Covered';

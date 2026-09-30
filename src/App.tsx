@@ -10,6 +10,20 @@ import { INITIAL_SWMS_RECORDS } from './data/mockData';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { fetchSWMSData, authMe, authLogout } from './api/client';
 import { isSubmissionComplete } from './utils/missedStreaks';
+import { isPlaceholderVehicle } from './utils/householdProgress';
+
+const normKey = (v?: string | null): string => (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+/**
+ * Stable owner for a record. Carts in the same zone share one vehicle code, so
+ * the driver name is part of the key; without it two carts would overwrite each
+ * other's record for the same door.
+ */
+const recordOwnerKey = (r: SWMSHouseholdRecord): string => {
+  const driver = normKey(r.driverWorkerName);
+  if (!isPlaceholderVehicle(r.vehicleNo)) return `veh:${normKey(r.vehicleNo)}|${driver}`;
+  return driver ? `drv:${driver}` : '';
+};
 
 
 export default function App() {
@@ -278,9 +292,20 @@ export default function App() {
     }
 
     setRecords(prev => {
-      const filtered = prev.filter(
-        r => r.id !== newRecord.id && r.streetName.toLowerCase().trim() !== newRecord.streetName.toLowerCase().trim()
-      );
+      // Replace only this worker's own record for the same door. The previous
+      // filter keyed on street alone, so a cart submitting a door wiped a
+      // different cart's record for that same street, and both carts' records
+      // shared one list.
+const vehicle = normKey(newRecord.vehicleNo);
+  const driver = normKey(newRecord.driverWorkerName);
+  const key = !isPlaceholderVehicle(newRecord.vehicleNo) && vehicle ? `veh:${vehicle}|${driver}` : (driver ? `drv:${driver}` : '');
+  const doorKey = `${normKey(newRecord.streetName)}#${normKey(newRecord.doorNo)}`;
+  const filtered = prev.filter(r => {
+    if (r.id === newRecord.id) return false;
+    if (!key) return true; // no owner recorded, cannot safely dedupe
+    if (recordOwnerKey(r) !== key) return true; // someone else's record
+    return `${normKey(r.streetName)}#${normKey(r.doorNo)}` !== doorKey;
+  });
       const updated = [newRecord, ...filtered];
       localStorage.setItem('swms_household_records', JSON.stringify(updated));
       return updated;
