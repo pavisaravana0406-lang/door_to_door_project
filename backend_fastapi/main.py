@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -299,7 +300,12 @@ def build_assignment(db: Session, user: models.UserModel) -> schemas.AssignmentS
         worker = db.query(models.WorkerModel).filter(models.WorkerModel.id == user.worker_id).first()
 
     vehicle_type = vehicle.vehicle_type if vehicle else None
-    is_pushcart = bool(vehicle_type and vehicle_type.lower() == "pushcart")
+    # The stored type is "PUSH CART" with a space, so an exact match on
+    # "pushcart" never fired and isPushcart came back false for every cart
+    # account. Match on the tokens instead, which also covers BOV and the
+    # other single-checkpoint vehicles.
+    vtype_norm = re.sub(r"[^A-Z0-9]", "", (vehicle_type or "").upper())
+    is_pushcart = vtype_norm in {"PUSHCART", "BOV", "COMPACTOR", "OBL", "OBLPRIVATE", "PTC", "CART"}
 
     return schemas.AssignmentSchema(
         userId=user.id,

@@ -16,3 +16,5 @@ __pycache__/
 backend_fastapi/photos/
 
 .vercel/
+# one-off Neon backups from the pushcart vehicle migration
+pushcart_backup.json
