@@ -24,7 +24,6 @@ interface DustbinAnimationModalProps {
   lang?: 'en' | 'ta';
   assignedVehicleId?: string;
   onClose: () => void;
-  onNextScan: () => void;
 }
 
 // Clean any full URL or prefix into a pure alphanumeric House ID
@@ -50,8 +49,7 @@ export const DustbinAnimationModal: React.FC<DustbinAnimationModalProps> = ({
   ward = 'Ward 12',
   lang = 'en',
   assignedVehicleId = 'v-push-cart',
-  onClose,
-  onNextScan
+  onClose
 }) => {
   const isPushCart = !assignedVehicleId || assignedVehicleId === 'v-push-cart' || assignedVehicleId.includes('push');
   const [isActive, setIsActive] = useState(false);
@@ -495,24 +493,14 @@ export const DustbinAnimationModal: React.FC<DustbinAnimationModalProps> = ({
             </div>
           </div>
 
-          {/* ACTION BUTTONS */}
-          <div className="w-full space-y-2">
-            {/* PRIMARY BUTTON: BACK TO DASHBOARD */}
+          {/* ACTION BUTTON: BACK TO DASHBOARD */}
+          <div className="w-full">
             <button
               onClick={onClose}
               className="w-full py-3 px-4 bg-[#1E7A38] hover:bg-[#166534] active:bg-[#113B22] text-white rounded-2xl font-black text-xs shadow-lg flex items-center justify-center space-x-2 transition active:scale-98 cursor-pointer"
             >
               <LayoutDashboard className="w-4 h-4 text-emerald-200" />
               <span className="text-white font-black">{lang === 'ta' ? 'டாஷ்போர்டிற்குத் திரும்பு' : 'BACK TO DASHBOARD'}</span>
-            </button>
-
-            {/* SECONDARY BUTTON: SCAN NEXT HOUSE */}
-            <button
-              onClick={onNextScan}
-              className="w-full py-2.5 px-4 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-800 rounded-2xl font-extrabold text-xs flex items-center justify-center space-x-2 border border-slate-200 transition active:scale-98 cursor-pointer"
-            >
-              <span>{lang === 'ta' ? 'அடுத்த வீட்டை ஸ்கேன் செய்க' : 'Scan Next House'}</span>
-              <ArrowRight className="w-4 h-4 text-[#1E7A38]" />
             </button>
           </div>
         </motion.div>

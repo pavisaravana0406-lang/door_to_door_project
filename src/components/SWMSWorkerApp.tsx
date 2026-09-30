@@ -740,10 +740,6 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
           setIsAnimationOpen(false);
           setActiveTab('history');
         }}
-        onNextScan={() => {
-          setIsAnimationOpen(false);
-          setActiveTab('scan');
-        }}
       />
 
     </div>

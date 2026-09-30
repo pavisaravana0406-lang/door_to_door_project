@@ -672,10 +672,6 @@ export const SWMSCollectionFormView: React.FC<SWMSCollectionFormViewProps> = ({
           setShowCollectedAnim(false);
           onBack();
         }}
-        onNextScan={() => {
-          setShowCollectedAnim(false);
-          onNextScan();
-        }}
       />
     </div>
   );

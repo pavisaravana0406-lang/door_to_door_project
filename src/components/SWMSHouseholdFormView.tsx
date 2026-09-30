@@ -386,24 +386,14 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     }
   };
 
-  // Sync formData.coverageStatus for vehicle mode
+  /**
+   * A scanned, photographed TATA ACE checkpoint is a collection, so the form
+   * sits on 'Covered' from the first successful scan rather than flipping to
+   * "Not Covered" until all five are done.
+   */
   useEffect(() => {
     if (!isSingleScanVehicle) {
-      if (completedScansWithPhotos === 5) {
-        setFormData(prev => ({ ...prev, coverageStatus: 'Covered', notCoveredReason: undefined }));
-      } else if (completedScansWithPhotos === 4) {
-        setFormData(prev => ({ 
-          ...prev, 
-          coverageStatus: 'Partially Covered',
-          notCoveredReason: 'Other' as NotCoveredReason
-        }));
-      } else {
-        setFormData(prev => ({ 
-          ...prev, 
-          coverageStatus: 'Not Covered',
-          notCoveredReason: 'Other' as NotCoveredReason
-        }));
-      }
+      setFormData(prev => ({ ...prev, coverageStatus: 'Covered', notCoveredReason: undefined }));
     }
   }, [isSingleScanVehicle, completedScansWithPhotos]);
 
@@ -644,16 +634,15 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       hour12: true
     });
 
-    let finalCoverageStatus: CoverageStatus = formData.coverageStatus;
-    if (!isSingleScanVehicle) {
-      if (completedScansWithPhotos === 5) {
-        finalCoverageStatus = 'Covered';
-      } else if (completedScansWithPhotos === 4) {
-        finalCoverageStatus = 'Partially Covered';
-      } else {
-        finalCoverageStatus = 'Not Covered';
-      }
-    }
+    /**
+     * Submitting means this checkpoint was collected: it was scanned and both
+     * proof photos are attached. The street as a whole may still have QR
+     * points outstanding, so the remaining count travels in the record for the
+     * dashboard, but the outcome of this submission is a collection.
+     */
+    const finalCoverageStatus: CoverageStatus = isSingleScanVehicle
+      ? formData.coverageStatus
+      : 'Covered';
 
     let finalDoorNo = formData.doorNo ? formData.doorNo.trim() : '';
     if (!finalDoorNo) {
