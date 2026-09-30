@@ -30,6 +30,7 @@ import type {
 import { AnimatedCounter } from './AnimatedCounter';
 import { CCMC_QR_ROUTES, type StreetScanRoute } from './SWMSStreetScanQRCard';
 import { WorkerStreetDashboard } from './WorkerStreetDashboard';
+import { WorkerHouseholdDashboard } from './WorkerHouseholdDashboard';
 import { isSingleScanVehicleType } from '../utils/streetProgress';
 
 interface SWMSCollectionDashboardViewProps {
@@ -461,9 +462,8 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
         {/* ── VEHICLE-TYPE SPECIFIC WORKER DASHBOARD ──
             TATA ACE workers get the street-wise 5-QR dashboard; BOV and push
             cart workers get the door-wise single-QR dashboard. */}
-        {dashboard && (
-          <WorkerStreetDashboard
-            mode={isSingleScanVehicleType(vehicleType) ? 'cart' : 'tata_ace'}
+        {dashboard && (isSingleScanVehicleType(vehicleType) ? (
+          <WorkerHouseholdDashboard
             dashboard={dashboard}
             records={records || []}
             assignment={assignment ?? null}
@@ -472,7 +472,18 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
             onOpenScanner={onOpenScanner}
             onRefresh={load}
           />
-        )}
+        ) : (
+          <WorkerStreetDashboard
+            mode="tata_ace"
+            dashboard={dashboard}
+            records={records || []}
+            assignment={assignment ?? null}
+            lang={lang}
+            loading={loading}
+            onOpenScanner={onOpenScanner}
+            onRefresh={load}
+          />
+        ))}
 
         {false && dashboard && stats && (() => {
           const currentVehicleKey = assignment?.vehicleNumber || vehicleNumber || vehicleNo || userName;
