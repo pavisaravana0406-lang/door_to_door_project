@@ -91,6 +91,26 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
 
   return (
     <div className="space-y-4 sm:space-y-5">
+      {/* ── FLOATING SCAN QR — fixed to the bottom of the viewport ── */}
+      <div className="fixed bottom-4 left-0 right-0 z-30 flex justify-center px-4 pointer-events-none">
+        <motion.button
+          type="button"
+          onClick={onOpenScanner}
+          whileTap={{ scale: 0.95 }}
+          aria-label={lang === 'ta' ? 'QR ஸ்கேன் செய்' : 'Scan QR'}
+          title={lang === 'ta' ? 'QR ஸ்கேன் செய்' : 'Scan QR'}
+          className="pointer-events-auto h-12 sm:h-14 px-4 sm:px-6 rounded-full
+            bg-gradient-to-r from-[#00875A] to-[#00704A] hover:from-[#00704A] hover:to-[#005c3e]
+            text-white font-black text-xs sm:text-sm tracking-wide uppercase
+            border-2 border-emerald-400/40 flex items-center justify-center gap-2
+            transition-colors"
+          style={{ boxShadow: '0 10px 28px -6px rgba(0,135,90,0.65)' }}
+        >
+          <QrCode className="w-5 h-5 sm:w-6 sm:h-6" />
+          <span>{lang === 'ta' ? 'QR ஸ்கேன்' : 'SCAN QR'}</span>
+        </motion.button>
+      </div>
+
       {/* ── KPI SQUARES ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
         <KpiSquare
@@ -298,22 +318,6 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
             ))}
           </div>
         )}
-      </div>
-
-      {/* ── MEDIUM SCAN QR BUTTON ────────────────────────────────── */}
-      <div className="sticky bottom-20 z-20 sm:bottom-24">
-        <motion.button
-          type="button"
-          onClick={onOpenScanner}
-          whileTap={{ scale: 0.97 }}
-          className="w-full h-14 sm:h-16 rounded-2xl bg-gradient-to-r from-[#00875A] to-[#00704A] hover:from-[#00704A] hover:to-[#005c3e]
-            text-white font-black text-base sm:text-lg tracking-wide shadow-2xl border-2 border-emerald-400/40
-            flex items-center justify-center gap-3 transition-shadow"
-          style={{ boxShadow: '0 10px 30px -8px rgba(0,135,90,0.6)' }}
-        >
-          <QrCode className="w-6 h-6 sm:w-7 sm:h-7" />
-          <span>{lang === 'ta' ? 'QR ஸ்கேன் செய்' : 'SCAN QR'}</span>
-        </motion.button>
       </div>
 
       {/* Legend */}
