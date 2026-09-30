@@ -97,9 +97,12 @@ export const isCheckpointComplete = (
 const SINGLE_SCAN_TYPES = ['PUSH CART', 'PUSH CART ', 'BOV', 'COMPACTOR', 'OBL'];
 
 /**
- * A submission is publishable to the admin dashboard only when the work is
- * genuinely finished: all 5 checkpoints scanned with their own before/after
- * photos for a multi-scan vehicle, or one completed pair for a BOV / push cart.
+ * A submission is publishable once it carries at least one finished checkpoint:
+ * scanned and photographed on both sides.
+ *
+ * Each scan is submitted on its own now, so a TATA ACE driver submitting
+ * Scan 2 of 5 has done real, verifiable work and the dashboard must reflect it.
+ * Waiting for all five would hide every scan until the very last one.
  */
 export const isSubmissionComplete = (r: {
   vehicleType?: string;
@@ -114,5 +117,5 @@ export const isSubmissionComplete = (r: {
   if (isSingleScan || scans.length === 0) {
     return !!(r.beforePhoto && r.afterPhoto);
   }
-  return scans.length === 5 && scans.every(isCheckpointComplete);
+  return scans.some(isCheckpointComplete);
 };

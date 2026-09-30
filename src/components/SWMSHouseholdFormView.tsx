@@ -74,8 +74,6 @@ interface SWMSHouseholdFormViewProps {
   assignedVehicleId?: string;
   onBackToScanner: () => void;
   onSubmitSuccess: (record: SWMSHouseholdRecord, status: CoverageStatus) => void;
-  /** Fires after each of the 5 scans is saved, so the parent can acknowledge it. */
-  onScanAcknowledged?: (info: { scanNumber: number; completedCount: number; isFinalScan: boolean }) => void;
 }
 
 // Clean any full URL or prefix into a pure alphanumeric House ID
@@ -100,8 +98,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   onToggleLang,
   assignedVehicleId = 'v-obl-pvt',
   onBackToScanner,
-  onSubmitSuccess,
-  onScanAcknowledged
+  onSubmitSuccess
 }) => {
   const [formData, setFormData] = useState<{
     houseId: string;
@@ -358,36 +355,15 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   );
 
   /**
-   * The page the worker must be on: the first checkpoint that is not complete.
-   * Used to reject an out-of-order QR scan and to keep the page indicator honest.
-   */
-  const nextAllowedScanId = useMemo(() => {
-    const ordered = [...streetScans].sort((a, b) => a.id - b.id);
-    for (const s of ordered) {
-      if (!isScanComplete(s)) return s.id;
-    }
-    return 0; // everything complete
-  }, [streetScans]);
-
-  /**
    * True when a QR for a checkpoint other than the current page is scanned. The
-   * worker is taken to that page instead, so the QR always drives the UI.
+   * UI follows the QR that was actually scanned, so the worker is never looking
+   * at the wrong checkpoint's photos.
    */
   const outOfOrderScanId = useMemo(() => {
     if (isSingleScanVehicle) return 0;
     const found = streetScans.find(s => s.isScanned && s.id !== currentScanPage && !isScanComplete(s));
     return found ? found.id : 0;
   }, [streetScans, currentScanPage, isSingleScanVehicle]);
-
-  // Warn once if a QR is scanned for a later page while an earlier one is open.
-  useEffect(() => {
-    if (!outOfOrderScanId) return;
-    setScanWarnMsg(lang === 'ta'
-      ? `⚠️ ஸ்கேன் ${outOfOrderScanId} QR — முதலில் ஸ்கேன் ${currentScanPage} ஐ முடித்து சேமியுங்கள்.`
-      : `⚠️ That is the Scan ${outOfOrderScanId} QR. Finish and save Scan ${currentScanPage} first.`);
-    const t = setTimeout(() => setScanWarnMsg(null), 5000);
-    return () => clearTimeout(t);
-  }, [outOfOrderScanId, currentScanPage, lang]);
 
   // Reset all 5 checkpoints to Pending X
   const handleResetAllScans = () => {
@@ -579,23 +555,13 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       return;
     }
     playChimeTone('warning');
-    // Sequential rule: only the next unfinished checkpoint may be scanned, and
-    // the previous one must already have both of its proof photos.
-    const allowed = nextAllowedScanId;
-    if (allowed && scan.id !== allowed) {
-      const blocker = streetScans.find(s => s.id === allowed);
-      setScanWarnMsg(
-        lang === 'ta'
-          ? `⚠️ ஸ்கேன் ${scan.id} பதிலாக முதலில் ஸ்கேன் ${allowed} முடிப்படுத்தவும் — அதற்கு முன் & பிறகு படங்கள் இரண்டும் தேவை.`
-          : `⚠️ Complete Scan ${allowed} first — its BEFORE and AFTER photos are required before Scan ${scan.id}.`
-      );
-    } else {
-      setScanWarnMsg(
-        lang === 'ta'
-          ? `⚠️ ஸ்கேன் ${scan.id}: QR கேமரா மூலம் ஸ்கேன் செய்தால் மட்டுமே பச்சையாக மாறும்!`
-          : `⚠️ Scan ${scan.id}: Must be scanned using QR Camera to turn green!`
-      );
-    }
+    // Each scan is submitted on its own, so any checkpoint may be scanned in any
+    // order — the QR itself decides which page the worker is taken to.
+    setScanWarnMsg(
+      lang === 'ta'
+        ? `⚠️ ஸ்கேன் ${scan.id}: QR கேமரா மூலம் ஸ்கேன் செய்தால் மட்டுமே பச்சையாக மாறும்!`
+        : `⚠️ Scan ${scan.id}: Must be scanned using QR Camera to turn green!`
+    );
     setTimeout(() => setScanWarnMsg(null), 4500);
   };
 
@@ -623,77 +589,32 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const [gpsLocationName, setGpsLocationName] = useState<string>('Kamaraj Salai, Coimbatore');
   const [gpsStatus, setGpsStatus] = useState<'acquiring' | 'locked' | 'live'>('locked');
 
-  /**
-   * TATA ACE: the bottom button advances one page at a time. Scan N must be
-   * scanned and photographed before it moves to page N+1, and the record is only
-   * published on the final page.
-   */
-  const handlePageSubmit = async (e?: React.FormEvent) => {
-    if (e?.preventDefault) e.preventDefault();
-    if (isSubmitting) return;
-
-    const pageScan = streetScans.find(s => s.id === currentScanPage);
-
-    if (!pageScan?.isScanned) {
-      setScanWarnMsg(lang === 'ta'
-        ? `⚠️ ஸ்கேன் ${currentScanPage} QR ஐ முதலில் ஸ்கேன் செய்யவும்.`
-        : `⚠️ Scan the Scan ${currentScanPage} QR first, then take its photos.`);
-      setTimeout(() => setScanWarnMsg(null), 5000);
-      return;
-    }
-    if (!pageScan.beforePhoto || !pageScan.afterPhoto) {
-      setScanWarnMsg(lang === 'ta'
-        ? `⚠️ ஸ்கேன் ${currentScanPage} க்கு முன் & பிறகு படங்கள் இரண்டும் தேவை.`
-        : `⚠️ Scan ${currentScanPage} needs its BEFORE and AFTER photos.`);
-      setTimeout(() => setScanWarnMsg(null), 5000);
-      return;
-    }
-
-    if (currentScanPage < TOTAL_SCAN_PAGES) {
-      // Commit this page, then acknowledge it before the worker walks to the
-      // next QR. completedCount reflects this page now being done.
-      playChimeTone('success');
-      setStreetScans(prev => prev.map(s =>
-        s.id === currentScanPage ? { ...s, photosCapturedAt: s.photosCapturedAt || getLiveScanTimeStr() } : s
-      ));
-      setCurrentScanPage(currentScanPage + 1);
-      setIsCameraModalOpen(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      onScanAcknowledged?.({
-        scanNumber: currentScanPage,
-        completedCount: completedScansWithPhotos + 1,
-        isFinalScan: false,
-      });
-      return;
-    }
-
-    await handleSubmit(e);
-    onScanAcknowledged?.({
-      scanNumber: currentScanPage,
-      completedCount: completedScansWithPhotos,
-      isFinalScan: true,
-    });
-  };
-
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e && e.preventDefault) {
       e.preventDefault();
     }
     if (isSubmitting) return;
 
-    // A TATA ACE run must finish all 5 checkpoints, and every one of them must
-    // carry its own BEFORE and AFTER photo before the record can be sent.
+    /**
+     * Each scan is submitted on its own: the worker scans a QR, photographs it,
+     * presses Submit, and the run is recorded. There is no "go to the next
+     * scan" step — the worker returns to the dashboard and comes back for the
+     * next QR when they are ready.
+     */
     if (!isSingleScanVehicle) {
-      const nextId = nextAllowedScanId;
-      if (nextId) {
-        const s = streetScans.find(x => x.id === nextId);
-        const needsScan = !s?.isScanned;
-        setScanWarnMsg(
-          lang === 'ta'
-            ? `⚠️ ஸ்கேன் ${nextId} ${needsScan ? 'இன்னும் ஸ்கேன் செய்யப்படவில்லை' : 'இன் முன் & பிறகு படங்கள் இரண்டும் தேவை'} — முழுமையாக முடிப்பது மட்டுமே சேமிக்க முடியும்.`
-            : `⚠️ Scan ${nextId} ${needsScan ? 'has not been scanned yet' : 'still needs its BEFORE and AFTER photos'} — all 5 checkpoints must be complete before saving.`
-        );
-        setTimeout(() => setScanWarnMsg(null), 6000);
+      const pageScan = streetScans.find(s => s.id === currentScanPage);
+      if (!pageScan?.isScanned) {
+        setScanWarnMsg(lang === 'ta'
+          ? `⚠️ ஸ்கேன் ${currentScanPage} QR ஐ முதலில் ஸ்கேன் செய்யவும்.`
+          : `⚠️ Scan the Scan ${currentScanPage} QR first, then take its photos.`);
+        setTimeout(() => setScanWarnMsg(null), 5000);
+        return;
+      }
+      if (!pageScan.beforePhoto || !pageScan.afterPhoto) {
+        setScanWarnMsg(lang === 'ta'
+          ? `⚠️ ஸ்கேன் ${currentScanPage} க்கு முன் & பிறகு படங்கள் இரண்டும் தேவை.`
+          : `⚠️ Scan ${currentScanPage} needs its BEFORE and AFTER photos.`);
+        setTimeout(() => setScanWarnMsg(null), 5000);
         return;
       }
     } else if (!beforePhoto || !afterPhoto) {
@@ -743,6 +664,14 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       }
     }
 
+    // Freeze the photos onto this checkpoint before the record is built, so the
+    // submitted record definitely carries the pair the worker just captured.
+    const finalScans = streetScans.map(s =>
+      s.id === currentScanPage && s.beforePhoto && s.afterPhoto
+        ? { ...s, photosCapturedAt: s.photosCapturedAt || getLiveScanTimeStr() }
+        : s
+    );
+
     const fallbackRecord: SWMSHouseholdRecord = {
       id: `REC-${Date.now()}`,
       houseId: formData.houseId || scannedHouseId,
@@ -772,15 +701,19 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       vehicleNo: formData.vehicleNo || (formData.vehicleType ? (assignedVehicleId || 'TN66AD6465') : 'TN66AD6465'),
       vehicleType: formData.vehicleType || 'TATA ACE',
       completedScansCount: completedScansCount,
-      streetScans: streetScans,
+      streetScans: finalScans,
       // Every checkpoint carries its own pair; the record-level fields keep the
       // first pair so older admin views still render something meaningful.
-      proofPhoto: streetScans.find(s => s.afterPhoto)?.afterPhoto || afterPhoto || undefined,
-      beforePhoto: streetScans.find(s => s.beforePhoto)?.beforePhoto || beforePhoto || undefined,
-      afterPhoto: streetScans.find(s => s.afterPhoto)?.afterPhoto || afterPhoto || undefined,
-      photos: streetScans.flatMap(s => [s.beforePhoto, s.afterPhoto]).filter(Boolean) as string[],
+      proofPhoto: finalScans.find(s => s.afterPhoto)?.afterPhoto || afterPhoto || undefined,
+      beforePhoto: finalScans.find(s => s.beforePhoto)?.beforePhoto || beforePhoto || undefined,
+      afterPhoto: finalScans.find(s => s.afterPhoto)?.afterPhoto || afterPhoto || undefined,
+      photos: finalScans.flatMap(s => [s.beforePhoto, s.afterPhoto]).filter(Boolean) as string[],
       submittedAt: timestampStr
     };
+
+    // The just-captured pair is stored against its own checkpoint, so the
+    // dashboard counts this scan straight away.
+    setStreetScans(finalScans);
 
     onSubmitSuccess(fallbackRecord, finalCoverageStatus);
     setIsSubmitting(false);
@@ -1477,8 +1410,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             type="submit"
             onClick={(e) => {
               e.preventDefault();
-              if (isSingleScanVehicle) handleSubmit(e);
-              else handlePageSubmit(e);
+              handleSubmit(e);
             }}
             disabled={isSubmitting}
             className={`w-full text-white font-black py-4 px-4 rounded-2xl text-sm sm:text-base transition shadow-xl flex items-center justify-center space-x-2 border active:scale-98 cursor-pointer disabled:opacity-60 ${
@@ -1507,7 +1439,8 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                   : formData.coverageStatus === 'Covered'
                     ? (lang === 'ta' ? 'சேகரிக்கப்பட்டது நிலை சமர்ப்பி (Submit Covered)' : 'Submit Covered Status')
                     : (lang === 'ta' ? '⚠️ சேகரிக்கப்படவில்லை நிலை சமர்ப்பி' : '⚠️ Submit Not Covered Status')
-                /* TATA ACE: one button per page — save this scan, move to the next */
+                /* TATA ACE: submit this scan on its own — the worker returns to
+                   the dashboard and returns for the next QR when ready. */
                 : !activePhotoScan?.isScanned
                 ? (lang === 'ta' ? `📷 ஸ்கேன் ${currentScanPage} QR ஐ ஸ்கேன் செய்யவும்` : `📷 Scan the Scan ${currentScanPage} QR first`)
                 : (!beforePhoto || !afterPhoto)
@@ -1516,51 +1449,11 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                   : !beforePhoto
                     ? (lang === 'ta' ? '📷 முன் படம் எடுக்கவும்' : '📷 Take BEFORE Photo')
                     : (lang === 'ta' ? '📷 பிறகு படம் எடுக்கவும்' : '📷 Take AFTER Photo'))
-                : currentScanPage < TOTAL_SCAN_PAGES
-                ? (lang === 'ta'
-                  ? `✅ ஸ்கேன் ${currentScanPage} சேமி — அடுத்து ஸ்கேன் ${currentScanPage + 1}க்கு செல்லவும்`
-                  : `Save Scan ${currentScanPage} — Go to Scan ${currentScanPage + 1} →`)
                 : (lang === 'ta'
-                  ? '✅ உடையவை முழுமையாக சேமி (5/5)'
-                  : 'Save All 5 Scans (5/5 Done) →')}
+                  ? `✅ ஸ்கேன் ${currentScanPage} சமர்ப்பி (${completedScansWithPhotos}/${TOTAL_SCAN_PAGES})`
+                  : `Submit Scan ${currentScanPage} (${completedScansWithPhotos}/${TOTAL_SCAN_PAGES})`)}
             </span>
           </button>
-
-          {/* Step chips — let the worker jump back to a finished page, never forward */}
-          {!isSingleScanVehicle && (
-            <div className="flex items-center justify-center gap-1.5">
-              {streetScans.map((s) => {
-                const done = isScanComplete(s);
-                const isCurrent = s.id === currentScanPage;
-                const canOpen = done || s.id === currentScanPage;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    disabled={!canOpen}
-                    onClick={() => {
-                      setCurrentScanPage(s.id);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className={`w-9 h-9 rounded-xl text-[11px] font-black border transition ${
-                      isCurrent
-                        ? 'bg-[#00875A] text-white border-emerald-600/40'
-                        : done
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100'
-                        : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                    }`}
-                    title={done
-                      ? `Scan ${s.id}: complete — tap to review its photos`
-                      : isCurrent
-                      ? `Scan ${s.id}: current page`
-                      : `Scan ${s.id}: locked until the earlier scans are saved`}
-                  >
-                    {done ? <Check className="w-4 h-4 mx-auto stroke-[3]" /> : s.id}
-                  </button>
-                );
-              })}
-            </div>
-          )}
         </div>
 
       </form>
