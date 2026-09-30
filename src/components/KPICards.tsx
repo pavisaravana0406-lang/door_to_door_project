@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, ArrowRight, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
+import { ArrowRight, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { KPIMetrics } from '../types';
 import { 
   TotalHouseholdsLogo,
@@ -61,10 +61,6 @@ export const KPICards: React.FC<KPICardsProps> = ({
               <AnimatedCounter value={metrics.totalCollectedToday} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <div className="flex items-center gap-1 text-[12px] font-bold text-slate-700 min-w-0">
-                <TrendingUp className="w-3.5 h-3.5 text-blue-700 flex-shrink-0 transition-colors duration-250 group-hover:text-blue-800" />
-                <span className="truncate">{lang === 'ta' ? 'பதிவு செய்யப்பட்டவை' : 'Registered'}</span>
-              </div>
               <span className="text-[10px] text-blue-800 font-bold flex items-center gap-0.5 flex-shrink-0">
                 {lang === 'ta' ? 'விவரங்கள்' : 'View details'} <ArrowRight className="w-3 h-3" />
               </span>
@@ -95,7 +91,6 @@ export const KPICards: React.FC<KPICardsProps> = ({
               <AnimatedCounter value={metrics.totalCoveredCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-[12px] font-bold text-slate-700 truncate">{lang === 'ta' ? 'சேகரிப்பு முடிவு' : 'Serviced doors'}</span>
               <span className="text-[10px] text-emerald-800 font-bold flex items-center gap-0.5 flex-shrink-0">
                 {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'View collected'} <ArrowRight className="w-3 h-3" />
               </span>
@@ -126,7 +121,6 @@ export const KPICards: React.FC<KPICardsProps> = ({
               <AnimatedCounter value={metrics.totalNotCoveredCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-[12px] font-bold text-slate-700 truncate">{lang === 'ta' ? 'மீண்டும் செல்ல வேண்டும்' : 'Requires re-visit'}</span>
               <span className="text-[10px] text-amber-800 font-bold flex items-center gap-0.5 flex-shrink-0">
                 {lang === 'ta' ? 'அறிக்கைகள்' : 'View reports'} <ArrowRight className="w-3 h-3" />
               </span>
@@ -167,7 +161,6 @@ export const KPICards: React.FC<KPICardsProps> = ({
               <AnimatedCounter value={frequentlyCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
-              <span className="text-[12px] font-bold text-slate-700 truncate">{lang === 'ta' ? 'பூட்டப்பட்டது & விடுபட்டவை' : 'Locked houses'}</span>
               <span className="text-[10px] text-red-800 font-bold flex items-center gap-0.5 flex-shrink-0">
                 {lang === 'ta' ? 'வீட்டு வாரியான பார்வை' : 'Household view'} <ArrowRight className="w-3 h-3" />
               </span>
