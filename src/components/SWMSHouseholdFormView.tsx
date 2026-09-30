@@ -519,19 +519,54 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     handleStartCamera(nextMode);
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  /**
+   * Downscale and re-encode an uploaded photo.
+   *
+   * A modern phone photo is several megabytes, and it was being stored as a
+   * raw base64 data URL. Compressing on the way in keeps a record small enough
+   * to cache and to send, which is what was filling localStorage after a
+   * handful of doors.
+   */
+  const compressUploadedPhoto = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Could not read that image'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('That file is not a readable image'));
+        img.onload = () => {
+          const MAX = 1280;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            const scale = MAX / Math.max(width, height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { reject(new Error('Could not process that image')); return; }
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+        img.src = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const slot = cameraSlot;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        setPhotoForSlot(slot, dataUrl);
-        playChimeTone('success');
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      setPhotoForSlot(slot, await compressUploadedPhoto(file));
+      playChimeTone('success');
+    } catch (err: any) {
+      setCameraError(err?.message || 'Could not use that image.');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const handleRemovePhoto = (slot: PhotoSlot) => {
@@ -718,8 +753,24 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     // dashboard counts this scan straight away.
     setStreetScans(finalScans);
 
-    onSubmitSuccess(fallbackRecord, finalCoverageStatus);
-    setIsSubmitting(false);
+    /**
+     * Always release the button. Saving used to call onSubmitSuccess and only
+     * then clear the flag, so anything thrown inside the save — a full
+     * localStorage being the usual cause, since each proof photo pair is close
+     * to a megabyte of base64 — left the form stuck on "Submitting Status..."
+     * with no way forward.
+     */
+    try {
+      onSubmitSuccess(fallbackRecord, finalCoverageStatus);
+    } catch (err) {
+      console.error('[SWMS] submit failed', err);
+      setScanWarnMsg(lang === 'ta'
+        ? '⚠️ சேமிக்க முடியவில்லை — சேமிப்பு இடம் நிறைந்துள்ளது. மீண்டும் முயற்சி செய்யவும்.'
+        : '⚠️ Could not save — device storage is full. Please try again.');
+      setTimeout(() => setScanWarnMsg(null), 8000);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

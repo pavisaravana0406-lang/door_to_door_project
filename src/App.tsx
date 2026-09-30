@@ -14,15 +14,44 @@ import { isPlaceholderVehicle } from './utils/householdProgress';
 
 const normKey = (v?: string | null): string => (v || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-/**
- * Stable owner for a record. Carts in the same zone share one vehicle code, so
- * the driver name is part of the key; without it two carts would overwrite each
- * other's record for the same door.
- */
 const recordOwnerKey = (r: SWMSHouseholdRecord): string => {
   const driver = normKey(r.driverWorkerName);
   if (!isPlaceholderVehicle(r.vehicleNo)) return `veh:${normKey(r.vehicleNo)}|${driver}`;
   return driver ? `drv:${driver}` : '';
+};
+
+/**
+ * Strip the proof photos from the cached copy of a record.
+ *
+ * Each before/after pair is close to a megabyte of base64, so a handful of
+ * doors overflows the ~5MB localStorage budget. The write then throws and the
+ * worker is left staring at a button that never stops saying "Submitting".
+ * The record in memory keeps its photos, so the success screen and the admin
+ * views still show them; only the offline cache is slimmed.
+ */
+const withoutPhotos = (r: SWMSHouseholdRecord) => ({
+  ...r,
+  beforePhoto: undefined,
+  afterPhoto: undefined,
+  proofPhoto: undefined,
+  photos: undefined,
+  streetScans: (r.streetScans || []).map(s => ({ ...s, beforePhoto: undefined, afterPhoto: undefined })),
+});
+
+/** Write the record cache, degrading rather than throwing when storage is full. */
+const persistRecords = (records: SWMSHouseholdRecord[]): void => {
+  const key = 'swms_household_records';
+  try {
+    localStorage.setItem(key, JSON.stringify(records.map(withoutPhotos)));
+  } catch {
+    try {
+      // Photos already stripped, so if this still fails it is record count.
+      // Keep the most recent 50 and let the server hold the history.
+      localStorage.setItem(key, JSON.stringify(records.slice(0, 50).map(withoutPhotos)));
+    } catch {
+      console.warn('[SWMS] could not cache records locally; continuing without the cache');
+    }
+  }
 };
 
 
@@ -194,9 +223,11 @@ export default function App() {
     showToast(newLang === 'ta' ? 'தமிழ் மொழி மாற்றப்பட்டது' : 'Language set to English');
   };
 
-  // Save records and stats to local storage on change
+  // Save records and stats to local storage on change.
+  // Routed through persistRecords so the photos are stripped and a full quota
+  // cannot throw from inside an effect.
   useEffect(() => {
-    localStorage.setItem('swms_household_records', JSON.stringify(records));
+    persistRecords(records);
   }, [records]);
 
   useEffect(() => {
@@ -220,7 +251,7 @@ export default function App() {
       }
       setRecords(prev => {
         const merged = [...liveRecords, ...prev.filter(p => !liveRecords.some(l => l.id === p.id))];
-        localStorage.setItem('swms_household_records', JSON.stringify(merged));
+        persistRecords(merged);
         return merged;
       });
       if (live?.stats) {
@@ -296,18 +327,20 @@ export default function App() {
       // filter keyed on street alone, so a cart submitting a door wiped a
       // different cart's record for that same street, and both carts' records
       // shared one list.
-const vehicle = normKey(newRecord.vehicleNo);
-  const driver = normKey(newRecord.driverWorkerName);
-  const key = !isPlaceholderVehicle(newRecord.vehicleNo) && vehicle ? `veh:${vehicle}|${driver}` : (driver ? `drv:${driver}` : '');
-  const doorKey = `${normKey(newRecord.streetName)}#${normKey(newRecord.doorNo)}`;
-  const filtered = prev.filter(r => {
-    if (r.id === newRecord.id) return false;
-    if (!key) return true; // no owner recorded, cannot safely dedupe
-    if (recordOwnerKey(r) !== key) return true; // someone else's record
-    return `${normKey(r.streetName)}#${normKey(r.doorNo)}` !== doorKey;
-  });
+      const vehicle = normKey(newRecord.vehicleNo);
+      const driver = normKey(newRecord.driverWorkerName);
+      const key = !isPlaceholderVehicle(newRecord.vehicleNo) && vehicle
+        ? `veh:${vehicle}|${driver}`
+        : (driver ? `drv:${driver}` : '');
+      const doorKey = `${normKey(newRecord.streetName)}#${normKey(newRecord.doorNo)}`;
+      const filtered = prev.filter(r => {
+        if (r.id === newRecord.id) return false;
+        if (!key) return true; // no owner recorded, cannot safely dedupe
+        if (recordOwnerKey(r) !== key) return true; // someone else's record
+        return `${normKey(r.streetName)}#${normKey(r.doorNo)}` !== doorKey;
+      });
       const updated = [newRecord, ...filtered];
-      localStorage.setItem('swms_household_records', JSON.stringify(updated));
+      persistRecords(updated);
       return updated;
     });
 
