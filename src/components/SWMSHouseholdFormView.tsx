@@ -74,6 +74,8 @@ interface SWMSHouseholdFormViewProps {
   assignedVehicleId?: string;
   onBackToScanner: () => void;
   onSubmitSuccess: (record: SWMSHouseholdRecord, status: CoverageStatus) => void;
+  /** Fires after each of the 5 scans is saved, so the parent can acknowledge it. */
+  onScanAcknowledged?: (info: { scanNumber: number; completedCount: number; isFinalScan: boolean }) => void;
 }
 
 // Clean any full URL or prefix into a pure alphanumeric House ID
@@ -98,7 +100,8 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   onToggleLang,
   assignedVehicleId = 'v-obl-pvt',
   onBackToScanner,
-  onSubmitSuccess
+  onSubmitSuccess,
+  onScanAcknowledged
 }) => {
   const [formData, setFormData] = useState<{
     houseId: string;
@@ -647,7 +650,8 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     }
 
     if (currentScanPage < TOTAL_SCAN_PAGES) {
-      // Commit this page and move to the next one.
+      // Commit this page, then acknowledge it before the worker walks to the
+      // next QR. completedCount reflects this page now being done.
       playChimeTone('success');
       setStreetScans(prev => prev.map(s =>
         s.id === currentScanPage ? { ...s, photosCapturedAt: s.photosCapturedAt || getLiveScanTimeStr() } : s
@@ -655,10 +659,20 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       setCurrentScanPage(currentScanPage + 1);
       setIsCameraModalOpen(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      onScanAcknowledged?.({
+        scanNumber: currentScanPage,
+        completedCount: completedScansWithPhotos + 1,
+        isFinalScan: false,
+      });
       return;
     }
 
     await handleSubmit(e);
+    onScanAcknowledged?.({
+      scanNumber: currentScanPage,
+      completedCount: completedScansWithPhotos,
+      isFinalScan: true,
+    });
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {

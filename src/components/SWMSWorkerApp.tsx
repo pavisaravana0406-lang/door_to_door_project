@@ -10,6 +10,7 @@ import { SWMSHouseholdFormView } from './SWMSHouseholdFormView';
 import type { ScannedCheckpointInfo } from './SWMSHouseholdFormView';
 import { SWMSScannerView } from './SWMSScannerView';
 import { DustbinAnimationModal } from './DustbinAnimationModal';
+import { ScanCheckpointAckModal } from './ScanCheckpointAckModal';
 import { SWMSStreetScanQRCard, getStreetScanRoute, StreetScanRoute } from './SWMSStreetScanQRCard';
 import { SWMSCollectionDashboardView, getVehicleRouteDetails, isAssignedRoute } from './SWMSCollectionDashboardView';
 import { SWMSCollectionFormView } from './SWMSCollectionFormView';
@@ -157,6 +158,8 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
 
   // Animation Modal state (legacy household form flow)
   const [isAnimationOpen, setIsAnimationOpen] = useState(false);
+  // Per-scan acknowledgement shown after scans 1-4 are saved.
+  const [ackScan, setAckScan] = useState<{ scanNumber: number; completedCount: number; isFinalScan: boolean } | null>(null);
   const [lastSubmittedRecord, setLastSubmittedRecord] = useState<SWMSHouseholdRecord | null>(null);
   const [submittedStatus, setSubmittedStatus] = useState<CoverageStatus>('Covered');
 
@@ -373,6 +376,21 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
     onRefreshData();
   };
 
+  // Each of the 5 scans is acknowledged individually, so the worker always
+  // knows how many checkpoints are recorded before walking to the next QR.
+  const handleScanAcknowledged = ({
+    scanNumber,
+    completedCount,
+    isFinalScan,
+  }: {
+    scanNumber: number;
+    completedCount: number;
+    isFinalScan: boolean;
+  }) => {
+    if (isFinalScan) return; // the full-run DustbinAnimationModal already reports this
+    setAckScan({ scanNumber, completedCount, isFinalScan });
+  };
+
   return (
     <div className="w-full flex-1 flex flex-col min-h-screen relative bg-white font-sans overflow-x-hidden">
 
@@ -521,6 +539,7 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
               assignedVehicleId={assignedVehicleId}
               onBackToScanner={() => setActiveTab('scan')}
               onSubmitSuccess={handleFormSubmitSuccess}
+              onScanAcknowledged={handleScanAcknowledged}
             />
           </div>
         )}
@@ -721,6 +740,23 @@ export const SWMSWorkerApp: React.FC<SWMSWorkerAppProps> = ({
           </div>
         </div>
       )}
+
+      {/* Per-scan acknowledgement — shown after each of the 5 scans is saved */}
+      <ScanCheckpointAckModal
+        isOpen={!!ackScan}
+        scanNumber={ackScan?.scanNumber ?? 0}
+        completedCount={ackScan?.completedCount ?? 0}
+        totalScans={5}
+        streetName={scannedCheckpoint?.streetName || lastSubmittedRecord?.streetName}
+        ward={scannedCheckpoint?.ward || lastSubmittedRecord?.ward}
+        lang={lang}
+        isFinalScan={false}
+        onClose={() => setAckScan(null)}
+        onNextScan={() => {
+          setAckScan(null);
+          setActiveTab('scan');
+        }}
+      />
 
       {/* DUSTBIN DROP & NOT COVERED ANIMATION MODAL (legacy household flow) */}
       <DustbinAnimationModal
