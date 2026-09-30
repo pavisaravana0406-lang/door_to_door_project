@@ -61,6 +61,23 @@ const normPlate = (v?: string | null): string => {
   return s.replace(/TN(\d{2})([A-Z0-9]{4})/g, (_m, a, b) => `TN${a}${b.replace(/O/g, '0')}`);
 };
 
+/**
+ * 0..1 similarity of two normalised street names, based on the words they
+ * share. Used only to absorb spelling differences between the printed QR
+ * cards and the database; two genuinely different streets share almost
+ * nothing, so they stay well below the threshold.
+ */
+const streetSimilar = (a: string, b: string): number => {
+  const words = (s: string) => s.match(/[A-Z]{3,}|[0-9]+/g) || [];
+  const A = new Set(words(a));
+  const B = new Set(words(b));
+  if (A.size === 0 || B.size === 0) return 0;
+  const shared = [...A].filter((w) => B.has(w)).length;
+  // A single shared word in a two-word name is a strong signal; in an
+  // eight-word name it is not. Weight by how much of the shorter name is covered.
+  return shared / Math.max(1, Math.min(A.size, B.size));
+};
+
 export interface ResolvedRoute {
   streetName: string;
   vehicleType: string;
@@ -86,21 +103,23 @@ for (const r of ROUTE_LIST) {
 }
 
 // The live roster (Neon swms_users) signs workers in with cart codes such as
-// PUSHCART241, which do not appear on the street cards. Map each one to the
-// card that represents its street so pushcart workers are not mis-assigned.
+// PUSHCART241, which do not appear on the street cards. Each code maps to the
+// card for the street that user's worker actually covers, derived from
+// swms_users.full_name -> swms_workers.worker_code -> that worker's street.
 const USERNAME_ALIASES: Record<string, string> = {
-  PUSHCART041: 'MEENAKSHI NAGAR',
-  PUSHCART042: 'VISAGA GARDEN',
-  PUSHCART10SOUTH: 'ALAGAACHI THOTTAM',
-  PUSHCART241: 'SREE NAGAR',
-  PUSHCART242: 'MAGESHWARI NAGAR',
-  PUSHCART351: 'BAJANA KOVIL VEEDHI',
-  PUSHCART352: 'BAARI NAGAR VEEDHI CUT ROAD',
-  PUSHCART491: 'KANDHASAMY LAYOUT',
-  PUSHCART492: 'LAKSHMI MILLS SIGNAL',
-  PUSHCART881: 'MEENAKSHI NAGAR',
-  PUSHCART882: 'ALAGAACHI THOTTAM',
+  PUSHCART041: 'MEENAKSHI NAGAR',        // Muthulakshumi (PC-015)
+  PUSHCART042: 'VISAGA GARDEN',          // Latha
+  PUSHCART10SOUTH: 'NAGAMMA NAYAGAR VEEDHI', // Sellamuthu (PC-009), South Zone
+  PUSHCART241: 'SREE NAGAR',             // Murali (PC-001)
+  PUSHCART242: 'MAGESHWARI NAGAR',       // Yogaraj (PC-002)
+  PUSHCART351: 'BAJANA KOVIL VEEDHI',    // Joothi Mani
+  PUSHCART352: 'BAARI NAGAR VEEDHI CUT ROAD', // Maragadham
+  PUSHCART491: 'KANDHASAMY LAYOUT',      // Palanisamy (PC-005)
+  PUSHCART492: 'LAKSHMI MILLS SIGNAL',  // Vadivukarasi (PC-006)
+  PUSHCART881: 'NAGAMMA NAYAGAR VEEDHI', // Sellamuthu (PC-009)
+  PUSHCART882: 'ALAGAACHI THOTTAM',      // Mahendhiran
 };
+
 
 const UNKNOWN: ResolvedRoute = {
   streetName: '',
@@ -174,7 +193,14 @@ export const isAssignedRoute = (
   const sVeh = normPlate(scanned.vehicleNo);
 
   const streetMatch = !!aStreet && !!sStreet &&
-    (aStreet === sStreet || aStreet.includes(sStreet) || sStreet.includes(aStreet));
+    (aStreet === sStreet
+      || aStreet.includes(sStreet)
+      || sStreet.includes(aStreet)
+      // The printed cards and the database spell some streets differently
+      // (BAJANA KOVIL VEEDHI vs BAJANA KOVIL STREET, Ponni Nagar vs Ponni
+      // Street, Maruthi Envue vs Maruthi Avenue). Compare on shared words so
+      // those variants are not reported as a mismatch.
+      || streetSimilar(aStreet, sStreet) >= 0.6);
   if (streetMatch) return true;
 
   // A cart or generic asset has no usable plate, so street is the whole test.
@@ -465,9 +491,12 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
               : (rec.coverageStatus === 'Covered' ? 5 : rec.coverageStatus === 'Partially Covered' ? 4 : 0);
           }
 
-          const isPushcartType = latestVehicleType === 'PUSH CART' || latestVehicleNo.includes('PUSH');
-          const minScansNeeded = isPushcartType ? 1 : 3;
-          const liveTotalCheckpoints = isPushcartType ? 1 : 5;
+          const isSingleScanType = latestVehicleType === 'PUSH CART'
+            || latestVehicleType === 'BOV'
+            || latestVehicleNo.includes('PUSH')
+            || latestVehicleNo.includes('BOV');
+          const minScansNeeded = isSingleScanType ? 1 : 3;
+          const liveTotalCheckpoints = isSingleScanType ? 1 : 5;
 
           const isFullyCovered = latestScansCount >= minScansNeeded;
           const isPartiallyCovered = latestScansCount > 0 && latestScansCount < minScansNeeded;
@@ -624,8 +653,11 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
           }
         } catch {}
 
-        const isPushcartType = routeInfo.vehicleType === 'PUSH CART' || latestVehicleNo.includes('PUSH');
-        const liveTotalCheckpoints = isPushcartType ? 1 : 5;
+        const isSingleScanType = routeInfo.vehicleType === 'PUSH CART'
+          || routeInfo.vehicleType === 'BOV'
+          || latestVehicleNo.includes('PUSH')
+          || latestVehicleNo.includes('BOV');
+        const liveTotalCheckpoints = isSingleScanType ? 1 : 5;
 
         const routeCheckpoints: QRCheckpoint[] = Array.from({ length: liveTotalCheckpoints }, (_, i) => {
           const cpNo = i + 1;

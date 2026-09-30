@@ -144,21 +144,39 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const isPushCart = (() => {
     if (formData?.vehicleType) {
       const vUpper = formData.vehicleType.toUpperCase();
-      if (vUpper.includes('TATA') || vUpper.includes('ACE') || vUpper.includes('BOV') || vUpper.includes('AUTO') || vUpper.includes('TRUCK')) {
-        return false;
-      }
       if (vUpper.includes('PUSH') || vUpper.includes('PTC') || vUpper.includes('CART')) {
         return true;
+      }
+      if (vUpper.includes('TATA') || vUpper.includes('ACE') || vUpper.includes('BOV') || vUpper.includes('AUTO') || vUpper.includes('TRUCK')) {
+        return false;
       }
     }
     if (assignedVehicleId) {
       const aUpper = assignedVehicleId.toUpperCase();
+      if (aUpper.includes('PUSH') || aUpper.includes('PTC') || aUpper.includes('CART')) {
+        return true;
+      }
       if (aUpper.includes('ACE') || aUpper.includes('TATA') || aUpper.includes('BOV') || aUpper.includes('PVT')) {
         return false;
       }
     }
     return assignedVehicleId === 'v-push-cart';
   })();
+
+  const isBov = (() => {
+    const fromType = formData?.vehicleType?.toUpperCase() || '';
+    if (fromType.includes('BOV')) return true;
+    return (assignedVehicleId || '').toUpperCase().includes('BOV');
+  })();
+
+  /**
+   * Only TATA ACE has five printed checkpoints on the street (the QR cards
+   * generate the -P2..-P5 variants for TATA ACE only). Push carts and BOVs
+   * only ever get a single QR per street, so requiring 5/5 for them made
+   * their status impossible to ever reach 'Covered'.
+   */
+  const isSingleScanVehicle = isPushCart || isBov;
+  const singleScanLabel = isPushCart ? 'Pushcart' : 'BOV';
 
   // Helper to format exact real-time live scan timestamp (e.g. "11:32 AM" or "01:27 PM")
   const getLiveScanTimeStr = (): string => {
@@ -335,7 +353,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
 
   // Sync formData.coverageStatus for vehicle mode
   useEffect(() => {
-    if (!isPushCart) {
+    if (!isSingleScanVehicle) {
       if (completedScansCount === 5) {
         setFormData(prev => ({ ...prev, coverageStatus: 'Covered', notCoveredReason: undefined }));
       } else if (completedScansCount === 4) {
@@ -352,7 +370,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
         }));
       }
     }
-  }, [isPushCart, completedScansCount]);
+  }, [isSingleScanVehicle, completedScansCount]);
 
   // Sync streetScans to localStorage whenever updated
   useEffect(() => {
@@ -548,7 +566,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     });
 
     let finalCoverageStatus: CoverageStatus = formData.coverageStatus;
-    if (!isPushCart) {
+    if (!isSingleScanVehicle) {
       if (completedScansCount === 5) {
         finalCoverageStatus = 'Covered';
       } else if (completedScansCount === 4) {
@@ -560,8 +578,8 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
 
     let finalDoorNo = formData.doorNo ? formData.doorNo.trim() : '';
     if (!finalDoorNo) {
-      if (isPushCart) {
-        finalDoorNo = lang === 'ta' ? 'விருப்பத்திற்குரியது (Pushcart)' : 'Optional (Pushcart)';
+      if (isSingleScanVehicle) {
+        finalDoorNo = lang === 'ta' ? 'விருப்பத்திற்குரியது (Pushcart)' : 'Optional ()';
       } else {
         finalDoorNo = "45";
       }
@@ -781,7 +799,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                 <span className="text-xs font-mono font-extrabold text-[#044D29] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                   Door #{formData.doorNo}
                 </span>
-              ) : isPushCart ? (
+              ) : isSingleScanVehicle ? (
                 <span className="text-[10px] sm:text-[11px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/80">
                   {lang === 'ta' ? 'கதவு எண்: விருப்பத்திற்குரியது (Pushcart)' : 'Door No: Optional (Pushcart)'}
                 </span>
@@ -800,7 +818,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
         </div>
 
         {/* SECOND CARD: STREET COVERAGE STATUS (VEHICLE / PUSHCART) */}
-        {isPushCart ? (
+        {isSingleScanVehicle ? (
           <div className="bg-white p-4 rounded-3xl border-2 border-emerald-300 shadow-sm space-y-4">
             {/* Header row */}
             <div className="flex items-center justify-between">
@@ -1193,7 +1211,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             }}
             disabled={isSubmitting}
             className={`w-full text-white font-black py-4 px-4 rounded-2xl text-sm sm:text-base transition shadow-xl flex items-center justify-center space-x-2 border active:scale-98 cursor-pointer disabled:opacity-60 ${
-              (isPushCart ? formData.coverageStatus === 'Covered' : completedScansCount === 5)
+              (isSingleScanVehicle ? formData.coverageStatus === 'Covered' : completedScansCount === 5)
                 ? 'bg-[#00875A] hover:bg-[#00704A] border-emerald-500/40'
                 : 'bg-[#B91C1C] hover:bg-[#991B1B] border-red-500/40'
             }`}
@@ -1212,9 +1230,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                   : !beforePhoto
                     ? (lang === 'ta' ? '📷 முன் படம் எடுக்கவும்' : '📷 Take BEFORE Photo')
                     : (lang === 'ta' ? '📷 பிறகு படம் எடுக்கவும்' : '📷 Take AFTER Photo'))
-                : isPushCart
+                : isSingleScanVehicle
                 ? formData.coverageStatus === 'Covered'
-                  ? (lang === 'ta' ? 'சேகரிக்கப்பட்டது நிலை சமர்ப்பி (Submit Covered)' : 'Submit Covered Status (Pushcart)')
+                  ? (lang === 'ta' ? 'சேகரிக்கப்பட்டது நிலை சமர்ப்பி (Submit Covered)' : 'Submit Covered Status ()')
                   : (lang === 'ta' ? '⚠️ சேகரிக்கப்படவில்லை நிலை சமர்ப்பி' : '⚠️ Submit Not Covered Status (Pushcart)')
                 : completedScansCount === 5
                 ? 'Submit Street Covered Status (5/5 Done)'
@@ -1452,7 +1470,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                   <div>
                     <label className="block text-[11px] font-bold text-slate-600 mb-1">
                       {lang === 'ta' ? 'கதவு எண் (Door No)' : 'Door No'}{' '}
-                      {isPushCart ? (
+                      {isSingleScanVehicle ? (
                         <span className="text-amber-600 font-extrabold">
                           ({lang === 'ta' ? 'விருப்பத்திற்குரியது - Pushcart' : 'Optional - Pushcart'})
                         </span>
@@ -1467,11 +1485,11 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                       value={formData.doorNo}
                       onChange={(e) => setFormData({ ...formData, doorNo: e.target.value })}
                       className={`w-full bg-slate-50 border rounded-xl px-3 py-2 text-xs font-bold text-slate-900 font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none ${
-                        isPushCart ? 'border-amber-300 focus:ring-amber-500' : 'border-slate-300'
+                        isSingleScanVehicle ? 'border-amber-300 focus:ring-amber-500' : 'border-slate-300'
                       }`}
                       placeholder={
-                        isPushCart
-                          ? (lang === 'ta' ? 'விருப்பத்திற்குரியது (Pushcart)...' : 'Optional for Pushcart...')
+                        isSingleScanVehicle
+                          ? (lang === 'ta' ? 'விருப்பத்திற்குரியது (Pushcart)...' : 'Optional for ' + singleScanLabel + '...')
                           : 'e.g. 45 or 12A'
                       }
                     />
