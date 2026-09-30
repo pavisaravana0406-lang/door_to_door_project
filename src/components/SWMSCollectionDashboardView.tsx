@@ -31,7 +31,7 @@ import { AnimatedCounter } from './AnimatedCounter';
 import { CCMC_QR_ROUTES, type StreetScanRoute } from './SWMSStreetScanQRCard';
 import { WorkerStreetDashboard } from './WorkerStreetDashboard';
 import { WorkerHouseholdDashboard } from './WorkerHouseholdDashboard';
-import { isSingleScanVehicleType } from '../utils/streetProgress';
+import { resolveVehicleKind, resolveVehicleLabel } from '../utils/streetProgress';
 
 interface SWMSCollectionDashboardViewProps {
   lang?: 'en' | 'ta';
@@ -261,14 +261,15 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
   const notCollectedList = allCheckpoints.filter(c => c.status === 'Not Collected');
   const frequentStreets = (dashboard?.streets ?? []).filter(s => s.checkpoints.every(c => c.status !== 'Collected'));
   const frequentList = frequentStreets.flatMap(s => s.checkpoints);
-  const isPushcart = !!assignment?.isPushcart;
-  const vehicleType = assignment?.vehicleType || (isPushcart ? 'Pushcart' : 'Vehicle');
-  const vehicleNumber = assignment?.vehicleNumber || (isPushcart ? (assignment?.workerCode || 'PTC') : '');
-  const vehicleNo = isPushcart
-    ? (assignment?.workerCode || 'Pushcart')
+  // A cart and BOV are shown with the worker glyph, a lorry with the truck glyph.
+  const isCartVehicle = resolveVehicleKind(assignment) === 'cart';
+  const vehicleType = resolveVehicleLabel(assignment);
+  const vehicleNumber = assignment?.vehicleNumber || (isCartVehicle ? (assignment?.workerCode || 'PTC') : '');
+  const vehicleNo = isCartVehicle
+    ? (assignment?.workerCode || vehicleType)
     : (assignment?.vehicleNumber
         ? `${assignment?.vehicleType ? `${assignment.vehicleType} ` : ''}${assignment.vehicleNumber}`
-        : (assignment?.vehicleType || 'Vehicle'));
+        : vehicleType);
   const applyLang = (l: 'en' | 'ta') => {
     if (onSetLanguage) onSetLanguage(l);
     else if (onToggleLang) onToggleLang();
@@ -338,7 +339,7 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
               title={`${vehicleNo}`}
             >
               <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-md sm:rounded-lg bg-white shadow-xs flex items-center justify-center border border-emerald-200 flex-shrink-0 overflow-hidden" title="Assigned Vehicle">
-                {isPushcart ? <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#1E7A38]" /> : <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-[#1E7A38]" />}
+                {isCartVehicle ? <UserCheck className="w-4 h-4 sm:w-5 sm:h-5 text-[#1E7A38]" /> : <Truck className="w-4 h-4 sm:w-5 sm:h-5 text-[#1E7A38]" />}
               </div>
               <div className="text-left pr-1">
                 <div className="text-xs sm:text-sm font-black text-white leading-tight font-mono whitespace-nowrap truncate">{vehicleNumber || vehicleNo}</div>
@@ -412,7 +413,7 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
             title={`${vehicleNo}`}
           >
             <div className="w-5 h-5 rounded-md bg-white shadow-xs flex items-center justify-center border border-emerald-200 flex-shrink-0 overflow-hidden" title="Assigned Vehicle">
-              {isPushcart ? <UserCheck className="w-3 h-3 text-[#1E7A38]" /> : <Truck className="w-3 h-3 text-[#1E7A38]" />}
+              {isCartVehicle ? <UserCheck className="w-3 h-3 text-[#1E7A38]" /> : <Truck className="w-3 h-3 text-[#1E7A38]" />}
             </div>
             <div className="text-left leading-none min-w-0">
               <div className="text-[10px] font-black text-white font-mono truncate">{vehicleNumber || vehicleNo}</div>
@@ -462,7 +463,7 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
         {/* ── VEHICLE-TYPE SPECIFIC WORKER DASHBOARD ──
             TATA ACE workers get the street-wise 5-QR dashboard; BOV and push
             cart workers get the door-wise single-QR dashboard. */}
-        {dashboard && (isSingleScanVehicleType(vehicleType) ? (
+        {dashboard && (resolveVehicleKind(assignment) === 'cart' ? (
           <WorkerHouseholdDashboard
             dashboard={dashboard}
             records={records || []}

@@ -30,6 +30,67 @@ export const isSingleScanVehicleType = (vehicleType?: string | null): boolean =>
 export const isTataAceType = (vehicleType?: string | null): boolean =>
   (vehicleType || '').toUpperCase().includes('TATA') || (vehicleType || '').toUpperCase().includes('ACE');
 
+/**
+ * Which dashboard a worker should see.
+ *
+ * The vehicle type on the assignment is authoritative when it is set, but most
+ * push cart accounts have no vehicle row in the database at all, so their type
+ * arrives as null and they would fall through to the TATA ACE model. Those
+ * accounts are still identifiable from the login itself, so fall back through
+ * the remaining signals in order of how much they can be trusted.
+ */
+export type VehicleKind = 'tata_ace' | 'cart';
+
+export interface VehicleKindInput {
+  vehicleType?: string | null;
+  vehicleNumber?: string | null;
+  vehicleName?: string | null;
+  workerCode?: string | null;
+  userName?: string | null;
+  fullName?: string | null;
+  isPushcart?: boolean;
+}
+
+const CART_TOKENS = ['PUSH CART', 'PUSHCART', 'PUSH', 'PTC', 'CART', 'BOV', 'COMPACTOR', 'OBL'];
+
+export const resolveVehicleKind = (a?: VehicleKindInput | null): VehicleKind => {
+  if (!a) return 'tata_ace';
+
+  // 1. Explicit type from the database.
+  const type = (a.vehicleType || '').toUpperCase();
+  if (type) return isSingleScanVehicleType(type) ? 'cart' : 'tata_ace';
+
+  // 2. The backend already decided this is a cart.
+  if (a.isPushcart) return 'cart';
+
+  // 3. Vehicle name / number naming a cart or BOV.
+  const vehicle = `${a.vehicleNumber || ''} ${a.vehicleName || ''}`.toUpperCase();
+  if (vehicle.trim() && CART_TOKENS.some(t => vehicle.includes(t))) return 'cart';
+
+  // 4. Worker code such as PTC-007.
+  const code = (a.workerCode || '').toUpperCase();
+  if (code && CART_TOKENS.some(t => code.includes(t))) return 'cart';
+
+  // 5. The login itself. PUSHCART881 is unambiguously a cart, and several
+  //    accounts carry "Pushcart" in their name.
+  const identity = `${a.userName || ''} ${a.fullName || ''}`.toUpperCase();
+  if (identity && CART_TOKENS.some(t => identity.includes(t))) return 'cart';
+
+  return 'tata_ace';
+};
+
+/** A human label for the header, never a bare "Vehicle". */
+export const resolveVehicleLabel = (a?: VehicleKindInput | null): string => {
+  if (!a) return 'TATA ACE';
+  const type = (a.vehicleType || '').toUpperCase();
+  if (type) return type;
+  if (resolveVehicleKind(a) === 'cart') {
+    const identity = `${a.userName || ''} ${a.fullName || ''}`.toUpperCase();
+    return identity.includes('BOV') ? 'BOV' : 'PUSH CART';
+  }
+  return 'TATA ACE';
+};
+
 export const totalCheckpointsFor = (vehicleType?: string | null): number =>
   isSingleScanVehicleType(vehicleType) ? SINGLE_CHECKPOINT : TATA_ACE_CHECKPOINTS;
 
