@@ -30,6 +30,7 @@ import {
   Eye
 } from 'lucide-react';
 import { FrequentlyNotCoveredAreaSummary, FrequentlyNotCollectedItem, ZoneName, SWMSHouseholdRecord } from '../types';
+import { buildHouseStreaks, houseKeyOf, inSevereTier, inWatchTier } from '../utils/missedStreaks';
 import { INITIAL_FREQUENTLY_NOT_COVERED_AREAS, INITIAL_FREQUENTLY_NOT_COLLECTED } from '../data/frequentlyNotCollectedData';
 
 interface FrequentlyNotCoveredAreaViewProps {
@@ -45,6 +46,10 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
   onNavigateToLiveTracking,
   onShowToast
 }) => {
+  // Real consecutive missed-day streak per house, so the benchmark tiers
+  // (2-3 days / more than 3 days) reflect actual data instead of a fixed 1.
+  const houseStreaks = useMemo(() => buildHouseStreaks(records), [records]);
+
   // Derive real not covered houses from real submissions
   const derivedHouses: FrequentlyNotCollectedItem[] = useMemo(() => {
     return records
@@ -58,7 +63,7 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
         zone: r.zone || 'Central Zone',
         householderName: r.householderName || 'Resident',
         householderPhone: r.householderContact || '',
-        consecutiveDaysMissed: 1,
+        consecutiveDaysMissed: houseStreaks.get(houseKeyOf(r)) ?? 1,
         totalMissedThisMonth: 1,
         primaryReason: r.notCoveredReason || 'House Locked',
         lastMissedDate: r.submittedAt ? r.submittedAt.split(',')[0] : 'Today',
@@ -70,7 +75,7 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
         remarks: r.remarks || r.notCoveredReason || 'Uncollected household reported',
         actionStatus: 'Pending' as const
       }));
-  }, [records]);
+  }, [records, houseStreaks]);
 
   // Derive real not covered area summaries from real submissions
   const derivedAreas: FrequentlyNotCoveredAreaSummary[] = useMemo(() => {
@@ -85,6 +90,9 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
 
     return Object.entries(streetMap).map(([key, items], idx) => {
       const first = items[0];
+      // An area inherits the worst streak of the houses on it, which is what
+      // makes it a priority for a special BOV sweep.
+      const worstStreak = items.reduce((acc, it) => Math.max(acc, houseStreaks.get(houseKeyOf(it)) ?? 1), 1);
       return {
         areaId: `area-fnc-${101 + idx}`,
         areaName: `${first.streetName} Sector`,
@@ -94,7 +102,7 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
         totalHouses: items.length,
         uncoveredHouses: items.length,
         uncoveredPercentage: 100,
-        consecutiveDaysMissed: 1,
+        consecutiveDaysMissed: worstStreak,
         primaryReason: first.notCoveredReason || 'Access Blocked',
         obstacleType: 'Narrow_Access' as const,
         supervisorName: first.ssName || first.siName || 'Supervisor',
@@ -106,7 +114,7 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
         status: 'Critical Attention' as const
       };
     });
-  }, [records]);
+  }, [records, houseStreaks]);
 
   const [areas, setAreas] = useState<FrequentlyNotCoveredAreaSummary[]>(derivedAreas);
   const [houses, setHouses] = useState<FrequentlyNotCollectedItem[]>(derivedHouses);
@@ -166,20 +174,27 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
   const summaryMetrics = useMemo(() => {
     const totalAreasCount = areas.length;
     const totalImpactedHouses = areas.reduce((acc, curr) => acc + curr.uncoveredHouses, 0);
-    const severeStreakCount = areas.filter((a) => a.consecutiveDaysMissed >= 4).length;
     const dispatchedCount = areas.filter((a) => a.status === 'Dispatched').length;
     const avgPercentage = Math.round(
       areas.reduce((acc, curr) => acc + curr.uncoveredPercentage, 0) / (areas.length || 1)
     );
 
+    // Benchmark tiers count houses, not areas, so the numbers line up with the
+    // "Doors"/"Houses" figures shown on the tiles.
+    const watchStreakHouses = houses.filter((h) => inWatchTier(h.consecutiveDaysMissed)).length;
+    const severeStreakHouses = houses.filter((h) => inSevereTier(h.consecutiveDaysMissed)).length;
+    const severeStreakCount = areas.filter((a) => a.consecutiveDaysMissed > 3).length;
+
     return {
       totalAreasCount,
       totalImpactedHouses,
       severeStreakCount,
+      watchStreakHouses,
+      severeStreakHouses,
       dispatchedCount,
       avgPercentage
     };
-  }, [areas]);
+  }, [areas, houses]);
 
   // Handle action dispatch
   const handleConfirmAction = () => {
@@ -287,7 +302,7 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
       {/* 2. KPI Metric Strip */}
       <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 shadow-xs border border-slate-200 relative overflow-hidden">
         {/* Highlight KPI Metric Strip */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 hover:border-slate-300 transition">
             <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">
               {lang === 'ta' ? 'அடிக்கடி சேகரிக்கப்படாத வீடுகள்' : 'Frequently Not Collected Household'}
@@ -297,12 +312,33 @@ export const FrequentlyNotCoveredAreaView: React.FC<FrequentlyNotCoveredAreaView
             </div>
           </div>
 
-          <div className="bg-slate-50/80 border border-slate-200/80 rounded-2xl p-3.5 sm:p-4 hover:border-slate-300 transition">
+          {/* Benchmark tier: 2-3 consecutive missed days (watch list) */}
+          <div
+            title={lang === 'ta'
+              ? 'தொடராக 2 முதல் 3 நாட்கள் சேகரிக்கப்படாத வீடுகள்'
+              : 'Houses missed on 2 or 3 consecutive days — monitor closely'}
+            className="bg-slate-50/80 border border-amber-200/80 rounded-2xl p-3.5 sm:p-4 hover:border-amber-300 transition"
+          >
             <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">
-              {lang === 'ta' ? 'தொடர் 4+ நாட்கள்' : 'Streak > 3 Days'}
+              {lang === 'ta' ? 'தொடர் 2-3 நாட்கள்' : 'Streak 2-3 Days'}
+            </span>
+            <div className="text-2xl sm:text-3xl font-black text-amber-600 mt-0.5">
+              {summaryMetrics.watchStreakHouses} <span className="text-xs font-normal text-slate-400">Houses</span>
+            </div>
+          </div>
+
+          {/* Benchmark tier: more than 3 consecutive missed days (severe) */}
+          <div
+            title={lang === 'ta'
+              ? 'தொடராக 3 நாட்களுக்கு மேல் சேகரிக்கப்படாத வீடுகள்'
+              : 'Houses missed on more than 3 consecutive days — needs special BOV clearance'}
+            className="bg-slate-50/80 border border-rose-200/80 rounded-2xl p-3.5 sm:p-4 hover:border-rose-300 transition"
+          >
+            <span className="text-[11px] text-slate-500 font-bold uppercase tracking-wider block">
+              {lang === 'ta' ? 'தொடர் 3+ நாட்கள்' : 'Streak > 3 Days'}
             </span>
             <div className="text-2xl sm:text-3xl font-black text-rose-600 mt-0.5">
-              {summaryMetrics.severeStreakCount} <span className="text-xs font-normal text-slate-400">Houses</span>
+              {summaryMetrics.severeStreakHouses} <span className="text-xs font-normal text-slate-400">Houses</span>
             </div>
           </div>
         </div>

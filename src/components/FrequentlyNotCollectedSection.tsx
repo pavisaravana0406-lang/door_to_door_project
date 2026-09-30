@@ -22,6 +22,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { FrequentlyNotCollectedItem, NotCoveredReason } from '../types';
+import { inSevereTier, inWatchTier } from '../utils/missedStreaks';
 
 interface FrequentlyNotCollectedSectionProps {
   items: FrequentlyNotCollectedItem[];
@@ -68,7 +69,10 @@ export const FrequentlyNotCollectedSection: React.FC<FrequentlyNotCollectedSecti
   // Statistics summaries
   const stats = useMemo(() => {
     const total = items.length;
-    const severeStreak = items.filter((i) => i.consecutiveDaysMissed >= 4).length;
+    // Benchmark tiers: 2-3 consecutive missed days is the watch list,
+    // more than 3 days is the severe list.
+    const watchStreak = items.filter((i) => inWatchTier(i.consecutiveDaysMissed)).length;
+    const severeStreak = items.filter((i) => inSevereTier(i.consecutiveDaysMissed)).length;
     const noticeSent = items.filter((i) => i.actionStatus === 'Notice Sent').length;
     const dispatched = items.filter((i) => i.actionStatus === 'Special Dispatch').length;
     const resolved = items.filter((i) => i.actionStatus === 'Resolved').length;
@@ -79,7 +83,7 @@ export const FrequentlyNotCollectedSection: React.FC<FrequentlyNotCollectedSecti
       reasonCounts[i.primaryReason] = (reasonCounts[i.primaryReason] || 0) + 1;
     });
 
-    return { total, severeStreak, noticeSent, dispatched, resolved, reasonCounts };
+    return { total, watchStreak, severeStreak, noticeSent, dispatched, resolved, reasonCounts };
   }, [items]);
 
   const handleExecuteAction = () => {
@@ -233,11 +237,30 @@ export const FrequentlyNotCollectedSection: React.FC<FrequentlyNotCollectedSecti
             <span className="text-sm sm:text-base font-black text-slate-900">{stats.total}</span>
           </div>
 
-          <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 text-center shadow-2xs">
+          {/* Benchmark tier: 2-3 consecutive missed days */}
+          <div
+            title={lang === 'ta'
+              ? 'தொடராக 2 முதல் 3 நாட்கள் சேகரிக்கப்படாத வீடுகள்'
+              : 'Houses missed on 2 or 3 consecutive days — monitor closely'}
+            className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5 text-center shadow-2xs"
+          >
             <span className="text-[10px] text-amber-800 block font-bold uppercase tracking-wider">
-              {lang === 'ta' ? '4+ நாட்கள் விடுபட்டவை' : 'Streak > 3 Days'}
+              {lang === 'ta' ? '2-3 நாட்கள் விடுபட்டவை' : 'Streak 2-3 Days'}
             </span>
-            <span className="text-sm sm:text-base font-black text-amber-700">{stats.severeStreak}</span>
+            <span className="text-sm sm:text-base font-black text-amber-700">{stats.watchStreak}</span>
+          </div>
+
+          {/* Benchmark tier: more than 3 consecutive missed days */}
+          <div
+            title={lang === 'ta'
+              ? 'தொடராக 3 நாட்களுக்கு மேல் சேகரிக்கப்படாத வீடுகள்'
+              : 'Houses missed on more than 3 consecutive days — needs special BOV clearance'}
+            className="bg-rose-50 border border-rose-200 rounded-xl px-3 py-1.5 text-center shadow-2xs"
+          >
+            <span className="text-[10px] text-rose-800 block font-bold uppercase tracking-wider">
+              {lang === 'ta' ? '3+ நாட்கள் விடுபட்டவை' : 'Streak > 3 Days'}
+            </span>
+            <span className="text-sm sm:text-base font-black text-rose-700">{stats.severeStreak}</span>
           </div>
         </div>
       </div>
