@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import {
   Layers, CheckCircle2, AlertTriangle, XCircle, Search, QrCode, Truck, UserCheck,
-  RefreshCw, ChevronDown, Building2, MapPin,
+  RefreshCw, ChevronDown, Building2, MapPin, MapPinned,
 } from 'lucide-react';
 import { KpiSquare } from './KpiSquare';
 import { StreetHistoryRow } from './StreetHistoryRow';
@@ -92,50 +92,47 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* ── KPI SQUARES ─────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
         <KpiSquare
           label={isCart
             ? (lang === 'ta' ? 'மொத்த வீடுகள்' : 'Total Houses')
-            : (lang === 'ta' ? 'மொத்த தெருக்கள்' : 'Total Street Count')}
+            : (lang === 'ta' ? 'தெருக்கள்' : 'Total Streets')}
           value={houses}
-          icon={isCart ? Building2 : Layers}
+          icon={isCart ? Building2 : MapPinned}
           tone="blue"
-          hint={isCart
-            ? (lang === 'ta' ? 'உங்கள் பொறுப்பில்' : 'In your route')
-            : (lang === 'ta' ? 'உங்கள் வழிகள்' : 'Streets in your route')}
           lang={lang}
           onClick={filter === 'all' ? undefined : () => setFilter('all')}
           active={filter === 'all'}
         />
 
         <KpiSquare
-          label={lang === 'ta' ? 'சேகரிக்கப்பட்ட தெரு' : 'Collected Street'}
+          label={lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
           value={isCart ? allRows.filter(r => r.status === 'covered').length : summary.collectedStreets}
           icon={CheckCircle2}
           tone="green"
-          hint={lang === 'ta' ? `${totalCheckpoints}/${totalCheckpoints} QR முடிந்தது` : `All ${totalCheckpoints} QR done`}
+          hint={`${totalCheckpoints}/${totalCheckpoints}`}
           lang={lang}
           onClick={() => setFilter(filter === 'covered' ? 'all' : 'covered')}
           active={filter === 'covered'}
         />
 
         <KpiSquare
-          label={lang === 'ta' ? 'பகுதி சேகரிக்கப்பட்டது' : 'Partially Collected'}
+          label={lang === 'ta' ? 'பகுதி சேகரிப்பு' : 'Partially'}
           value={summary.partialStreets}
           icon={AlertTriangle}
           tone="amber"
-          hint={isCart ? (lang === 'ta' ? 'மூன்று அல்லது நான்கு QR' : '3 or 4 of 5 QR') : (lang === 'ta' ? '3 அல்லது 4 QR' : '3 or 4 of 5 QR')}
+          hint={totalCheckpoints > 1 ? '3-4/5' : ''}
           lang={lang}
           onClick={() => setFilter(filter === 'partial' ? 'all' : 'partial')}
           active={filter === 'partial'}
         />
 
         <KpiSquare
-          label={lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected Street'}
+          label={lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}
           value={summary.notCollectedStreets}
           icon={XCircle}
           tone="rose"
-          hint={lang === 'ta' ? '2 அல்லது குறைவு QR' : 'Fewer than 3 QR'}
+          hint={totalCheckpoints > 1 ? '0-2/5' : ''}
           lang={lang}
           onClick={() => setFilter(filter === 'not_collected' ? 'all' : 'not_collected')}
           active={filter === 'not_collected'}

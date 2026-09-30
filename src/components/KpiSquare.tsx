@@ -41,38 +41,36 @@ export const KpiSquare: React.FC<KpiSquareProps> = ({
       type={onClick ? 'button' : undefined}
       onClick={onClick}
       title={hint || label}
-      className={`group relative w-full aspect-square rounded-2xl bg-white border-2 p-3 sm:p-4
-        flex flex-col items-center justify-center text-center gap-1.5
+      className={`group relative w-full rounded-xl bg-white border p-2.5 sm:p-3
+        flex items-center gap-2.5
         transition-all duration-200 shadow-sm
-        hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.99] active:translate-y-0
+        hover:shadow-lg hover:-translate-y-0.5 active:scale-[0.99] active:translate-y-0
         ${t.ring}
         ${active ? 'ring-2 ring-offset-1 ring-[#00875A]' : ''}
         ${onClick ? 'cursor-pointer' : 'cursor-default'}`}
     >
       {/* soft colour wash that intensifies on hover */}
       <span
-        className={`pointer-events-none absolute inset-0 rounded-2xl bg-gradient-to-br ${t.glow} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200`}
+        className={`pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br ${t.glow} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200`}
       />
 
-      <span className={`relative inline-flex items-center justify-center h-9 w-9 sm:h-11 sm:w-11 rounded-xl border ${t.chip} transition-transform duration-200 group-hover:scale-110`}>
-        <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
+      <span className={`relative flex-shrink-0 inline-flex items-center justify-center h-8 w-8 sm:h-9 sm:w-9 rounded-lg border ${t.chip} transition-transform duration-200 group-hover:scale-110`}>
+        <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
       </span>
 
-      <span
-        className={`relative text-2xl sm:text-3xl font-black font-num leading-none ${t.value} transition-transform duration-200 group-hover:scale-105`}
-      >
-        {value.toLocaleString()}
-      </span>
-
-      <span className="relative text-[10px] sm:text-[11px] font-black uppercase tracking-wide text-slate-500 leading-tight px-1">
-        {label}
-      </span>
-
-      {hint && (
-        <span className="relative text-[9px] sm:text-[10px] font-bold text-slate-400 leading-tight">
-          {hint}
-        </span>
-      )}
+      <div className="relative min-w-0 flex-1">
+        <div className={`text-lg sm:text-xl font-black font-num leading-none ${t.value} transition-transform duration-200 group-hover:scale-105`}>
+          {value.toLocaleString()}
+        </div>
+        <div className="mt-0.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wide text-slate-500 leading-tight truncate">
+          {label}
+        </div>
+        {hint && (
+          <div className="text-[9px] font-bold text-slate-400 leading-tight truncate">
+            {hint}
+          </div>
+        )}
+      </div>
     </Tag>
   );
 };
