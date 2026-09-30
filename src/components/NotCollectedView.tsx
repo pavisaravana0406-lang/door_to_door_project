@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, XCircle, Search, Filter, Eye, RefreshCw, MapPin, Truck, ArrowLeft, CheckCircle2, Phone, AlertCircle, FileSpreadsheet, Lock, Ban, Milestone, HelpCircle } from 'lucide-react';
+import { AlertTriangle, XCircle, Search, Filter, Eye, RefreshCw, MapPin, Truck, ArrowLeft, CheckCircle2, Phone, AlertCircle, FileSpreadsheet, Lock, Ban, HelpCircle } from 'lucide-react';
 import { CollectionRecord } from '../types';
 import { householdNotCoveredIcon, householdNotCoveredFallbackIcon } from '../constants/branding';
 
@@ -137,20 +137,6 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
             </div>
             <div className="text-xl font-black text-amber-900">
               {refusedCount} {lang === 'ta' ? 'வீடுகள்' : 'Households'}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
-          <div className="p-3 bg-orange-50 text-orange-700 rounded-xl">
-            <Milestone className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-xs text-gray-500 font-semibold">
-              {lang === 'ta' ? 'குறுகிய சந்து' : 'Narrow Lane'}
-            </div>
-            <div className="text-xl font-black text-orange-900">
-              {narrowLaneCount} {lang === 'ta' ? 'பகுதிகள்' : 'Locations'}
             </div>
           </div>
         </div>
