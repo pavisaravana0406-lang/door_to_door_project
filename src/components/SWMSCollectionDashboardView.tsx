@@ -29,6 +29,8 @@ import type {
 } from '../types';
 import { AnimatedCounter } from './AnimatedCounter';
 import { CCMC_QR_ROUTES, type StreetScanRoute } from './SWMSStreetScanQRCard';
+import { WorkerStreetDashboard } from './WorkerStreetDashboard';
+import { isSingleScanVehicleType } from '../utils/streetProgress';
 
 interface SWMSCollectionDashboardViewProps {
   lang?: 'en' | 'ta';
@@ -456,7 +458,23 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
           </div>
         )}
 
-        {dashboard && stats && (() => {
+        {/* ── VEHICLE-TYPE SPECIFIC WORKER DASHBOARD ──
+            TATA ACE workers get the street-wise 5-QR dashboard; BOV and push
+            cart workers get the door-wise single-QR dashboard. */}
+        {dashboard && (
+          <WorkerStreetDashboard
+            mode={isSingleScanVehicleType(vehicleType) ? 'cart' : 'tata_ace'}
+            dashboard={dashboard}
+            records={records || []}
+            assignment={assignment ?? null}
+            lang={lang}
+            loading={loading}
+            onOpenScanner={onOpenScanner}
+            onRefresh={load}
+          />
+        )}
+
+        {false && dashboard && stats && (() => {
           const currentVehicleKey = assignment?.vehicleNumber || vehicleNumber || vehicleNo || userName;
           const routeInfo = getVehicleRouteDetails(currentVehicleKey);
 
@@ -617,7 +635,9 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
         })()}
       </div>
 
-      {/* ── FLOATING SCAN BUTTON — solid professional pill ── */}
+      {/* ── FLOATING SCAN BUTTON — superseded by the sticky SCAN QR button
+           inside WorkerStreetDashboard, kept only for the legacy view ── */}
+      {false && (
       <div className="fixed bottom-4 sm:bottom-5 left-0 right-0 z-40 flex items-center justify-center pointer-events-none px-4">
         <button
           onClick={onOpenScanner}
@@ -633,9 +653,10 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
           </span>
         </button>
       </div>
+      )}
 
-      {/* ── QR DETAILS SHEET (opens by tapping a KPI card) ── */}
-      {viewFilter && (() => {
+      {/* ── QR DETAILS SHEET (legacy KPI sheet, superseded by the new dashboard) ── */}
+      {false && viewFilter && (() => {
         const currentVehicleKey = assignment?.vehicleNumber || vehicleNumber || vehicleNo || userName;
         const routeInfo = getVehicleRouteDetails(currentVehicleKey);
         const latestStreetName = routeInfo.streetName;
