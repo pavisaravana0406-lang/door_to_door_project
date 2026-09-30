@@ -13,6 +13,7 @@ import { RecordDetailModal } from './RecordDetailModal';
 import { FrequentlyNotCoveredAreaView } from './FrequentlyNotCoveredAreaView';
 import { AIPredictionAnalyticsSection } from './AIPredictionAnalyticsSection';
 import { QRCheckpointManagementView } from './QRCheckpointManagementView';
+import { ZONE_NAMES } from '../constants/wards';
 
 import {
   INITIAL_KPI_METRICS,
@@ -177,9 +178,17 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
     overallCoveragePercentage: coveragePercent,
   };
 
-  // Zonal summaries calculated dynamically from real records
+  // Zonal summaries calculated dynamically from real records.
+  // Every zone is always listed, even when it has no records yet, so the
+  // summary does not silently shrink to just the zones that happen to
+  // have data.
   const zoneSummaries = React.useMemo(() => {
     const zoneMap: { [zone: string]: { total: number; collected: number; notCollected: number } } = {};
+
+    for (const z of ZONE_NAMES) {
+      zoneMap[z] = { total: 0, collected: 0, notCollected: 0 };
+    }
+
     (sbmRecords || []).forEach(r => {
       const z = r.zone || 'Central Zone';
       if (!zoneMap[z]) {
@@ -193,13 +202,16 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
       }
     });
 
-    return Object.entries(zoneMap).map(([zone, data]) => ({
-      zone,
-      totalLocations: data.total,
-      collectedCount: data.collected,
-      notCollectedCount: data.notCollected,
-      coveragePercentage: data.total > 0 ? Number(((data.collected / data.total) * 100).toFixed(2)) : 0
-    }));
+    return ZONE_NAMES.map((zone) => {
+      const data = zoneMap[zone];
+      return {
+        zone,
+        totalLocations: data.total,
+        collectedCount: data.collected,
+        notCollectedCount: data.notCollected,
+        coveragePercentage: data.total > 0 ? Number(((data.collected / data.total) * 100).toFixed(2)) : 0
+      };
+    });
   }, [sbmRecords]);
 
   const handleInspectRecord = (record: CollectionRecord) => {
