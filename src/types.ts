@@ -8,6 +8,13 @@ export interface StreetScanPoint {
   taLocationName: string;
   isScanned: boolean;
   scannedAt?: string;
+  /**
+   * Proof photos for THIS checkpoint, captured after it was scanned. Both must
+   * be present before the next checkpoint can be scanned.
+   */
+  beforePhoto?: string;
+  afterPhoto?: string;
+  photosCapturedAt?: string;
 }
 
 export type NotCoveredReason = 

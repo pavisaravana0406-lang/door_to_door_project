@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { CoverageStatus, NotCoveredReason, SWMSHouseholdRecord, StreetScanPoint } from '../types';
 import { playChimeTone } from '../utils/audioHelper';
 import { HouseholdLocationMapModal } from './HouseholdLocationMapModal';
@@ -11,6 +11,7 @@ import {
   MapPin, 
   Building2, 
   Truck, 
+  Lock,
   ShieldCheck, 
   FileText,
   MoreVertical,
@@ -307,6 +308,10 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
         return sc;
       });
 
+      // The proof-photo panel always follows the checkpoint that was just
+      // scanned, so each of the 5 scans gets its own before/after pair.
+      setActivePhotoScanId(targetPoint || 1);
+
       try {
         const raw = localStorage.getItem(SCAN_KEY);
         const obj = raw ? JSON.parse(raw) : {};
@@ -329,6 +334,33 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
 
   // Compute vehicle coverage state
   const completedScansCount = streetScans.filter(s => s.isScanned).length;
+
+  // Which checkpoint's before/after pair the photo panel is currently showing.
+  // Defaults to the first checkpoint that is scanned but not yet fully photographed.
+  const [activePhotoScanId, setActivePhotoScanId] = useState<number>(1);
+  const activePhotoScan = useMemo(
+    () => streetScans.find(s => s.id === activePhotoScanId) || streetScans[0],
+    [streetScans, activePhotoScanId]
+  );
+
+  /** A checkpoint is only complete once scanned AND both photos are captured. */
+  const isScanComplete = (s: StreetScanPoint): boolean =>
+    s.isScanned && !!s.beforePhoto && !!s.afterPhoto;
+
+  const completedScansWithPhotos = streetScans.filter(isScanComplete).length;
+
+  /**
+   * The highest checkpoint the worker may scan next. Checkpoints must be done
+   * strictly in order with photos in between, so this is the first incomplete
+   * one — every later checkpoint stays locked until it is finished.
+   */
+  const nextAllowedScanId = useMemo(() => {
+    const ordered = [...streetScans].sort((a, b) => a.id - b.id);
+    for (const s of ordered) {
+      if (!isScanComplete(s)) return s.id;
+    }
+    return 0; // everything complete
+  }, [streetScans]);
 
   // Reset all 5 checkpoints to Pending X
   const handleResetAllScans = () => {
@@ -354,9 +386,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   // Sync formData.coverageStatus for vehicle mode
   useEffect(() => {
     if (!isSingleScanVehicle) {
-      if (completedScansCount === 5) {
+      if (completedScansWithPhotos === 5) {
         setFormData(prev => ({ ...prev, coverageStatus: 'Covered', notCoveredReason: undefined }));
-      } else if (completedScansCount === 4) {
+      } else if (completedScansWithPhotos === 4) {
         setFormData(prev => ({ 
           ...prev, 
           coverageStatus: 'Partially Covered',
@@ -370,7 +402,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
         }));
       }
     }
-  }, [isSingleScanVehicle, completedScansCount]);
+  }, [isSingleScanVehicle, completedScansWithPhotos]);
 
   // Sync streetScans to localStorage whenever updated
   useEffect(() => {
@@ -385,12 +417,26 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   }, [streetScans, formData.streetName]);
 
   const [scanWarnMsg, setScanWarnMsg] = useState<string | null>(null);
-  // Two mandatory proof photos: the bin before collection and after collection.
-  const [beforePhoto, setBeforePhoto] = useState<string | null>(null);
-  const [afterPhoto, setAfterPhoto] = useState<string | null>(null);
+  // The two mandatory proof photos belong to the checkpoint currently shown in
+  // the photo panel, so each of the 5 scans keeps its own pair. For the
+  // single-scan vehicles there is only ever checkpoint 1.
+  const beforePhoto: string | null = activePhotoScan?.beforePhoto || null;
+  const afterPhoto: string | null = activePhotoScan?.afterPhoto || null;
   // Which slot the live camera is currently filling.
   const [cameraSlot, setCameraSlot] = useState<PhotoSlot>('before');
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  /** Write a captured photo into the active checkpoint's record. */
+  const updateActiveScanPhotos = (slot: PhotoSlot, dataUrl: string | null) => {
+    if (!activePhotoScan) return;
+    setStreetScans(prev => prev.map(s => {
+      if (s.id !== activePhotoScan.id) return s;
+      const next = slot === 'before'
+        ? { ...s, beforePhoto: dataUrl || undefined }
+        : { ...s, afterPhoto: dataUrl || undefined };
+      return { ...next, photosCapturedAt: next.beforePhoto && next.afterPhoto ? getLiveScanTimeStr() : next.photosCapturedAt };
+    }));
+  };
 
   // Live WebCam / Camera Viewfinder State & Refs
   const [isCameraModalOpen, setIsCameraModalOpen] = useState(false);
@@ -400,8 +446,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   const streamRef = React.useRef<MediaStream | null>(null);
 
   const setPhotoForSlot = (slot: PhotoSlot, dataUrl: string) => {
-    if (slot === 'before') setBeforePhoto(dataUrl);
-    else setAfterPhoto(dataUrl);
+    updateActiveScanPhotos(slot, dataUrl);
   };
 
   const openCameraFor = (slot: PhotoSlot) => {
@@ -492,19 +537,35 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
   };
 
   const handleRemovePhoto = (slot: PhotoSlot) => {
-    if (slot === 'before') setBeforePhoto(null);
-    else setAfterPhoto(null);
+    updateActiveScanPhotos(slot, null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleScanCardClick = (scan: StreetScanPoint) => {
-    if (scan.isScanned) return;
+    // Clicking a checkpoint selects it for the photo panel, so the worker can
+    // review or recapture an earlier scan's photos.
+    if (scan.isScanned) {
+      setActivePhotoScanId(scan.id);
+      return;
+    }
     playChimeTone('warning');
-    setScanWarnMsg(
-      lang === 'ta'
-        ? `⚠️ ஸ்கேன் ${scan.id}: QR கேமரா மூலம் ஸ்கேன் செய்தால் மட்டுமே பச்சையாக மாறும்!`
-        : `⚠️ Scan ${scan.id}: Must be scanned using QR Camera to turn green!`
-    );
+    // Sequential rule: only the next unfinished checkpoint may be scanned, and
+    // the previous one must already have both of its proof photos.
+    const allowed = nextAllowedScanId;
+    if (allowed && scan.id !== allowed) {
+      const blocker = streetScans.find(s => s.id === allowed);
+      setScanWarnMsg(
+        lang === 'ta'
+          ? `⚠️ ஸ்கேன் ${scan.id} பதிலாக முதலில் ஸ்கேன் ${allowed} முடிப்படுத்தவும் — அதற்கு முன் & பிறகு படங்கள் இரண்டும் தேவை.`
+          : `⚠️ Complete Scan ${allowed} first — its BEFORE and AFTER photos are required before Scan ${scan.id}.`
+      );
+    } else {
+      setScanWarnMsg(
+        lang === 'ta'
+          ? `⚠️ ஸ்கேன் ${scan.id}: QR கேமரா மூலம் ஸ்கேன் செய்தால் மட்டுமே பச்சையாக மாறும்!`
+          : `⚠️ Scan ${scan.id}: Must be scanned using QR Camera to turn green!`
+      );
+    }
     setTimeout(() => setScanWarnMsg(null), 4500);
   };
 
@@ -538,8 +599,23 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
     }
     if (isSubmitting) return;
 
-    // Both proof photos (before + after) are mandatory.
-    if (!beforePhoto || !afterPhoto) {
+    // A TATA ACE run must finish all 5 checkpoints, and every one of them must
+    // carry its own BEFORE and AFTER photo before the record can be sent.
+    if (!isSingleScanVehicle) {
+      const nextId = nextAllowedScanId;
+      if (nextId) {
+        const s = streetScans.find(x => x.id === nextId);
+        const needsScan = !s?.isScanned;
+        setScanWarnMsg(
+          lang === 'ta'
+            ? `⚠️ ஸ்கேன் ${nextId} ${needsScan ? 'இன்னும் ஸ்கேன் செய்யப்படவில்லை' : 'இன் முன் & பிறகு படங்கள் இரண்டும் தேவை'} — முழுமையாக முடிப்பது மட்டுமே சேமிக்க முடியும்.`
+            : `⚠️ Scan ${nextId} ${needsScan ? 'has not been scanned yet' : 'still needs its BEFORE and AFTER photos'} — all 5 checkpoints must be complete before saving.`
+        );
+        setTimeout(() => setScanWarnMsg(null), 6000);
+        return;
+      }
+    } else if (!beforePhoto || !afterPhoto) {
+      // Single-scan vehicles (BOV / push cart) need one before/after pair.
       const missing = !beforePhoto && !afterPhoto
         ? (lang === 'ta' ? 'குப்பை எடுக்கும் முன் & பிறகு படங்கள் இரண்டும் கட்டாயம்.'
                           : 'Both the BEFORE and AFTER photos are required.')
@@ -567,9 +643,9 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
 
     let finalCoverageStatus: CoverageStatus = formData.coverageStatus;
     if (!isSingleScanVehicle) {
-      if (completedScansCount === 5) {
+      if (completedScansWithPhotos === 5) {
         finalCoverageStatus = 'Covered';
-      } else if (completedScansCount === 4) {
+      } else if (completedScansWithPhotos === 4) {
         finalCoverageStatus = 'Partially Covered';
       } else {
         finalCoverageStatus = 'Not Covered';
@@ -615,10 +691,12 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
       vehicleType: formData.vehicleType || 'TATA ACE',
       completedScansCount: completedScansCount,
       streetScans: streetScans,
-      proofPhoto: afterPhoto || undefined,
-      beforePhoto: beforePhoto || undefined,
-      afterPhoto: afterPhoto || undefined,
-      photos: [beforePhoto, afterPhoto].filter(Boolean) as string[],
+      // Every checkpoint carries its own pair; the record-level fields keep the
+      // first pair so older admin views still render something meaningful.
+      proofPhoto: streetScans.find(s => s.afterPhoto)?.afterPhoto || afterPhoto || undefined,
+      beforePhoto: streetScans.find(s => s.beforePhoto)?.beforePhoto || beforePhoto || undefined,
+      afterPhoto: streetScans.find(s => s.afterPhoto)?.afterPhoto || afterPhoto || undefined,
+      photos: streetScans.flatMap(s => [s.beforePhoto, s.afterPhoto]).filter(Boolean) as string[],
       submittedAt: timestampStr
     };
 
@@ -968,13 +1046,13 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                 </h4>
               </div>
               <span className={`text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full border flex-shrink-0 ${
-                completedScansCount === 5
+                completedScansWithPhotos === 5
                   ? 'bg-emerald-100 text-[#00875A] border-emerald-300'
-                  : completedScansCount === 4
+                  : completedScansWithPhotos === 4
                   ? 'bg-amber-100 text-amber-900 border-amber-300'
                   : 'bg-[#FFEAEA] text-[#DC2626] border-red-200'
               }`}>
-                {completedScansCount === 5 ? 'Covered' : completedScansCount === 4 ? 'Partially Covered' : 'Not Covered'}
+                {completedScansWithPhotos === 5 ? 'Covered' : completedScansWithPhotos === 4 ? 'Partially Covered' : 'Not Covered'}
               </span>
             </div>
 
@@ -982,7 +1060,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-1.5 border-t border-slate-100 pt-2.5 min-w-0">
               <div className="flex items-center space-x-1.5 text-[11px] sm:text-xs font-black text-slate-800 min-w-0">
                 <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00875A] flex-shrink-0" />
-                <span className="truncate">5 Checkpoints ({completedScansCount}/5 Scanned)</span>
+                <span className="truncate">5 Checkpoints ({completedScansWithPhotos}/5 Scanned + Photographed)</span>
               </div>
               <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0 ml-auto">
                 <button
@@ -1016,7 +1094,13 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                 gutters and text below the xs breakpoint so nothing clips. */}
             <div className="grid grid-cols-5 gap-0.5 xs:gap-1 sm:gap-2.5 w-full">
               {streetScans.map((scan) => {
-                const isDone = scan.isScanned;
+                const isDone = isScanComplete(scan);
+                const scannedOnly = scan.isScanned && !isDone;
+                const isActive = activePhotoScan?.id === scan.id;
+                const isLocked = !isSingleScanVehicle
+                  && nextAllowedScanId > 0
+                  && scan.id > nextAllowedScanId
+                  && !isDone;
                 return (
                   <div
                     key={scan.id}
@@ -1024,17 +1108,33 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                     className={`flex flex-col items-center justify-center py-1.5 xs:py-2 sm:py-3 px-0 rounded-xl sm:rounded-2xl border sm:border-2 text-center select-none cursor-pointer transition active:scale-95 min-w-0 ${
                       isDone
                         ? 'bg-[#E6F4EA] border-[#00D084] text-slate-900 shadow-2xs'
+                        : scannedOnly
+                        ? 'bg-amber-50 border-amber-300 text-amber-900'
+                        : isLocked
+                        ? 'bg-slate-50 border-slate-200 text-slate-400'
                         : 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
-                    }`}
-                    title={isDone ? `Scan ${scan.id} Scanned ✓` : `Scan ${scan.id}: QR Camera scan required`}
+                    } ${isActive ? 'ring-2 ring-offset-1 ring-emerald-500' : ''}`}
+                    title={isDone
+                      ? `Scan ${scan.id}: scanned with both proof photos ✓`
+                      : scannedOnly
+                      ? `Scan ${scan.id}: scanned — BEFORE and AFTER photos still required`
+                      : isLocked
+                      ? `Scan ${scan.id}: locked until Scan ${nextAllowedScanId} is completed with photos`
+                      : `Scan ${scan.id}: QR Camera scan required`}
                   >
                     <div className={`w-5 h-5 xs:w-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-black mb-0.5 sm:mb-1 shadow-2xs flex-shrink-0 ${
                       isDone
                         ? 'bg-[#00A86B] text-white'
+                        : scannedOnly
+                        ? 'bg-amber-500 text-white'
                         : 'bg-[#EF4444] text-white'
                     }`}>
                       {isDone ? (
                         <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
+                      ) : scannedOnly ? (
+                        <Camera className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      ) : isLocked ? (
+                        <Lock className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                       ) : (
                         <X className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[3]" />
                       )}
@@ -1043,43 +1143,61 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                       Scan {scan.id}
                     </span>
                     <span className={`text-[8px] xs:text-[9px] sm:text-[11px] font-bold mt-0.5 leading-tight truncate w-full ${
-                      isDone ? 'text-[#00A86B] font-mono' : 'text-[#DC2626]'
+                      isDone ? 'text-[#00A86B] font-mono' : scannedOnly ? 'text-amber-700' : isLocked ? 'text-slate-400' : 'text-[#DC2626]'
                     }`}>
-                      {isDone ? (scan.scannedAt || 'Done ✓') : 'Pending X'}
+                      {isDone
+                        ? (scan.scannedAt || 'Done ✓')
+                        : scannedOnly
+                        ? (lang === 'ta' ? 'படம் தேவை' : 'Photos due')
+                        : isLocked
+                        ? (lang === 'ta' ? 'பூட்டப்பட்டது' : 'Locked')
+                        : 'Pending X'}
                     </span>
                   </div>
                 );
               })}
             </div>
 
+            {/* Sequential rule reminder, so the worker knows why later scans are blocked */}
+            {!isSingleScanVehicle && nextAllowedScanId > 0 && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-start gap-2 text-[11px] sm:text-xs font-bold text-amber-900">
+                <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                <span>
+                  {lang === 'ta'
+                    ? `அடுத்து ஸ்கேன் ${nextAllowedScanId} மட்டுமே ஸ்கேன் செய்யலாம் — அதன் முன் & பிறகு படங்கள் இரண்டையும் பதிவிடுங்கள். (${completedScansWithPhotos}/5 முடிந்தது)`
+                    : `Scan ${nextAllowedScanId} is the next one — upload its BEFORE and AFTER photos to unlock the rest. (${completedScansWithPhotos}/5 complete)`}
+                </span>
+              </div>
+            )}
+
             {/* Bottom Alert Banner inside Second Card */}
             <div className={`p-3 sm:p-3.5 rounded-2xl border flex items-center justify-between gap-2.5 sm:gap-3 ${
-              completedScansCount === 5
+              completedScansWithPhotos === 5
                 ? 'bg-emerald-50 border-emerald-200 text-[#00875A]'
-                : completedScansCount === 4
+                : completedScansWithPhotos === 4
                 ? 'bg-amber-50 border-amber-200 text-amber-900'
                 : 'bg-[#FFEAEA] border-[#FCA5A5] text-[#991B1B]'
             }`}>
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center flex-shrink-0 font-black text-white text-sm sm:text-base ${
-                  completedScansCount === 5
+                  completedScansWithPhotos === 5
                     ? 'bg-[#00A86B]'
-                    : completedScansCount === 4
+                    : completedScansWithPhotos === 4
                     ? 'bg-amber-600'
                     : 'bg-[#DC2626]'
                 }`}>
-                  {completedScansCount === 5 ? '✓' : '!'}
+                  {completedScansWithPhotos === 5 ? '✓' : '!'}
                 </div>
                 <div className="min-w-0 flex-1">
                   <h5 className="text-xs sm:text-sm font-black leading-tight text-[#C53030] break-words sm:truncate">
-                    {completedScansCount === 5
+                    {completedScansWithPhotos === 5
                       ? 'STREET COVERED (5/5 CHECKPOINTS)'
-                      : completedScansCount === 4
+                      : completedScansWithPhotos === 4
                       ? 'PARTIALLY COVERED (4/5 CHECKPOINTS)'
                       : `NOT COVERED (${completedScansCount}/5 CHECKPOINTS)`}
                   </h5>
                   <p className="text-[11px] sm:text-xs font-semibold text-[#991B1B] mt-0.5 break-words sm:truncate">
-                    {completedScansCount === 5
+                    {completedScansWithPhotos === 5
                       ? 'All 5 checkpoints scanned • 100% Covered ✓'
                       : `${5 - completedScansCount} or fewer checkpoints scanned • Not Covered ⚠️ (${5 - completedScansCount} pending)`}
                   </p>
@@ -1087,7 +1205,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
               </div>
 
               <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                completedScansCount === 5 ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
+                completedScansWithPhotos === 5 ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse'
               }`} />
             </div>
           </div>
@@ -1122,6 +1240,15 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                 : (lang === 'ta' ? 'கட்டாயம் / Mandatory' : 'Mandatory')}
             </span>
           </div>
+
+          {/* Shows which of the 5 checkpoints this photo pair belongs to */}
+          {!isSingleScanVehicle && (
+            <div className="text-[11px] font-black text-slate-700 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1">
+              {lang === 'ta'
+                ? `ஸ்கேன் ${activePhotoScan?.id ?? 1} க்கான படங்கள்`
+                : `Photos for Scan ${activePhotoScan?.id ?? 1} of 5`}
+            </div>
+          )}
 
           <div className="border-t border-slate-100 pt-2.5 space-y-3">
             {(!beforePhoto || !afterPhoto) && (
@@ -1211,7 +1338,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
             }}
             disabled={isSubmitting}
             className={`w-full text-white font-black py-4 px-4 rounded-2xl text-sm sm:text-base transition shadow-xl flex items-center justify-center space-x-2 border active:scale-98 cursor-pointer disabled:opacity-60 ${
-              (isSingleScanVehicle ? formData.coverageStatus === 'Covered' : completedScansCount === 5)
+              (isSingleScanVehicle ? formData.coverageStatus === 'Covered' : completedScansWithPhotos === 5)
                 ? 'bg-[#00875A] hover:bg-[#00704A] border-emerald-500/40'
                 : 'bg-[#B91C1C] hover:bg-[#991B1B] border-red-500/40'
             }`}
@@ -1234,7 +1361,7 @@ export const SWMSHouseholdFormView: React.FC<SWMSHouseholdFormViewProps> = ({
                 ? formData.coverageStatus === 'Covered'
                   ? (lang === 'ta' ? 'சேகரிக்கப்பட்டது நிலை சமர்ப்பி (Submit Covered)' : 'Submit Covered Status ()')
                   : (lang === 'ta' ? '⚠️ சேகரிக்கப்படவில்லை நிலை சமர்ப்பி' : '⚠️ Submit Not Covered Status (Pushcart)')
-                : completedScansCount === 5
+                : completedScansWithPhotos === 5
                 ? 'Submit Street Covered Status (5/5 Done)'
                 : `⚠️ Submit Not Covered Status (${completedScansCount}/5 Done)`}
             </span>

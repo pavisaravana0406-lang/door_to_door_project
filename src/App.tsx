@@ -9,6 +9,7 @@ import { CommissionerConsole } from './components/CommissionerConsole';
 import { INITIAL_SWMS_RECORDS } from './data/mockData';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { fetchSWMSData, authMe, authLogout } from './api/client';
+import { isSubmissionComplete } from './utils/missedStreaks';
 
 
 export default function App() {
@@ -264,6 +265,18 @@ export default function App() {
   }, [fetchSwmsData]);
 
   const handleRecordCreated = (newRecord: SWMSHouseholdRecord) => {
+    // A record is only published to the admin dashboard once the worker's run is
+    // genuinely finished. For a 5-scan vehicle that means all 5 checkpoints are
+    // scanned AND each carries its own before/after photo; otherwise the record
+    // stays out of the dashboard rather than showing as partially done.
+    if (!isSubmissionComplete(newRecord)) {
+      console.warn('[SWMS] withheld incomplete record from admin dashboard', newRecord.id, {
+        scans: (newRecord.streetScans || []).filter(s => s.isScanned).length,
+        scansWithPhotos: (newRecord.streetScans || []).filter(s => s.isScanned && s.beforePhoto && s.afterPhoto).length,
+      });
+      return;
+    }
+
     setRecords(prev => {
       const filtered = prev.filter(
         r => r.id !== newRecord.id && r.streetName.toLowerCase().trim() !== newRecord.streetName.toLowerCase().trim()

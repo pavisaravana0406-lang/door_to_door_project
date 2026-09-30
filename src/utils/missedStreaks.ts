@@ -1,4 +1,4 @@
-import { SWMSHouseholdRecord } from '../types';
+import { SWMSHouseholdRecord, StreetScanPoint } from '../types';
 
 /**
  * Consecutive missed-collection streaks.
@@ -88,3 +88,31 @@ export const STREAK_BENCHMARKS = {
 
 export const inWatchTier = (streak: number): boolean => streak >= 2 && streak <= 3;
 export const inSevereTier = (streak: number): boolean => streak > 3;
+
+/** A checkpoint counts as done only when scanned AND photographed both sides. */
+export const isCheckpointComplete = (
+  s: Pick<StreetScanPoint, 'isScanned' | 'beforePhoto' | 'afterPhoto'>
+): boolean => s.isScanned && !!s.beforePhoto && !!s.afterPhoto;
+
+const SINGLE_SCAN_TYPES = ['PUSH CART', 'PUSH CART ', 'BOV', 'COMPACTOR', 'OBL'];
+
+/**
+ * A submission is publishable to the admin dashboard only when the work is
+ * genuinely finished: all 5 checkpoints scanned with their own before/after
+ * photos for a multi-scan vehicle, or one completed pair for a BOV / push cart.
+ */
+export const isSubmissionComplete = (r: {
+  vehicleType?: string;
+  streetScans?: StreetScanPoint[];
+  beforePhoto?: string;
+  afterPhoto?: string;
+}): boolean => {
+  const vType = (r.vehicleType || '').toUpperCase();
+  const isSingleScan = SINGLE_SCAN_TYPES.some(t => vType.includes(t.trim()));
+
+  const scans = r.streetScans || [];
+  if (isSingleScan || scans.length === 0) {
+    return !!(r.beforePhoto && r.afterPhoto);
+  }
+  return scans.length === 5 && scans.every(isCheckpointComplete);
+};
