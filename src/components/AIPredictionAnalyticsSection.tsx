@@ -58,6 +58,35 @@ interface AIPredictionAnalyticsSectionProps {
   onDispatchAction?: (actionType: string) => void;
 }
 
+/**
+ * Hover-only detail popup for a Ward / Zone label.
+ * Nothing extra is shown until the label is hovered (desktop),
+ * tapped (touch via :active) or keyboard-focused — the numbers
+ * live only inside the popup, so tables stay clean.
+ */
+export const GeoHoverDetail: React.FC<{
+  label: string;
+  title: string;
+  lines: Array<{ k: string; v: string; tone?: 'rose' | 'emerald' | 'slate' }>;
+}> = ({ label, title, lines }) => {
+  // No stats for this label → render plain text, no hover affordance.
+  if (!lines || lines.length === 0) return <span>{label}</span>;
+  return (
+    <span className="ai-geo-hover" tabIndex={0}>
+      <span className="ai-geo-label">{label}</span>
+      <span className="ai-geo-pop" role="tooltip">
+        <span className="ai-geo-pop-title">{title}</span>
+        {lines.map((l, i) => (
+          <span key={i} className="ai-geo-pop-row">
+            <span className="ai-geo-pop-k">{l.k}</span>
+            <span className={`ai-geo-pop-v ai-geo-pop-v-${l.tone || 'slate'}`}>{l.v}</span>
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+};
+
 export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSectionProps> = ({
   records = [],
   lang = 'en',
@@ -259,6 +288,68 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
       }))
       .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   }, [streetAnalyses, lang]);
+
+  // Full ward / zone aggregates (unlike the top-6 chart slice) powering the
+  // hover-only detail popups on every "Ward X (Zone)" label.
+  const wardHoverStats = useMemo(() => {
+    const m = new Map<string, { streets: number; doors: number; missed: number }>();
+    streetAnalyses.forEach((s) => {
+      const e = m.get(s.ward) || { streets: 0, doors: 0, missed: 0 };
+      e.streets += 1;
+      e.doors += s.totalDoors;
+      e.missed += s.missedCount;
+      m.set(s.ward, e);
+    });
+    return m;
+  }, [streetAnalyses]);
+
+  const zoneHoverStats = useMemo(() => {
+    const m = new Map<string, { streets: number; collected: number; missed: number }>();
+    streetAnalyses.forEach((s) => {
+      const e = m.get(s.zone) || { streets: 0, collected: 0, missed: 0 };
+      e.streets += 1;
+      e.collected += s.collectedCount;
+      e.missed += s.missedCount;
+      m.set(s.zone, e);
+    });
+    return m;
+  }, [streetAnalyses]);
+
+  const wardPopup = (ward: string, fallbackDoors = 0) => {
+    const s = wardHoverStats.get(ward);
+    if (!s) {
+      if (!fallbackDoors) return { title: '', lines: [] as Array<{ k: string; v: string; tone?: 'rose' | 'emerald' | 'slate' }> };
+      const fallback = { streets: 0, doors: fallbackDoors, missed: 0 };
+      return {
+        title: lang === 'ta' ? `வார்டு ${ward} விவரம்` : `Ward ${ward} details`,
+        lines: [
+          { k: lang === 'ta' ? 'மொத்த கதவுகள்' : 'Total doors', v: `${fallback.doors}` },
+        ],
+      };
+    }
+    const rate = s.doors > 0 ? `${((s.missed / s.doors) * 100).toFixed(1)}%` : '0%';
+    return {
+      title: lang === 'ta' ? `வார்டு ${ward} விவரம்` : `Ward ${ward} details`,
+      lines: [
+        { k: lang === 'ta' ? 'தெருக்கள்' : 'Streets', v: `${s.streets}` },
+        { k: lang === 'ta' ? 'மொத்த கதவுகள்' : 'Total doors', v: `${s.doors}` },
+        { k: lang === 'ta' ? 'விடுபட்டவை' : 'Missed', v: `${s.missed} (${rate})`, tone: 'rose' as const },
+      ],
+    };
+  };
+
+  const zonePopup = (zone: string) => {
+    const s = zoneHoverStats.get(zone);
+    if (!s) return { title: '', lines: [] as Array<{ k: string; v: string; tone?: 'rose' | 'emerald' | 'slate' }> };
+    return {
+      title: lang === 'ta' ? `${zone} விவரம்` : `${zone} details`,
+      lines: [
+        { k: lang === 'ta' ? 'தெருக்கள்' : 'Streets', v: `${s.streets}` },
+        { k: lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected', v: `${s.collected}`, tone: 'emerald' as const },
+        { k: lang === 'ta' ? 'விடுபட்டவை' : 'Missed', v: `${s.missed}`, tone: 'rose' as const },
+      ],
+    };
+  };
 
 
   // 2. Donut Chart Data (Grounded on historical coverage segments)
@@ -1163,7 +1254,9 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                         <span className="font-black text-xs text-slate-900">{alert.title}</span>
                       </div>
                       <div className="flex items-center gap-2 text-[10px] font-bold">
-                        <span className="bg-slate-200/80 text-slate-700 px-2 py-0.5 rounded-full">{alert.zone} · {alert.ward}</span>
+                        <span className="bg-slate-200/80 text-slate-700 px-2 py-0.5 rounded-full">
+                          <GeoHoverDetail label={alert.zone} {...zonePopup(alert.zone)} /> · <GeoHoverDetail label={alert.ward} {...wardPopup(alert.ward)} />
+                        </span>
                         <span className="text-slate-400">{alert.timeAgo}</span>
                       </div>
                     </div>
@@ -1324,7 +1417,13 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                   {filteredReportStreets.map((row, i) => (
                     <tr key={i} className="hover:bg-slate-50/80 transition">
                       <td className="py-3 px-3 font-black text-slate-900">{row.streetName}</td>
-                      <td className="py-3 px-2 text-center text-slate-600">Ward {row.ward} ({row.zone})</td>
+                      <td className="py-3 px-2 text-center text-slate-600">
+                        <GeoHoverDetail
+                          label={lang === 'ta' ? `வார்டு ${row.ward}` : `Ward ${row.ward}`}
+                          {...wardPopup(row.ward, row.totalDoors)}
+                        />{' '}
+                        <GeoHoverDetail label={`(${row.zone})`} {...zonePopup(row.zone)} />
+                      </td>
                       <td className="py-3 px-2 text-right text-slate-700">{row.totalDoors}</td>
                       <td className="py-3 px-2 text-right text-rose-700 font-black">{row.recentMissRatePercent}%</td>
                       <td className="py-3 px-2 text-right text-slate-500 font-medium">{row.olderBaselineMissRatePercent}%</td>
@@ -1464,7 +1563,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                       </td>
                       <td className="py-3 px-3 font-bold text-slate-900">
                         {row.residentName}
-                        <div className="text-[10px] text-slate-500 font-normal">{row.address} (W-{row.ward})</div>
+                        <div className="text-[10px] text-slate-500 font-normal">{row.address} (<GeoHoverDetail label={`W-${row.ward}`} {...wardPopup(row.ward)} />)</div>
                       </td>
                       <td className="py-3 px-2 text-center">
                         <div className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 font-black text-[10.5px] px-2 py-0.5 rounded">

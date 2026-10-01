@@ -1083,6 +1083,87 @@ button, .btn-interactive {
   .swms-hover-detail { transition: none; }
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   AI ANALYTICS — hover-only Ward / Zone detail popup.
+   The label shows a dotted underline affordance; the detail card
+   appears only on hover (desktop), tap (:active, touch) or keyboard
+   focus. Position absolute so table layout never shifts.
+   ════════════════════════════════════════════════════════════════════ */
+.ai-geo-hover {
+  position: relative;
+  display: inline-block;
+  cursor: help;
+  border-radius: 0.25rem;
+}
+.ai-geo-hover:focus { outline: none; }
+.ai-geo-hover:focus-visible { outline: 2px solid #1e7a38; outline-offset: 1px; }
+.ai-geo-label {
+  border-bottom: 1px dotted #94a3b8;
+  padding-bottom: 1px;
+}
+.ai-geo-hover:hover .ai-geo-label { border-bottom-color: #1e7a38; color: #14532d; }
+.ai-geo-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  min-width: 190px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 12px 28px -8px rgba(15, 42, 67, 0.28);
+  padding: 0.6rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms;
+  z-index: 60;
+  text-align: left;
+  white-space: nowrap;
+}
+.ai-geo-pop::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #ffffff;
+}
+.ai-geo-hover:hover .ai-geo-pop,
+.ai-geo-hover:focus-within .ai-geo-pop,
+.ai-geo-hover:focus .ai-geo-pop,
+.ai-geo-hover:active .ai-geo-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+.ai-geo-pop-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #0f2a43;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+.ai-geo-pop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.75rem;
+}
+.ai-geo-pop-k { font-weight: 500; color: #64748b; }
+.ai-geo-pop-v { font-weight: 700; font-variant-numeric: tabular-nums; }
+.ai-geo-pop-v-slate { color: #0f172a; }
+.ai-geo-pop-v-emerald { color: #15803d; }
+.ai-geo-pop-v-rose { color: #b91c1c; }
+@media (prefers-reduced-motion: reduce) {
+  .ai-geo-pop { transition: none; }
+}
+
 .swms-kpi-bar {
   margin-top: auto;
   height: 4px;
