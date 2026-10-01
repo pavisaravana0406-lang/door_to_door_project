@@ -68,11 +68,13 @@ export const GeoHoverDetail: React.FC<{
   label: string;
   title: string;
   lines: Array<{ k: string; v: string; tone?: 'rose' | 'emerald' | 'slate' }>;
-}> = ({ label, title, lines }) => {
+  /** Render the label as a pill chip (for chart chip rows). */
+  chip?: boolean;
+}> = ({ label, title, lines, chip }) => {
   // No stats for this label → render plain text, no hover affordance.
   if (!lines || lines.length === 0) return <span>{label}</span>;
   return (
-    <span className="ai-geo-hover" tabIndex={0}>
+    <span className={`ai-geo-hover${chip ? ' ai-geo-chip' : ''}`} tabIndex={0}>
       <span className="ai-geo-label">{label}</span>
       <span className="ai-geo-pop" role="tooltip">
         <span className="ai-geo-pop-title">{title}</span>
@@ -232,6 +234,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
     });
     return Array.from(grouped.values())
       .map((w) => ({
+        ward: w.ward,
         name: `Ward\n${w.ward}`,
         displayName: `Ward ${w.ward}`,
         count: w.missedCount,
@@ -905,6 +908,23 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             <span className="w-3 h-3 rounded-xs bg-red-600 inline-block" />
             <span>Missed Household Count (Not Collected)</span>
           </div>
+
+          {/* Hover a ward chip → detail popup (axis labels can't trigger chart tooltips) */}
+          {wardMissData.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-2">
+              <span className="text-[11px] font-semibold text-slate-400">
+                {lang === 'ta' ? 'விவரத்திற்கு வார்டு மீது:' : 'Hover a ward:'}
+              </span>
+              {wardMissData.map((entry) => (
+                <GeoHoverDetail
+                  key={entry.ward}
+                  chip
+                  label={lang === 'ta' ? `வார்டு ${entry.ward}` : entry.displayName}
+                  {...wardPopup(entry.ward, entry.totalDoors)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
       </div>
@@ -955,6 +975,18 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             {lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}
           </span>
         </div>
+
+        {/* Hover a zone chip → detail popup (axis labels can't trigger chart tooltips) */}
+        {zoneCollectionData.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-2">
+            <span className="text-[11px] font-semibold text-slate-400">
+              {lang === 'ta' ? 'விவரத்திற்கு மண்டலம் மீது:' : 'Hover a zone:'}
+            </span>
+            {zoneCollectionData.map((entry) => (
+              <GeoHoverDetail key={entry.name} chip label={entry.displayName} {...zonePopup(entry.name)} />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ========================================================================= */}

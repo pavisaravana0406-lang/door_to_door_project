@@ -1160,6 +1160,21 @@ button, .btn-interactive {
 .ai-geo-pop-v-slate { color: #0f172a; }
 .ai-geo-pop-v-emerald { color: #15803d; }
 .ai-geo-pop-v-rose { color: #b91c1c; }
+/* Pill-chip variant for the chart chip rows */
+.ai-geo-chip .ai-geo-label {
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 9999px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #334155;
+}
+.ai-geo-chip:hover .ai-geo-label {
+  border-color: #1e7a38;
+  background: #e8f5ed;
+  color: #14532d;
+}
 @media (prefers-reduced-motion: reduce) {
   .ai-geo-pop { transition: none; }
 }
