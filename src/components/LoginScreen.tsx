@@ -269,7 +269,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
           <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 shadow-2xs">
             <Leaf className="w-3.5 h-3.5 text-[#1E7A38] animate-float-gentle" />
             <span className="text-[9.5px] sm:text-[10.5px] font-black text-[#1E7A38] uppercase tracking-wider">
-              SOLID WASTE MANAGEMENT SYSTEM (SWMS)
+              SWMS DOOR-TO-DOOR MONITORING
             </span>
           </div>
         </div>
