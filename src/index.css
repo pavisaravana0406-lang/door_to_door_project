@@ -1053,6 +1053,36 @@ button, .btn-interactive {
 /* Table cells wrap instead of forcing horizontal squeeze */
 .dash-page th, .dash-page td { overflow-wrap: break-word; word-break: break-word; }
 
+/* ════════════════════════════════════════════════════════════════════
+   HOVER-ONLY ROW DETAILS (all analytics tables)
+   Zone / ward / vehicle extra details stay hidden until the row is
+   hovered (desktop), tapped (touch via :active) or focused (keyboard).
+   Numbers stay visible — only the detail line under the label hides.
+   ════════════════════════════════════════════════════════════════════ */
+.swms-table tr.swms-hover-row { cursor: default; }
+.swms-table tr.swms-hover-row:focus { outline: none; }
+.swms-table tr.swms-hover-row:focus-visible { outline: 2px solid #1e7a38; outline-offset: -2px; }
+.swms-hover-detail {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-3px);
+  transition: max-height 200ms ease, opacity 200ms ease, transform 200ms ease;
+  margin: 0 !important;
+}
+.swms-table tr.swms-hover-row:hover .swms-hover-detail,
+.swms-table tr.swms-hover-row:focus-within .swms-hover-detail,
+.swms-table tr.swms-hover-row:focus .swms-hover-detail,
+.swms-table tr.swms-hover-row:active .swms-hover-detail {
+  max-height: 3rem;
+  opacity: 1;
+  transform: none;
+  margin-top: 0.15rem !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .swms-hover-detail { transition: none; }
+}
+
 .swms-kpi-bar {
   margin-top: auto;
   height: 4px;

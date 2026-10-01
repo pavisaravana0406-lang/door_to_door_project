@@ -197,10 +197,10 @@ export const PerformanceTable: React.FC<{
           {rows.map(r => {
             const chip = perfChip(r.performance, r.total);
             return (
-              <tr key={r.key}>
+              <tr key={r.key} tabIndex={0} className="swms-hover-row">
                 <td>
                   <div className="swms-row-title">{r.label}</div>
-                  {r.sublabel && <div className="swms-meta">{r.sublabel}</div>}
+                  {r.sublabel && <div className="swms-meta swms-hover-detail">{r.sublabel}</div>}
                 </td>
                 {columns.map(c => {
                   const v = Number((r as any)[c]) || 0;
