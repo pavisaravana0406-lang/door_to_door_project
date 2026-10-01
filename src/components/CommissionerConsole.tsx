@@ -25,7 +25,7 @@ import { INITIAL_FREQUENTLY_NOT_COLLECTED } from '../data/frequentlyNotCollected
 import { REAL_QR_VEHICLE_REPORTS } from '../utils/vehicleAssignmentStorage';
 import { buildAdminAnalytics, reasonOf } from '../utils/adminAnalytics';
 import { buildHouseStreaks, houseKeyOf } from '../utils/missedStreaks';
-import { GarbageKpiGrid, PerformanceList, AdminSection } from './AdminKpi';
+import { GarbageKpiGrid, PerformanceTable, ZonePerformanceTable, VehiclePerformanceTable, AdminSection } from './AdminKpi';
 import {
   PartiallyNotCollectedView, FrequentlyNotCollectedVehicleView,
 } from './VehicleMissView';
@@ -309,16 +309,16 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-5 sm:space-y-6 w-full">
-              <div className="animate-dash-enter flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="animate-dash-enter flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <h1 className="dash-section-title text-[24px] sm:text-[30px] lg:text-[34px] font-black text-slate-900 tracking-tight leading-tight">
+                  <h1 className="swms-title">
                     {lang === 'ta' ? 'நிர்வாக ஆய்வுக் கட்டுப்பாட்டகம்' : 'Admin Review Dashboard'}
                   </h1>
-                  <p className="text-[13px] sm:text-sm lg:text-base font-bold text-slate-600 mt-1.5">
+                  <p className="swms-subtitle mt-1">
                     {lang === 'ta' ? 'நேரடி சேகரிப்பு கண்காணிப்பு' : 'Live collection monitoring across zones and wards'}
                   </p>
                 </div>
-                <span className="dash-badge dash-badge-green w-fit">Live • ICCC connected</span>
+                <span className="swms-chip swms-chip-good w-fit">{lang === 'ta' ? 'நேரடி' : 'Live'} • ICCC connected</span>
               </div>
 
               {/* Six headline garbage KPIs, doubling as navigation */}
@@ -340,21 +340,9 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
                   titleTa="மண்டல வாரியான செயல்திறன்"
                   icon={MapPin}
                   lang={lang}
-                  right={<span className="text-[10px] font-bold text-slate-400">5 zones</span>}
+                  right={<span className="swms-meta">5 zones</span>}
                 >
-                  <PerformanceList
-                    lang={lang}
-                    rows={adminAnalytics.byZone.map(z => ({
-                      key: z.key,
-                      label: z.label,
-                      sublabel: `${z.vehicles} vehicles`,
-                      total: z.total,
-                      collected: z.collected,
-                      partial: z.partial,
-                      notCollected: z.notCollected,
-                      performance: z.performance,
-                    }))}
-                  />
+                  <ZonePerformanceTable lang={lang} rows={adminAnalytics.byZone} />
                 </AdminSection>
               </div>
 
@@ -365,46 +353,21 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
                   titleTa="வாகன வாரியான செயல்திறன்"
                   icon={Truck}
                   lang={lang}
+                  right={<span className="swms-meta">by vehicle class</span>}
                 >
-                  <PerformanceList
-                    lang={lang}
-                    rows={adminAnalytics.byVehicleType.map(v => ({
-                      key: v.key,
-                      label: v.label,
-                      sublabel: `${v.vehicles} vehicles`,
-                      total: v.total,
-                      collected: v.collected,
-                      partial: v.partial,
-                      notCollected: v.notCollected,
-                      performance: v.performance,
-                    }))}
-                    emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
-                  />
+                  <VehiclePerformanceTable lang={lang} rows={adminAnalytics.byVehicleType} />
 
                   {adminAnalytics.byVehicle.length > 0 && (
-                    <details className="mt-2 group">
-                      <summary className="cursor-pointer list-none text-[11px] font-black text-emerald-700 hover:underline">
-                        {lang === 'ta' ? 'வாகன் வாரியாக விரிவாக' : 'Show per-vehicle breakdown'}
+                    <details className="border-t border-slate-100">
+                      <summary className="cursor-pointer list-none px-4 py-2.5 swms-label hover:text-[#1E7A38] transition">
+                        {lang === 'ta'
+                          ? `வாகன் வாரியாக விரிவாக (${adminAnalytics.byVehicle.length})`
+                          : `Per-vehicle breakdown (${adminAnalytics.byVehicle.length})`}
                       </summary>
-                      <div className="mt-2 space-y-2">
-                        <PerformanceList
-                          lang={lang}
-                          showChips={false}
-                          rows={adminAnalytics.byVehicle.slice(0, 40).map(v => ({
-                            key: v.key,
-                            label: v.vehicleNo,
-                            sublabel: `${v.vehicleType} • ${v.workerName}`,
-                            total: v.total,
-                            collected: v.collected,
-                            performance: v.performance,
-                            extra: (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-[9px] font-bold text-rose-700">
-                                {v.notCollected} missed
-                              </span>
-                            ),
-                          }))}
-                        />
-                      </div>
+                      <VehiclePerformanceTable
+                        lang={lang}
+                        rows={adminAnalytics.byVehicle.slice(0, 60)}
+                      />
                     </details>
                   )}
                 </AdminSection>
@@ -454,27 +417,12 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
               lang={lang}
               afterKpis={
                 <div className="space-y-4">
-                  <AdminSection title="Zone-wise Performance" titleTa="மண்டல வாரியான செயல்திறன்" icon={MapPin} lang={lang}>
-                    <PerformanceList
-                      lang={lang}
-                      rows={analyticsForViews.byZone.map(z => ({
-                        key: z.key, label: z.label, sublabel: `${z.collected} of ${z.total}`,
-                        total: z.total, collected: z.collected, partial: z.partial,
-                        notCollected: z.notCollected, performance: z.performance,
-                      }))}
-                    />
+                  <AdminSection title="Zone-wise Performance" titleTa="????? ??????? ??????????" icon={MapPin} lang={lang}>
+                    <ZonePerformanceTable lang={lang} rows={analyticsForViews.byZone} />
                   </AdminSection>
 
-                  <AdminSection title="Vehicle-wise Performance" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
-                    <PerformanceList
-                      lang={lang}
-                      rows={analyticsForViews.byVehicleType.map(v => ({
-                        key: v.key, label: v.label, sublabel: `${v.vehicles} vehicles`,
-                        total: v.total, collected: v.collected, partial: v.partial,
-                        notCollected: v.notCollected, performance: v.performance,
-                      }))}
-                      emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
-                    />
+                  <AdminSection title="Vehicle-wise Performance" titleTa="???? ??????? ??????????" icon={Truck} lang={lang}>
+                    <VehiclePerformanceTable lang={lang} rows={analyticsForViews.byVehicleType} />
                   </AdminSection>
                 </div>
               }
@@ -491,27 +439,12 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
               lang={lang}
               afterKpis={
                 <div className="space-y-4">
-                  <AdminSection title="Zone-wise Performance" titleTa="மண்டல வாரியான செயல்திறன்" icon={MapPin} lang={lang}>
-                    <PerformanceList
-                      lang={lang}
-                      rows={analyticsForViews.byZone.map(z => ({
-                        key: z.key, label: z.label, sublabel: `${z.notCollected} missed`,
-                        total: z.total, collected: z.collected, partial: z.partial,
-                        notCollected: z.notCollected, performance: z.performance,
-                      }))}
-                    />
+                  <AdminSection title="Zone-wise Performance" titleTa="????? ??????? ??????????" icon={MapPin} lang={lang}>
+                    <ZonePerformanceTable lang={lang} rows={analyticsForViews.byZone} />
                   </AdminSection>
 
-                  <AdminSection title="Vehicle-wise Performance" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
-                    <PerformanceList
-                      lang={lang}
-                      rows={analyticsForViews.byVehicleType.map(v => ({
-                        key: v.key, label: v.label, sublabel: `${v.vehicles} vehicles`,
-                        total: v.total, collected: v.collected, partial: v.partial,
-                        notCollected: v.notCollected, performance: v.performance,
-                      }))}
-                      emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
-                    />
+                  <AdminSection title="Vehicle-wise Performance" titleTa="???? ??????? ??????????" icon={Truck} lang={lang}>
+                    <VehiclePerformanceTable lang={lang} rows={analyticsForViews.byVehicleType} />
                   </AdminSection>
                 </div>
               }

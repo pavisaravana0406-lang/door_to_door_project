@@ -244,11 +244,13 @@ export const buildAdminAnalytics = (
       frequentPercent: pct(totals.frequent, totals.total),
     },
     byZone: ALL_ZONES.map(z => finish(zoneMap.get(z)!)),
-    // A record with an unrecognised vehicle still has to appear somewhere, or
-    // it silently vanishes from the vehicle breakdown.
+    /**
+     * Every vehicle class the fleet has is listed, including ones with no
+     * activity yet. Filtering to classes with rows is what made PUSH CART and
+     * BOV vanish from the overview whenever only TATA ACE had been used.
+     */
     byVehicleType: [...VEHICLE_CLASSES, 'OTHER' as VehicleClass]
       .map(t => typeMap.get(t)!)
-      .filter(g => g.total > 0)
       .map(finish),
     byVehicle,
     frequentByVehicle: byVehicle.filter(v => v.frequent > 0).sort((a, b) => b.frequent - a.frequent),

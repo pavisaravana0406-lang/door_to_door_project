@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import {
   Truck, AlertTriangle, Search, MapPin, DoorOpen, PackageMinus, Layers, CheckCircle2, XCircle,
 } from 'lucide-react';
-import { PerformanceList, AdminSection, AdminKpiSquare, type PerformanceRow } from './AdminKpi';
+import { PerformanceTable, VehiclePerformanceTable, AdminSection, AdminKpiSquare } from './AdminKpi';
 import { AdminAnalytics, VehicleBreakdownRow } from '../utils/adminAnalytics';
 import { CollectionRecord, SWMSHouseholdRecord } from '../types';
 
@@ -36,23 +36,6 @@ const TONE = {
   },
 };
 
-const toRows = (vs: VehicleBreakdownRow[], field: 'partial' | 'frequent'): PerformanceRow[] =>
-  vs.map(v => ({
-    key: v.key,
-    label: v.vehicleNo,
-    sublabel: `${v.vehicleType}${v.workerName ? ` • ${v.workerName}` : ''}`,
-    total: v.total,
-    collected: v.collected,
-    partial: v.partial,
-    notCollected: v.notCollected,
-    performance: v.performance,
-    extra: (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-[9px] font-bold text-slate-600">
-        {v[field]} {field === 'partial' ? 'partial' : 'chronic'}
-      </span>
-    ),
-  }));
-
 /**
  * Vehicle-wise view of the partially and frequently missed tiers.
  *
@@ -68,7 +51,7 @@ export const VehicleMissView: React.FC<VehicleMissViewProps> = ({
   const [zoneFilter, setZoneFilter] = useState('All');
 
   const vehicleRows = useMemo(
-    () => toRows(tier === 'partial' ? analytics.partialByVehicle : analytics.frequentByVehicle, tier),
+    () => (tier === 'partial' ? analytics.partialByVehicle : analytics.frequentByVehicle),
     [analytics, tier]
   );
 
@@ -158,21 +141,21 @@ export const VehicleMissView: React.FC<VehicleMissViewProps> = ({
             value={tierTotal}
             icon={cfg.icon}
             tone={cfg.tone}
-            lang={lang as any}
+            
           />
           <AdminKpiSquare
             label={lang === 'ta' ? 'பாதிக்கப்பட்ட வாகனங்கள்' : 'Vehicles Affected'}
             value={affectedVehicles}
             icon={Truck}
             tone="rose"
-            lang={lang as any}
+            
           />
           <AdminKpiSquare
             label={lang === 'ta' ? 'மொத்த வீடுகள்' : 'Total Doors'}
             value={analytics.totals.total}
             icon={DoorOpen}
             tone="slate"
-            lang={lang as any}
+            
           />
         </div>
       </div>
@@ -184,9 +167,10 @@ export const VehicleMissView: React.FC<VehicleMissViewProps> = ({
         icon={Truck}
         lang={lang}
       >
-        <PerformanceList
+        <VehiclePerformanceTable
           rows={vehicleRows}
           lang={lang}
+          tierField={tier}
           emptyText={lang === 'ta' ? 'இந்த வகையில் வாகனங்கள் இல்லை' : 'No vehicles in this tier'}
         />
       </AdminSection>
@@ -198,7 +182,8 @@ export const VehicleMissView: React.FC<VehicleMissViewProps> = ({
         icon={Layers}
         lang={lang}
       >
-        <PerformanceList
+        <PerformanceTable
+          labelHeader={lang === 'ta' ? 'மண்டலம்' : 'Zone'}
           rows={zoneRows}
           lang={lang}
           emptyText={lang === 'ta' ? 'மண்டல தரவு இல்லை' : 'No zone data'}

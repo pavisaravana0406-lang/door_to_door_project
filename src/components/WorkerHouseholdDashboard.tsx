@@ -105,7 +105,7 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
       </div>
 
       {/* ── KPI CARDS ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-2.5">
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
         <KpiSquare
           label={lang === 'ta' ? 'மொத்த வீடுகள்' : 'Total Households'}
           value={summary.totalHouseholds}
