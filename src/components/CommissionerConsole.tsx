@@ -444,20 +444,9 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             />
           )}
 
-          {/* TAB 5: COLLECTED — performance by zone and vehicle */}
+          {/* TAB 5: COLLECTED — performance by vehicle */}
           {activeTab === 'collected' && (
             <div className="space-y-4">
-              <AdminSection title="Performance by Zone" titleTa="மண்டல வாரியான செயல்திறன்" icon={MapPin} lang={lang}>
-                <PerformanceList
-                  lang={lang}
-                  rows={analyticsForViews.byZone.map(z => ({
-                    key: z.key, label: z.label, sublabel: `${z.collected} of ${z.total}`,
-                    total: z.total, collected: z.collected, partial: z.partial,
-                    notCollected: z.notCollected, performance: z.performance,
-                  }))}
-                />
-              </AdminSection>
-
               <AdminSection title="Performance by Vehicle" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
                 <PerformanceList
                   lang={lang}
@@ -480,20 +469,9 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             </div>
           )}
 
-          {/* TAB 6: NOT COLLECTED — performance by zone and vehicle */}
+          {/* TAB 6: NOT COLLECTED — performance by vehicle */}
           {activeTab === 'not-collected' && (
             <div className="space-y-4">
-              <AdminSection title="Performance by Zone" titleTa="மண்டல வாரியான செயல்திறன்" icon={MapPin} lang={lang}>
-                <PerformanceList
-                  lang={lang}
-                  rows={analyticsForViews.byZone.map(z => ({
-                    key: z.key, label: z.label, sublabel: `${z.notCollected} missed`,
-                    total: z.total, collected: z.collected, partial: z.partial,
-                    notCollected: z.notCollected, performance: z.performance,
-                  }))}
-                />
-              </AdminSection>
-
               <AdminSection title="Performance by Vehicle" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
                 <PerformanceList
                   lang={lang}
