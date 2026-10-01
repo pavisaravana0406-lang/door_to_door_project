@@ -444,54 +444,78 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             />
           )}
 
-          {/* TAB 5: COLLECTED — performance by vehicle */}
+          {/* TAB 5: COLLECTED — zone and vehicle performance sit after the KPI boxes */}
           {activeTab === 'collected' && (
-            <div className="space-y-4">
-              <AdminSection title="Performance by Vehicle" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
-                <PerformanceList
-                  lang={lang}
-                  rows={analyticsForViews.byVehicleType.map(v => ({
-                    key: v.key, label: v.label, sublabel: `${v.vehicles} vehicles`,
-                    total: v.total, collected: v.collected, partial: v.partial,
-                    notCollected: v.notCollected, performance: v.performance,
-                  }))}
-                  emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
-                />
-              </AdminSection>
+            <CollectedView
+              records={collectionRecords}
+              onInspectRecord={handleInspectRecord}
+              onBackToOverview={() => setActiveTab('overview')}
+              onNavigateToNotCovered={() => setActiveTab('not-collected')}
+              lang={lang}
+              afterKpis={
+                <div className="space-y-4">
+                  <AdminSection title="Zone-wise Performance" titleTa="மண்டல வாரியான செயல்திறன்" icon={MapPin} lang={lang}>
+                    <PerformanceList
+                      lang={lang}
+                      rows={analyticsForViews.byZone.map(z => ({
+                        key: z.key, label: z.label, sublabel: `${z.collected} of ${z.total}`,
+                        total: z.total, collected: z.collected, partial: z.partial,
+                        notCollected: z.notCollected, performance: z.performance,
+                      }))}
+                    />
+                  </AdminSection>
 
-              <CollectedView
-                records={collectionRecords}
-                onInspectRecord={handleInspectRecord}
-                onBackToOverview={() => setActiveTab('overview')}
-                onNavigateToNotCovered={() => setActiveTab('not-collected')}
-                lang={lang}
-              />
-            </div>
+                  <AdminSection title="Vehicle-wise Performance" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
+                    <PerformanceList
+                      lang={lang}
+                      rows={analyticsForViews.byVehicleType.map(v => ({
+                        key: v.key, label: v.label, sublabel: `${v.vehicles} vehicles`,
+                        total: v.total, collected: v.collected, partial: v.partial,
+                        notCollected: v.notCollected, performance: v.performance,
+                      }))}
+                      emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
+                    />
+                  </AdminSection>
+                </div>
+              }
+            />
           )}
 
-          {/* TAB 6: NOT COLLECTED — performance by vehicle */}
+          {/* TAB 6: NOT COLLECTED — zone and vehicle performance sit after the KPI boxes */}
           {activeTab === 'not-collected' && (
-            <div className="space-y-4">
-              <AdminSection title="Performance by Vehicle" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
-                <PerformanceList
-                  lang={lang}
-                  rows={analyticsForViews.byVehicleType.map(v => ({
-                    key: v.key, label: v.label, sublabel: `${v.vehicles} vehicles`,
-                    total: v.total, collected: v.collected, partial: v.partial,
-                    notCollected: v.notCollected, performance: v.performance,
-                  }))}
-                  emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
-                />
-              </AdminSection>
+            <NotCollectedView
+              records={analyticsRecords}
+              onInspectRecord={handleInspectRecord}
+              onBackToOverview={() => setActiveTab('overview')}
+              onNavigateToCovered={() => setActiveTab('collected')}
+              lang={lang}
+              afterKpis={
+                <div className="space-y-4">
+                  <AdminSection title="Zone-wise Performance" titleTa="மண்டல வாரியான செயல்திறன்" icon={MapPin} lang={lang}>
+                    <PerformanceList
+                      lang={lang}
+                      rows={analyticsForViews.byZone.map(z => ({
+                        key: z.key, label: z.label, sublabel: `${z.notCollected} missed`,
+                        total: z.total, collected: z.collected, partial: z.partial,
+                        notCollected: z.notCollected, performance: z.performance,
+                      }))}
+                    />
+                  </AdminSection>
 
-              <NotCollectedView
-                records={analyticsRecords}
-                onInspectRecord={handleInspectRecord}
-                onBackToOverview={() => setActiveTab('overview')}
-                onNavigateToCovered={() => setActiveTab('collected')}
-                lang={lang}
-              />
-            </div>
+                  <AdminSection title="Vehicle-wise Performance" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
+                    <PerformanceList
+                      lang={lang}
+                      rows={analyticsForViews.byVehicleType.map(v => ({
+                        key: v.key, label: v.label, sublabel: `${v.vehicles} vehicles`,
+                        total: v.total, collected: v.collected, partial: v.partial,
+                        notCollected: v.notCollected, performance: v.performance,
+                      }))}
+                      emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
+                    />
+                  </AdminSection>
+                </div>
+              }
+            />
           )}
 
 

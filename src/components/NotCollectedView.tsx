@@ -10,6 +10,8 @@ interface NotCollectedViewProps {
   onBackToOverview?: () => void;
   onNavigateToCovered?: () => void;
   lang?: 'en' | 'ta';
+  /** Rendered directly after the KPI boxes. */
+  afterKpis?: React.ReactNode;
 }
 
 export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
@@ -18,6 +20,7 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
   onBackToOverview,
   onNavigateToCovered,
   lang = 'en',
+  afterKpis,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedZone, setSelectedZone] = useState('All');
@@ -119,6 +122,9 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Rendered directly after the KPI boxes, before the rest of the page. */}
+      {afterKpis}
 
       {/* Uncollected Vehicles Summary Banner (Zone-wise Vehicle Tracking) */}
       <div className="bg-rose-50/70 border border-rose-200/90 rounded-2xl p-4 shadow-2xs space-y-3">
