@@ -320,12 +320,16 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
                   Corporation
                 </div>
                 <div className="text-[9px] font-black tracking-wide text-amber-300 uppercase leading-none mt-1 drop-shadow">
-                  Integrated Command &amp; Control Center
+                  Integrated Command &amp; Control Center (ICCC)
+                </div>
+                <div className="text-[9px] font-black tracking-wide text-emerald-300 uppercase leading-none mt-0.5 drop-shadow">
+                  SWMS {lang === 'ta' ? 'வீடு வழி' : 'Door-to-Door'}
                 </div>
               </div>
               <div className="hidden sm:flex sm:flex-col sm:justify-center leading-tight">
                 <span className="text-lg lg:text-[24px] font-black tracking-tight text-white drop-shadow leading-tight">Coimbatore City Municipal Corporation</span>
                 <span className="text-[13px] lg:text-[15px] font-black tracking-wider text-amber-300 uppercase drop-shadow mt-1">Integrated Command and Control Center (ICCC)</span>
+                <span className="text-[11px] lg:text-[13px] font-black tracking-wider text-emerald-300 uppercase drop-shadow mt-0.5">SWMS {lang === 'ta' ? 'வீடு வழி' : 'Door-to-Door'}</span>
               </div>
             </div>
           </div>

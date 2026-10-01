@@ -260,16 +260,21 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess }) => {
         </h1>
 
         {/* Integrated Command and Control Center Subtitle in ALL CAPS */}
-        <div className="text-[11px] sm:text-[13px] font-black text-[#1E7A38] uppercase tracking-wider text-center mb-3 px-2">
-          INTEGRATED COMMAND AND CONTROL CENTER
+        <div className="text-[11px] sm:text-[13px] font-black text-[#1E7A38] uppercase tracking-wider text-center px-2">
+          INTEGRATED COMMAND AND CONTROL CENTER (ICCC)
         </div>
 
         {/* SWMS Subtitle */}
-        <div className="flex flex-col items-center gap-1.5 mb-5">
+        <div className="flex flex-col items-center gap-1.5 mt-3 mb-5">
           <div className="inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 shadow-2xs">
             <Leaf className="w-3.5 h-3.5 text-[#1E7A38] animate-float-gentle" />
             <span className="text-[9.5px] sm:text-[10.5px] font-black text-[#1E7A38] uppercase tracking-wider">
               SOLID WASTE MANAGEMENT SYSTEM (SWMS)
+            </span>
+          </div>
+          <div className="inline-flex items-center justify-center px-3 py-1 rounded-full bg-emerald-100/70 border border-emerald-300/80">
+            <span className="text-[9.5px] sm:text-[10.5px] font-black text-[#14532D] uppercase tracking-wider">
+              SWMS DOOR-TO-DOOR
             </span>
           </div>
         </div>

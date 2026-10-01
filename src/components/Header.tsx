@@ -149,7 +149,10 @@ export const Header: React.FC<HeaderProps> = ({
                   Coimbatore City Municipal Corporation
                 </div>
                 <div className="text-[12px] font-black tracking-wide text-amber-300 uppercase leading-snug mt-1 drop-shadow">
-                  Integrated Command and Control Center
+                  Integrated Command and Control Center (ICCC)
+                </div>
+                <div className="text-[11px] font-black tracking-wide text-emerald-300 uppercase leading-snug mt-1 drop-shadow">
+                  SWMS {lang === 'ta' ? 'வீடு வழி' : 'Door-to-Door'}
                 </div>
                 {userRole !== 'admin' && (
                   <div className="text-[11px] font-bold text-cyan-200 tracking-wide uppercase leading-snug mt-1">
@@ -172,6 +175,9 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
                 <div className="text-sm lg:text-[18px] font-black tracking-wider text-amber-300 uppercase drop-shadow mt-1 leading-snug">
                   Integrated Command and Control Center (ICCC)
+                </div>
+                <div className="text-xs lg:text-[15px] font-black tracking-wider text-emerald-300 uppercase drop-shadow mt-0.5 leading-snug">
+                  SWMS {lang === 'ta' ? 'வீடு வழி' : 'Door-to-Door'}
                 </div>
               </div>
             </div>
