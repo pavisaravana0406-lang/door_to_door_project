@@ -116,30 +116,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* ========================================================================= */}
       {/* 1. DESKTOP SIDEBAR (Visible on lg and up)                                 */}
       {/* ========================================================================= */}
-      <aside className="hidden lg:flex w-72 lg:w-80 bg-[#eef3ee] border-r border-[#dfe7df] min-h-[calc(100vh-80px)] flex-col justify-between px-4 py-3 flex-shrink-0 select-none sticky top-20 self-start">
+      <aside className="hidden lg:flex w-60 xl:w-64 bg-white border-r border-slate-200 min-h-[calc(100vh-64px)] flex-col justify-between px-3 py-4 flex-shrink-0 select-none sticky top-16 self-start">
         {/* Top Navigation Items */}
-        <div className="space-y-2.5">
+        <div className="space-y-1.5">
           {/* 1. Overview Tab */}
           <button
             onClick={() => handleTabClick('overview')}
             data-active={activeTab === 'overview'}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-left cursor-pointer border ${
               activeTab === 'overview'
-                ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
-                : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
+                ? 'bg-emerald-50 text-emerald-900 shadow-sm border-emerald-200'
+                : 'text-slate-600 border-transparent hover:bg-slate-50 hover:text-emerald-900 hover:border-slate-200'
             }`}
           >
-            <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-2.5">
               <div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors shadow-xs ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                   activeTab === 'overview'
                     ? 'bg-[#1E7A38] text-white'
-                    : 'dash-sidebar-icon bg-white text-slate-700 border border-gray-200'
+                    : 'dash-sidebar-icon bg-slate-100 text-slate-600'
                 }`}
               >
-                <LayoutDashboard className="w-6 h-6" />
+                <LayoutDashboard className="w-5 h-5" />
               </div>
-              <span className="text-[15px] font-bold text-slate-900">{lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview'}</span>
+              <span className="text-sm font-bold text-slate-800">{lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview'}</span>
             </div>
           </button>
 

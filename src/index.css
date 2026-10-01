@@ -72,7 +72,7 @@ html, body, #root {
    Subtle 200–300ms transitions, 2px lift max, fade+slide-up on load.
    ════════════════════════════════════════════════════════════════════ */
 .dash-page {
-  background-color: #ffffff;
+  background-color: #f1f5f9;
   color: #1f2937;
   font-size: 1rem;
 }
@@ -720,35 +720,35 @@ button, .btn-interactive {
    700 headings and figures, 800 reserved for the page title alone.
    --------------------------------------------------------------------------- */
 
-/* Page title � the only place 800 is used. */
+/* Page title — hotspot style: compact 18-20px dark-navy, not 38px. */
 .swms-title {
   font-weight: 800;
-  font-size: 1.75rem;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-  color: #0f1f17;
+  font-size: 1.125rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: #0f2a43;
 }
-@media (min-width: 640px)  { .swms-title { font-size: 2.125rem; } }
-@media (min-width: 1024px) { .swms-title { font-size: 2.375rem; } }
+@media (min-width: 640px)  { .swms-title { font-size: 1.25rem; } }
+@media (min-width: 1024px) { .swms-title { font-size: 1.375rem; } }
 
 /* Sub-heading directly under the page title. */
 .swms-subtitle {
   font-weight: 500;
-  font-size: 0.9375rem;
+  font-size: 0.8125rem;
   line-height: 1.5;
-  color: #5b6b63;
+  color: #64748b;
 }
-@media (min-width: 640px) { .swms-subtitle { font-size: 1rem; } }
+@media (min-width: 640px) { .swms-subtitle { font-size: 0.875rem; } }
 
-/* Section heading � a group of cards or a table. */
+/* Section heading — a group of cards or a table. */
 .swms-section {
   font-weight: 700;
-  font-size: 1.0625rem;
+  font-size: 0.9375rem;
   line-height: 1.35;
   letter-spacing: -0.01em;
-  color: #16261d;
+  color: #0f2a43;
 }
-@media (min-width: 640px) { .swms-section { font-size: 1.125rem; } }
+@media (min-width: 640px) { .swms-section { font-size: 1rem; } }
 
 /* Column heading / table header / group label. */
 .swms-label {
@@ -769,7 +769,7 @@ button, .btn-interactive {
 }
 @media (min-width: 640px) { .swms-data { font-size: 1.75rem; } }
 
-/* A figure inside a table cell � smaller than .swms-data, same weight feel. */
+/* A figure inside a table cell � smaller than .swms-data, same weight feel. */
 .swms-data-sm {
   font-weight: 700;
   font-size: 0.9375rem;
@@ -794,7 +794,7 @@ button, .btn-interactive {
   letter-spacing: 0;
 }
 
-/* Row label inside tables and lists � the identity of the thing. */
+/* Row label inside tables and lists � the identity of the thing. */
 .swms-row-title {
   font-weight: 600;
   font-size: 0.875rem;
@@ -803,13 +803,14 @@ button, .btn-interactive {
 }
 
 /* -- Surfaces -------------------------------------------------------------
-   One card definition used by every panel so borders, radius and shadow
-   cannot drift between screens. */
+   Hotspot style: 16px rounded white cards floating on slate bg with
+   real breathing room — never edge-to-edge. */
 .swms-panel {
   background: #ffffff;
-  border: 1px solid #e4e9e6;
-  border-radius: 0.875rem;
-  box-shadow: 0 1px 2px rgba(16, 40, 28, 0.04);
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(15, 42, 67, 0.06);
+  overflow: hidden;
 }
 
 .swms-panel-head {
@@ -817,8 +818,8 @@ button, .btn-interactive {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.875rem 1rem;
-  border-bottom: 1px solid #eef1ef;
+  padding: 0.875rem 1.125rem;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 /* -- Data tables --------------------------------------------------------
@@ -827,29 +828,35 @@ button, .btn-interactive {
 .swms-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  padding: 0.75rem;
 }
 
 .swms-table {
   width: 100%;
   min-width: 640px;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.875rem;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
 .swms-table thead th {
-  position: sticky;
-  top: 0;
-  background: #f6f8f7;
-  border-bottom: 1px solid #e4e9e6;
-  padding: 0.625rem 0.75rem;
+  background: #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.625rem 0.875rem;
   text-align: left;
-  font-weight: 600;
-  font-size: 0.75rem;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #6b7a72;
+  color: #475569;
   white-space: nowrap;
 }
+.swms-table thead th:first-child { border-top-left-radius: 0.75rem; }
+.swms-table thead th:last-child { border-top-right-radius: 0.75rem; }
 
 .swms-table thead th.num,
 .swms-table td.num { text-align: right; }
@@ -871,7 +878,7 @@ button, .btn-interactive {
 .swms-table tbody tr { transition: background-color 150ms ease; }
 .swms-table tbody tr:hover { background: #f6f9f7; }
 
-/* Totals row � heavier than the body but not the same as a heading. */
+/* Totals row � heavier than the body but not the same as a heading. */
 .swms-table tfoot td {
   padding: 0.6875rem 0.75rem;
   background: #f2f6f4;
@@ -905,66 +912,115 @@ button, .btn-interactive {
 .swms-chip-info     { background: #e9f0fb; color: #1a4fa0; border-color: #c2d5f5; }
 .swms-chip-neutral  { background: #f2f4f3; color: #5b6b63; border-color: #e2e7e4; }
 
-/* A square KPI tile: icon above, figure, then label. Always a square. */
+/* Hotspot-style KPI card: pastel fill per tone, left-aligned stack,
+   compact label row on top, big figure, hint, progress bar.
+   No forced square — cards breathe at ~130px min-height. */
 .swms-kpi {
   position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 0.375rem;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  padding: 0.75rem 0.5rem;
-  border-radius: 0.75rem;
-  background: #ffffff;
-  border: 1px solid #e4e9e6;
-  box-shadow: 0 1px 2px rgba(16, 40, 28, 0.04);
+  min-height: 132px;
+  padding: 0.875rem 1rem 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(15, 42, 67, 0.06);
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
-  text-align: center;
+  text-align: left;
+  overflow: hidden;
 }
 .swms-kpi:hover {
-  transform: translateY(-3px);
-  border-color: #c8d6ce;
-  box-shadow: 0 12px 24px -12px rgba(30, 122, 56, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px -12px rgba(15, 42, 67, 0.25);
 }
-.swms-kpi:active { transform: translateY(-1px); }
+.swms-kpi:active { transform: translateY(0); }
+
+/* Pastel fills per tone — matches hotspot overview cards */
+.swms-kpi-tone-slate  { background: #eef2ff; border-color: #c7d2fe; }
+.swms-kpi-tone-blue   { background: #e8f0fe; border-color: #bfd4f8; }
+.swms-kpi-tone-green  { background: #e6f6ec; border-color: #b7e2c6; }
+.swms-kpi-tone-amber  { background: #fef3e2; border-color: #f2d5a4; }
+.swms-kpi-tone-rose   { background: #fdecea; border-color: #f4c3bd; }
+.swms-kpi-tone-violet { background: #f1eafe; border-color: #d5c8fa; }
+
+.swms-kpi-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.swms-kpi-label-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+}
 
 .swms-kpi-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.625rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.55rem;
   flex-shrink: 0;
+  background: rgba(255,255,255,0.85);
+  border: 1px solid rgba(15,42,67,0.08);
 }
-@media (min-width: 640px) {
-  .swms-kpi-icon { width: 2.5rem; height: 2.5rem; }
+
+.swms-kpi-pct {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(15,42,67,0.08);
+  color: #3b82f6;
+  white-space: nowrap;
 }
 
 .swms-kpi-figure {
-  font-weight: 700;
-  font-size: 1.625rem;
+  font-weight: 800;
+  font-size: 1.75rem;
   line-height: 1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
+  color: #0f172a;
 }
-@media (min-width: 640px) { .swms-kpi-figure { font-size: 1.875rem; } }
+@media (min-width: 640px) { .swms-kpi-figure { font-size: 2rem; } }
 
 .swms-kpi-label {
   font-weight: 600;
-  font-size: 0.6875rem;
-  line-height: 1.25;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  color: #6b7a72;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: #334155;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-@media (min-width: 640px) { .swms-kpi-label { font-size: 0.75rem; } }
 
 .swms-kpi-hint {
   font-weight: 500;
-  font-size: 0.6875rem;
-  line-height: 1.25;
-  color: #8494ac;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  color: #64748b;
+}
+
+.swms-kpi-bar {
+  margin-top: auto;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(15,42,67,0.1);
+  overflow: hidden;
+}
+.swms-kpi-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 9999px;
 }

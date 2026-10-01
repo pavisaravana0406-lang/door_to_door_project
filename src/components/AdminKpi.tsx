@@ -7,13 +7,13 @@ import { GroupBreakdown, VehicleBreakdownRow, AdminTotals } from '../utils/admin
 
 export type KpiTone = 'slate' | 'blue' | 'green' | 'amber' | 'rose' | 'violet';
 
-const TONES: Record<KpiTone, { ring: string; value: string; chip: string; chipIcon: string }> = {
-  slate:  { ring: 'hover:border-slate-400',   value: 'text-slate-700',   chip: 'bg-slate-50 border-slate-200',       chipIcon: 'text-slate-500' },
-  blue:   { ring: 'hover:border-blue-400',    value: 'text-blue-700',    chip: 'bg-blue-50 border-blue-200',          chipIcon: 'text-blue-600' },
-  green:  { ring: 'hover:border-emerald-500', value: 'text-emerald-700', chip: 'bg-emerald-50 border-emerald-200',    chipIcon: 'text-emerald-600' },
-  amber:  { ring: 'hover:border-amber-500',   value: 'text-amber-700',   chip: 'bg-amber-50 border-amber-200',      chipIcon: 'text-amber-600' },
-  rose:   { ring: 'hover:border-rose-400',    value: 'text-rose-700',    chip: 'bg-rose-50 border-rose-200',        chipIcon: 'text-rose-500' },
-  violet: { ring: 'hover:border-violet-400',  value: 'text-violet-700',  chip: 'bg-violet-50 border-violet-200',    chipIcon: 'text-violet-600' },
+const TONES: Record<KpiTone, { value: string; iconColor: string; bar: string }> = {
+  slate:  { value: 'text-slate-900',   iconColor: 'text-indigo-600',  bar: '#6366f1' },
+  blue:   { value: 'text-blue-700',    iconColor: 'text-blue-600',    bar: '#2563eb' },
+  green:  { value: 'text-emerald-700', iconColor: 'text-emerald-600', bar: '#16a34a' },
+  amber:  { value: 'text-amber-700',   iconColor: 'text-amber-600',   bar: '#f59e0b' },
+  rose:   { value: 'text-rose-700',    iconColor: 'text-rose-500',    bar: '#dc2626' },
+  violet: { value: 'text-violet-700',  iconColor: 'text-violet-600',  bar: '#7c3aed' },
 };
 
 export interface AdminKpiSquareProps {
@@ -28,29 +28,39 @@ export interface AdminKpiSquareProps {
 }
 
 /**
- * Square KPI tile: icon, figure, label, stacked vertically. The aspect-ratio
- * in .swms-kpi keeps it a true square at every breakpoint, which a
- * padding-and-gap layout could not guarantee.
+ * Hotspot-style KPI card: top row (icon + tiny label … % pill),
+ * big figure, sub-label, bottom progress bar.
+ * Each tone gets its own pastel fill so cards are instantly separable.
  */
 export const AdminKpiSquare: React.FC<AdminKpiSquareProps> = ({
   label, value, icon: Icon, tone, hint, active, onClick,
 }) => {
   const t = TONES[tone];
   const Tag: any = onClick ? 'button' : 'div';
+  const pct = hint?.includes('%') ? hint : undefined;
   return (
     <Tag
       type={onClick ? 'button' : undefined}
       onClick={onClick}
       title={`${label}: ${value.toLocaleString()}${hint ? ` (${hint})` : ''}`}
       aria-pressed={onClick ? !!active : undefined}
-      className={`swms-kpi ${t.ring} ${active ? 'ring-2 ring-[#1E7A38] ring-offset-2' : ''} ${onClick ? 'cursor-pointer' : ''}`}
+      className={`swms-kpi swms-kpi-tone-${tone} ${active ? 'ring-2 ring-[#1E7A38] ring-offset-2' : ''} ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <span className={`swms-kpi-icon ${t.chip}`}>
-        <Icon className={`h-5 w-5 ${t.chipIcon}`} />
+      <span className="swms-kpi-top">
+        <span className="swms-kpi-label-row">
+          <span className="swms-kpi-icon">
+            <Icon className={`h-4 w-4 ${t.iconColor}`} />
+          </span>
+          <span className="swms-kpi-label">{label}</span>
+        </span>
+        {pct && <span className="swms-kpi-pct">{pct}</span>}
       </span>
       <span className={`swms-kpi-figure ${t.value}`}>{value.toLocaleString()}</span>
-      <span className="swms-kpi-label">{label}</span>
-      {hint && <span className="swms-kpi-hint">{hint}</span>}
+      {hint && !pct && <span className="swms-kpi-hint">{hint}</span>}
+      {hint && pct && <span className="swms-kpi-hint">{label}</span>}
+      <span className="swms-kpi-bar" aria-hidden="true">
+        <span style={{ width: pct ? pct.replace('%','') + '%' : '100%', background: t.bar }} />
+      </span>
     </Tag>
   );
 };
@@ -63,7 +73,7 @@ export const GARBAGE_KPIS: Array<{
   icon: React.ComponentType<{ className?: string }>;
   tone: KpiTone;
 }> = [
-  { key: 'total', label: 'Total Garbage', labelTa: 'மொத்த கழிவு', icon: Package, tone: 'slate' },
+  { key: 'total', label: 'Total Garbage', labelTa: 'மொத்த கழிவு', icon: Package, tone: 'blue' },
   { key: 'collected', label: 'Collected', labelTa: 'சேகரிக்கப்பட்டது', icon: PackageCheck, tone: 'green' },
   { key: 'notCollected', label: 'Not Collected', labelTa: 'சேகரிக்கப்படவில்லை', icon: PackageX, tone: 'rose' },
   { key: 'partial', label: 'Partially Not Collected', labelTa: 'பகுதி சேகரிக்கப்படவில்லை', icon: PackageMinus, tone: 'amber' },
@@ -91,7 +101,7 @@ export const GarbageKpiGrid: React.FC<{
   };
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4">
       {GARBAGE_KPIS.map(k => (
         <AdminKpiSquare
           key={k.key}

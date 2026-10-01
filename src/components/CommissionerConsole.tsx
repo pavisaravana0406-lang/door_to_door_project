@@ -302,14 +302,14 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           lang={lang}
         />
 
-        {/* 3. Main content body — 1px breathing room on all sides so the page
-            sits just off the header/nav bar without a wide gutter. */}
-        <div className="flex-1 overflow-y-auto p-[3px] pb-8 bg-white w-full min-w-0">
+        {/* 3. Main content body — hotspot style: slate canvas + real padding
+            so cards never touch header, sidebar or each other. */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 lg:p-6 pb-10 bg-[#f1f5f9] w-full min-w-0">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
-            <div className="space-y-5 sm:space-y-6 w-full">
-              <div className="animate-dash-enter flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-4 sm:space-y-5 w-full max-w-[1400px] mx-auto">
+              <div className="animate-dash-enter flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white border border-slate-200 rounded-2xl px-4 py-3 shadow-sm">
                 <div className="min-w-0">
                   <h1 className="swms-title">
                     {lang === 'ta' ? 'நிர்வாக ஆய்வுக் கட்டுப்பாட்டகம்' : 'Admin Review Dashboard'}

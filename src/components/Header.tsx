@@ -86,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="w-full select-none text-white shadow-md sticky top-0 z-50">
       {/* Top Main Green Bar - dark enterprise green */}
-      <div className="bg-[#14532d] px-2 sm:px-4 lg:px-8 py-2 sm:py-2.5 lg:py-4 flex items-center justify-between gap-1.5 sm:gap-4 border-b border-[#0f3d22] min-h-[56px] sm:min-h-[68px] lg:min-h-[88px]">
+      <div className="bg-[#14532d] px-3 sm:px-5 lg:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-4 border-b border-[#0f3d22] min-h-[56px] sm:min-h-[64px]">
         {/* Left Side: Mobile Menu Toggle + CM Portrait & CCMC Emblem Duo + Municipal Titles */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1">
           
@@ -141,42 +141,42 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-            {/* Municipal Title — main headings, big and highly visible */}
+            {/* Municipal Title — compact hotspot-like headings */}
             <div className="min-w-0 flex flex-col justify-center">
-              {/* Mobile View: stacked, large and readable (< sm) */}
+              {/* Mobile View: stacked, compact (< sm) */}
               <div className="sm:hidden flex flex-col justify-center leading-tight">
-                <div className="text-[17px] font-black tracking-tight text-white leading-snug drop-shadow">
+                <div className="text-[14px] font-bold tracking-tight text-white leading-snug">
                   Coimbatore City Municipal Corporation
                 </div>
-                <div className="text-[12px] font-black tracking-wide text-amber-300 uppercase leading-snug mt-1 drop-shadow">
+                <div className="text-[10px] font-bold tracking-wide text-amber-300 uppercase leading-snug mt-0.5">
                   Integrated Command and Control Center (ICCC)
                 </div>
-                <div className="text-[11px] font-black tracking-wide text-emerald-300 uppercase leading-snug mt-1 drop-shadow">
+                <div className="text-[10px] font-bold tracking-wide text-emerald-300 uppercase leading-snug mt-0.5">
                   SWMS {lang === 'ta' ? 'வீடு வழி' : 'Door-to-Door'}
                 </div>
                 {userRole !== 'admin' && (
-                  <div className="text-[11px] font-bold text-cyan-200 tracking-wide uppercase leading-snug mt-1">
+                  <div className="text-[10px] font-semibold text-cyan-200 tracking-wide uppercase leading-snug mt-0.5">
                     {lang === 'ta' ? 'களப் பணியாளர்' : 'SANITARY FIELD WORKER'}
                   </div>
                 )}
               </div>
 
-              {/* Desktop / tablet: big single-block headings (>= sm) */}
+              {/* Desktop / tablet: compact single-block headings (>= sm) */}
               <div className="hidden sm:flex sm:flex-col sm:justify-center leading-tight">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-xl lg:text-[28px] font-black tracking-tight text-white drop-shadow leading-tight">
+                  <span className="text-[17px] lg:text-[19px] font-bold tracking-tight text-white leading-tight">
                     Coimbatore City Municipal Corporation
                   </span>
                   {userRole !== 'admin' && (
-                    <span className="text-sm lg:text-lg font-black tracking-wider text-amber-300 uppercase drop-shadow">
+                    <span className="text-xs font-bold tracking-wider text-amber-300 uppercase">
                       • {lang === 'ta' ? 'களப் பணியாளர்' : 'SANITARY FIELD WORKER'}
                     </span>
                   )}
                 </div>
-                <div className="text-sm lg:text-[18px] font-black tracking-wider text-amber-300 uppercase drop-shadow mt-1 leading-snug">
+                <div className="text-[11px] lg:text-xs font-bold tracking-wider text-amber-300 uppercase mt-0.5 leading-snug">
                   Integrated Command and Control Center (ICCC)
                 </div>
-                <div className="text-xs lg:text-[15px] font-black tracking-wider text-emerald-300 uppercase drop-shadow mt-0.5 leading-snug">
+                <div className="text-[11px] lg:text-xs font-semibold tracking-wider text-emerald-300 uppercase mt-0.5 leading-snug">
                   SWMS {lang === 'ta' ? 'வீடு வழி' : 'Door-to-Door'}
                 </div>
               </div>
