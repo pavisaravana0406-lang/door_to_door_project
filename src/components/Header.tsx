@@ -152,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
                   Integrated Command and Control Center (ICCC)
                 </div>
                 <div className="text-[10px] font-bold tracking-wide text-emerald-300 uppercase leading-snug mt-0.5">
-                  SWMS {lang === 'ta' ? 'வீடு வழி' : 'Door-to-Door'}
+                  SWMS {lang === 'ta' ? 'வீடு வழி கண்காணிப்பு' : 'Door-to-Door Monitoring'}
                 </div>
                 {userRole !== 'admin' && (
                   <div className="text-[10px] font-semibold text-cyan-200 tracking-wide uppercase leading-snug mt-0.5">
@@ -177,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({
                   Integrated Command and Control Center (ICCC)
                 </div>
                 <div className="text-[11px] lg:text-xs font-semibold tracking-wider text-emerald-300 uppercase mt-0.5 leading-snug">
-                  SWMS {lang === 'ta' ? 'வீடு வழி' : 'Door-to-Door'}
+                  SWMS {lang === 'ta' ? 'வீடு வழி கண்காணிப்பு' : 'Door-to-Door Monitoring'}
                 </div>
               </div>
             </div>
