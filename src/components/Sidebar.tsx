@@ -147,14 +147,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             onClick={() => handleTabClick('ai-prediction')}
             data-active={activeTab === 'ai-prediction'}
-            className={`dash-sidebar-item w-full flex items-center justify-between px-3.5 py-3 rounded-2xl font-bold text-[15px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-left cursor-pointer border ${
               activeTab === 'ai-prediction'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-emerald-500/50 bg-emerald-50/50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="w-9 h-9 rounded-xl overflow-hidden border-2 border-emerald-500/50 bg-emerald-50/50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
                 <img
                   src={AI_PREDICTION_ICON_URL}
                   alt="AI Prediction"
@@ -172,14 +172,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 3. Collected Tab */}
           <button
             onClick={() => handleTabClick('collected')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-left cursor-pointer border ${
               activeTab === 'collected'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-emerald-500/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="w-9 h-9 rounded-xl overflow-hidden border-2 border-emerald-500/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
                 <img
                   src={householdCoveredIcon}
                   alt="Collected"
@@ -199,14 +199,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 4. Not Collected Tab */}
           <button
             onClick={() => handleTabClick('not-collected')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-left cursor-pointer border ${
               activeTab === 'not-collected'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-rose-600/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="w-9 h-9 rounded-xl overflow-hidden border-2 border-rose-600/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
                 <img
                   src={householdNotCoveredIcon}
                   alt="Not Collected"
@@ -228,17 +228,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => handleTabClick('partially-not-collected')}
             data-active={activeTab === 'partially-not-collected'}
             title={lang === 'ta' ? 'பகுதி சேகரிக்கப்படவில்லை' : 'Partially Not Collected'}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-left cursor-pointer border ${
               activeTab === 'partially-not-collected'
                 ? 'bg-white text-amber-900 shadow-sm border-amber-400'
                 : 'text-slate-700 border-transparent hover:bg-[#fef6e7] hover:text-amber-900 hover:border-amber-300'
             }`}
           >
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="dash-sidebar-icon w-12 h-12 rounded-2xl border-2 border-amber-400 bg-amber-50 flex-shrink-0 flex items-center justify-center shadow-xs">
-                <AlertTriangle className="w-6 h-6 text-amber-600" />
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="dash-sidebar-icon w-9 h-9 rounded-xl border-2 border-amber-400 bg-amber-50 flex-shrink-0 flex items-center justify-center shadow-xs">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
               </div>
-              <span className="text-[17px] font-extrabold text-slate-900 truncate">{lang === 'ta' ? 'பகுதி சேகரிக்கப்படவில்லை' : 'Partially Not Collected'}</span>
+              <span className="text-[13px] font-bold text-slate-800 leading-snug break-words flex-1">{lang === 'ta' ? 'பகுதி சேகரிக்கப்படவில்லை' : 'Partially Not Collected'}</span>
             </div>
           </button>
 
@@ -247,14 +247,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => handleTabClick('frequently-not-covered-area')}
             data-active={activeTab === 'frequently-not-covered-area'}
             title={lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Not Collected Household'}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-left cursor-pointer border ${
               activeTab === 'frequently-not-covered-area'
                 ? 'bg-white text-rose-900 shadow-sm border-rose-400'
                 : 'text-slate-700 border-transparent hover:bg-[#fdecea] hover:text-rose-900 hover:border-rose-300'
             }`}
           >
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="dash-sidebar-icon w-12 h-12 rounded-2xl overflow-hidden border-2 border-rose-400 bg-rose-50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="dash-sidebar-icon w-9 h-9 rounded-xl overflow-hidden border-2 border-rose-400 bg-rose-50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
                 <img
                   src={frequentlyNotCollectedIcon}
                   alt="Frequently Missed Houses"
@@ -267,7 +267,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
-              <span className="text-[17px] font-extrabold text-slate-900 truncate">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed'}</span>
+              <span className="text-[13px] font-bold text-slate-800 leading-snug break-words flex-1">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed'}</span>
             </div>
             <span className="dash-badge dash-badge-red flex-shrink-0 ml-2">!</span>
           </button>
@@ -275,14 +275,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 6. Municipal Reports Tab */}
           <button
             onClick={() => handleTabClick('reports')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-left cursor-pointer border ${
               activeTab === 'reports'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
-            <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl overflow-hidden border-2 border-emerald-500/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+              <div className="w-9 h-9 rounded-xl overflow-hidden border-2 border-emerald-500/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
                 <img
                   src={REPORTS_ICON_URL}
                   alt="Reports"
@@ -297,21 +297,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* 7. QR Management Tab (QR Checkpoint Admin) */}
           <button
             onClick={() => handleTabClick('qr-management')}
-            className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-sm text-left cursor-pointer border ${
               activeTab === 'qr-management'
                 ? 'bg-white text-emerald-900 shadow-sm border-emerald-300'
                 : 'text-slate-700 border-transparent hover:bg-white hover:text-emerald-900 hover:border-emerald-200'
             }`}
           >
-            <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <div
-                className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors shadow-xs ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors shadow-xs ${
                   activeTab === 'qr-management'
                     ? 'bg-[#1E7A38] text-white'
                     : 'bg-white text-[#1E7A38] border border-emerald-300'
                 }`}
               >
-                <QrCode className="w-6 h-6" />
+                <QrCode className="w-5 h-5" />
               </div>
               <span className="text-sm font-bold">{lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management'}</span>
             </div>
@@ -333,7 +333,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-2xl font-bold text-sm text-[#1E7A38] hover:bg-gray-200/60 transition-all text-left cursor-pointer"
           >
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#1E7A38] flex items-center justify-center flex-shrink-0 border border-emerald-200/80 shadow-xs">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#1E7A38] flex items-center justify-center flex-shrink-0 border border-emerald-200/80 shadow-xs">
               <LogOut className="w-6 h-6 text-[#1E7A38]" />
             </div>
             <span className="text-sm font-bold">{lang === 'ta' ? 'வெளியேறு' : 'Logout'}</span>

@@ -199,8 +199,8 @@ export const PerformanceTable: React.FC<{
             return (
               <tr key={r.key}>
                 <td>
-                  <div className="swms-row-title truncate">{r.label}</div>
-                  {r.sublabel && <div className="swms-meta truncate">{r.sublabel}</div>}
+                  <div className="swms-row-title">{r.label}</div>
+                  {r.sublabel && <div className="swms-meta">{r.sublabel}</div>}
                 </td>
                 {columns.map(c => {
                   const v = Number((r as any)[c]) || 0;
@@ -311,7 +311,7 @@ export const AdminSection: React.FC<{
     <div className="swms-panel-head">
       <h3 className="swms-section flex items-center gap-2 min-w-0">
         <Icon className="w-4 h-4 text-[#1E7A38] flex-shrink-0" />
-        <span className="truncate">{lang === 'ta' && titleTa ? titleTa : title}</span>
+        <span>{lang === 'ta' && titleTa ? titleTa : title}</span>
       </h3>
       {right}
     </div>

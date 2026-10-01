@@ -80,7 +80,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
     <div className="dash-card overflow-hidden">
       {/* Table Title & Zone Filter Ribbon */}
       <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
-        <h2 className="dash-section-title text-lg sm:text-xl font-black text-slate-900 tracking-tight">
+        <h2 className="dash-section-title text-base font-bold text-slate-900 tracking-tight">
           {lang === 'ta' ? 'சமீபத்திய சேகரிப்பு மேலோட்டம்' : 'Recent Collection Overview'}
         </h2>
 

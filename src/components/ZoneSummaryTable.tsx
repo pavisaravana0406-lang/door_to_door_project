@@ -87,7 +87,7 @@ export const ZoneSummaryTable: React.FC<ZoneSummaryTableProps> = ({
                 <td className="px-5 sm:px-6 py-3.5 text-slate-900 font-bold">
                   <div className="flex items-center gap-2 min-w-0">
                     <MapPin className="w-4 h-4 text-emerald-700 flex-shrink-0" />
-                    <span className="truncate">{getZoneDisplayName(row.zone, lang)}</span>
+                    <span>{getZoneDisplayName(row.zone, lang)}</span>
                   </div>
                 </td>
 

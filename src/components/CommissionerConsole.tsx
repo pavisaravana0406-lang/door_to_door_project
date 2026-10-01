@@ -512,7 +512,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             <div className="space-y-6">
               <div className="bg-emerald-900 text-white rounded-2xl p-5 border border-emerald-800 shadow-xl flex items-center justify-between flex-wrap gap-4">
                 <div>
-                  <h2 className="text-lg sm:text-xl font-black">
+                  <h2 className="text-base font-bold">
                     SBM Door-to-Door Garbage Audit Panel
                   </h2>
                   <p className="text-xs sm:text-[13px] text-emerald-100 font-semibold mt-1">

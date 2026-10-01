@@ -52,12 +52,12 @@ export const KPICards: React.FC<KPICardsProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] sm:text-sm font-extrabold text-blue-950 flex items-center justify-between gap-2">
-              <span className="truncate">{lang === 'ta' ? 'மொத்த வீடுகள்' : 'Total Households'}</span>
+              <span>{lang === 'ta' ? 'மொத்த வீடுகள்' : 'Total Households'}</span>
               <span className="dash-badge dash-badge-blue flex-shrink-0">
                 {lang === 'ta' ? 'அனைத்தும்' : 'All'}
               </span>
             </div>
-            <div className="text-[42px] sm:text-[48px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
+            <div className="text-[30px] sm:text-[34px] font-bold text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalCollectedToday} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
@@ -82,12 +82,12 @@ export const KPICards: React.FC<KPICardsProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
-              <span className="truncate">{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}</span>
+              <span>{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}</span>
               <span className="dash-badge dash-badge-green flex-shrink-0">
                 <CheckCircle2 className="w-3 h-3" /> {typeof coveredPercent === 'string' && coveredPercent.includes('%') ? coveredPercent : `${coveredPercent}%`}
               </span>
             </div>
-            <div className="text-[42px] sm:text-[48px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
+            <div className="text-[30px] sm:text-[34px] font-bold text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalCoveredCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
@@ -112,12 +112,12 @@ export const KPICards: React.FC<KPICardsProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
-              <span className="truncate">{lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}</span>
+              <span>{lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}</span>
               <span className="dash-badge dash-badge-amber flex-shrink-0">
                 <AlertTriangle className="w-3 h-3" /> {typeof notCoveredPercent === 'string' && notCoveredPercent.includes('%') ? notCoveredPercent : `${notCoveredPercent}%`}
               </span>
             </div>
-            <div className="text-[42px] sm:text-[48px] font-black text-slate-900 tracking-tight my-2 font-num leading-none">
+            <div className="text-[30px] sm:text-[34px] font-bold text-slate-900 tracking-tight my-2 font-num leading-none">
               <AnimatedCounter value={metrics.totalNotCoveredCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
@@ -152,12 +152,12 @@ export const KPICards: React.FC<KPICardsProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
-              <span className="truncate">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed'}</span>
+              <span>{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed'}</span>
               <span className="dash-badge dash-badge-red flex-shrink-0">
                 <AlertOctagon className="w-3 h-3" /> {typeof frequentlyPercent === 'string' && frequentlyPercent.includes('%') ? frequentlyPercent : `${frequentlyPercent}%`}
               </span>
             </div>
-            <div className="text-[42px] sm:text-[48px] font-black text-slate-900 tracking-tight my-2 font-num leading-none flex items-baseline gap-1.5">
+            <div className="text-[30px] sm:text-[34px] font-bold text-slate-900 tracking-tight my-2 font-num leading-none flex items-baseline gap-1.5">
               <AnimatedCounter value={frequentlyCount} />
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
