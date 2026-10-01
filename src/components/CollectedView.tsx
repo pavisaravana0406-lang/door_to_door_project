@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Truck, CheckCircle2, Search, Filter, Eye, ShieldCheck, MapPin, Download, ArrowLeft, Layers, Users, Calendar, Sparkles, Home } from 'lucide-react';
 import { CollectionRecord } from '../types';
 import { householdCoveredIcon, householdCoveredFallbackIcon } from '../constants/branding';
+import { AdminSubPageHeader } from './AdminSubPageHeader';
 
 interface CollectedViewProps {
   records: CollectionRecord[];
@@ -50,70 +51,28 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner Navigation & Summary */}
-      <div className="bg-white rounded-2xl p-6 border border-emerald-200/90 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-emerald-500/60 bg-white p-0.5 flex-shrink-0 shadow-sm flex items-center justify-center">
-            <img
-              src={householdCoveredIcon}
-              alt="Total Household Collected"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                if (e.currentTarget.src !== householdCoveredFallbackIcon) {
-                  e.currentTarget.src = householdCoveredFallbackIcon;
-                }
-              }}
-              className="w-full h-full object-cover rounded-xl"
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              {onBackToOverview && (
-                <button
-                  onClick={onBackToOverview}
-                  className="text-xs text-gray-500 hover:text-[#1E7A38] font-bold flex items-center gap-1 transition cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" /> {lang === 'ta' ? 'டாஷ்போர்டிற்குத் திரும்பு' : 'Back to Dashboard'}
-                </button>
-              )}
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 mt-1">
-              {lang === 'ta' ? 'மொத்த வீட்டுச் சேகரிப்பு விவரங்கள்' : 'Total Household Collected Details'}
-            </h1>
-          </div>
-        </div>
-
-        {/* Action / Stats Pill */}
-        <div className="flex items-center gap-3">
-          <div className="bg-emerald-50 border border-emerald-200 px-4 py-3 rounded-2xl flex items-center gap-3">
-            <CheckCircle2 className="w-7 h-7 text-[#1E7A38]" />
-            <div>
-              <div className="text-[11px] text-[#1E7A38] font-bold uppercase tracking-wider">
-                {lang === 'ta' ? 'சேகரிக்கப்பட்ட வீடுகள்' : 'Collected Count'}
-              </div>
-              <div className="text-2xl font-black text-[#1E7A38]">
-                {collectedRecords.length.toLocaleString()}{' '}
-                <span className="text-xs font-normal text-gray-500">
-                  {lang === 'ta' ? 'வீடுகள்' : 'Households'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {onNavigateToNotCovered && (
-            <button
-              onClick={onNavigateToNotCovered}
-              className="bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 text-xs font-bold px-3.5 py-3 rounded-2xl transition flex items-center gap-2 cursor-pointer"
-            >
-              <span>
-                {lang === 'ta'
-                  ? `சேகரிக்கப்படாதவை (${notCollectedCount.toLocaleString()})`
-                  : `View Not Collected (${notCollectedCount.toLocaleString()})`}
-              </span>
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Header */}
+      <AdminSubPageHeader
+        icon={householdCoveredIcon}
+        iconAlt="Total Household Collected"
+        iconFallback={householdCoveredFallbackIcon}
+        title="Total Household Collected Details"
+        titleTa="மொத்த வீட்டுச் சேகரிப்பு விவரங்கள்"
+        lang={lang}
+        tone="green"
+        onBack={onBackToOverview}
+        statLabel={lang === 'ta' ? 'சேகரிக்கப்பட்ட வீடுகள்' : 'Collected Count'}
+        statValue={collectedRecords.length}
+        statSuffix={lang === 'ta' ? 'வீடுகள்' : 'Households'}
+        navLabel={
+          onNavigateToNotCovered
+            ? (lang === 'ta'
+              ? `சேகரிக்கப்படாதவை (${notCollectedCount.toLocaleString()})`
+              : `View Not Collected (${notCollectedCount.toLocaleString()})`)
+            : undefined
+        }
+        onNav={onNavigateToNotCovered}
+      />
 
       {/* Quick Metrics Bar */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

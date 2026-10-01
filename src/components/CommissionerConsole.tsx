@@ -95,7 +95,16 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           return !s.includes('Not Logged');
         };
 
+        /**
+         * Whether this record was filed today. This only decides the date and
+         * time columns — it must NOT decide whether the door was collected. A
+         * door collected yesterday is still collected; classifying on "today"
+         * used to relabel every past record as Not Collected, so a worker who
+         * had genuinely collected 2 houses showed as Collected 0.
+         */
         const isRealSubmission = !!r.submittedAt && isSubmittedToday(r.submittedAt);
+        const wasCollected = r.coverageStatus === 'Covered';
+
         return {
           id: r.id || `REC-${1000 + idx}`,
           householdId: r.houseId,
@@ -104,7 +113,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           streetName: r.streetName,
           ward: r.ward,
           zone: r.zone || (r.ward?.includes('49') ? 'Central Zone' : r.ward?.includes('35') ? 'West Zone' : r.ward?.includes('12') ? 'North Zone' : 'East Zone'),
-          status: (isRealSubmission && r.coverageStatus === 'Covered' ? 'Collected' : 'Not Collected') as any,
+          status: (wasCollected ? 'Collected' : 'Not Collected') as any,
           wasteType: 'Segregated (Wet & Dry)',
           propertyType: 'Residence',
           scannedAt: isRealSubmission ? r.submittedAt : 'Shift Pending',
@@ -117,7 +126,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           timestamp: isRealSubmission ? r.submittedAt : 'Shift Pending (Not Logged In Today)',
           street: r.streetName,
           workerPhone: r.driverWorkerContact || r.ssContact || '',
-          binLevelPercent: isRealSubmission && r.coverageStatus === 'Covered' ? 100 : 0,
+          binLevelPercent: wasCollected ? 100 : 0,
           supervisor: r.ssName ? `${r.ssName} (SS)` : (r.siName ? `${r.siName} (SI)` : 'Sanitary Supervisor'),
           coordinates: r.latitude && r.longitude ? { lat: r.latitude, lng: r.longitude } : undefined,
           completedScansCount: isRealSubmission ? r.completedScansCount : 0,
@@ -126,7 +135,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
           beforePhoto: r.beforePhoto,
           afterPhoto: r.afterPhoto,
           photos: r.photos,
-          coverageStatus: isRealSubmission ? r.coverageStatus : ('Not Covered' as any)
+          coverageStatus: r.coverageStatus ?? ('Not Covered' as any)
         };
       });
     }

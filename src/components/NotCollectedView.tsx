@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle, XCircle, Search, Filter, Eye, RefreshCw, MapPin, Truck, ArrowLeft, CheckCircle2, Phone, AlertCircle, FileSpreadsheet, Lock, Ban, HelpCircle } from 'lucide-react';
 import { CollectionRecord } from '../types';
 import { householdNotCoveredIcon, householdNotCoveredFallbackIcon } from '../constants/branding';
+import { AdminSubPageHeader } from './AdminSubPageHeader';
 
 interface NotCollectedViewProps {
   records: CollectionRecord[];
@@ -51,70 +52,28 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* View Header */}
-      <div className="bg-white rounded-2xl p-6 border border-rose-200/90 shadow-sm flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-rose-600/60 bg-white p-0.5 flex-shrink-0 shadow-sm flex items-center justify-center">
-            <img
-              src={householdNotCoveredIcon}
-              alt="Total Household Not Collected"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                if (e.currentTarget.src !== householdNotCoveredFallbackIcon) {
-                  e.currentTarget.src = householdNotCoveredFallbackIcon;
-                }
-              }}
-              className="w-full h-full object-cover rounded-xl"
-            />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              {onBackToOverview && (
-                <button
-                  onClick={onBackToOverview}
-                  className="text-xs text-gray-500 hover:text-rose-700 font-bold flex items-center gap-1 transition cursor-pointer"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" /> {lang === 'ta' ? 'டாஷ்போர்டிற்குத் திரும்பு' : 'Back to Dashboard'}
-                </button>
-              )}
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-gray-900 mt-1">
-              {lang === 'ta' ? 'சேகரிக்கப்படாத வீடுகள் அறிக்கை' : 'Total Household Not Collected Reports'}
-            </h1>
-          </div>
-        </div>
-
-        {/* Action / Stats Pill */}
-        <div className="flex items-center gap-3">
-          <div className="bg-rose-50 border border-rose-200 px-4 py-3 rounded-2xl flex items-center gap-3">
-            <AlertTriangle className="w-7 h-7 text-[#C5221F]" />
-            <div>
-              <div className="text-[11px] text-rose-800 font-bold uppercase tracking-wider">
-                {lang === 'ta' ? 'சேகரிக்கப்படாத வீடுகள்' : 'Not Collected Count'}
-              </div>
-              <div className="text-2xl font-black text-[#C5221F]">
-                {pendingRecords.length.toLocaleString()}{' '}
-                <span className="text-xs font-normal text-gray-500">
-                  {lang === 'ta' ? 'வீடுகள்' : 'Households'}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {onNavigateToCovered && (
-            <button
-              onClick={onNavigateToCovered}
-              className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold px-3.5 py-3 rounded-2xl transition flex items-center gap-2 cursor-pointer"
-            >
-              <span>
-                {lang === 'ta'
-                  ? `சேகரிக்கப்பட்டவை (${collectedCount.toLocaleString()})`
-                  : `View Collected (${collectedCount.toLocaleString()})`}
-              </span>
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Header */}
+      <AdminSubPageHeader
+        icon={householdNotCoveredIcon}
+        iconAlt="Total Household Not Collected"
+        iconFallback={householdNotCoveredFallbackIcon}
+        title="Total Household Not Collected Reports"
+        titleTa="?????????????? ??????? ???????"
+        lang={lang}
+        tone="rose"
+        onBack={onBackToOverview}
+        statLabel={lang === 'ta' ? '?????????????? ???????' : 'Not Collected Count'}
+        statValue={pendingRecords.length}
+        statSuffix={lang === 'ta' ? '???????' : 'Households'}
+        navLabel={
+          onNavigateToCovered
+            ? (lang === 'ta'
+              ? `???????????????? (${collectedCount.toLocaleString()})`
+              : `View Collected (${collectedCount.toLocaleString()})`)
+            : undefined
+        }
+        onNav={onNavigateToCovered}
+      />
 
       {/* Missed Reason Breakdown Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
