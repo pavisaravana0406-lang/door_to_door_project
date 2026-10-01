@@ -34,11 +34,16 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
     ? pendingRecords.length - lockedCount - refusedCount - narrowLaneCount
     : 0;
 
+  // street/ward are optional, so a record missing them used to throw and blank
+  // the page. vehicleNo is included because the placeholder text on this
+  // search box promises a vehicle search that was never actually wired up.
+  const q = searchTerm.trim().toLowerCase();
   const filtered = pendingRecords.filter((r) => {
-    const matchesSearch =
-      r.street.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.ward.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.workerName.toLowerCase().includes(searchTerm.toLowerCase());
+    const haystack = [r.street, r.streetName, r.ward, r.workerName, r.vehicleNo]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    const matchesSearch = !q || haystack.includes(q);
     const matchesZone = selectedZone === 'All' || r.zone === selectedZone;
     const matchesReason = reasonFilter === 'All' || (r.reasonIfNotCollected && r.reasonIfNotCollected.includes(reasonFilter));
     return matchesSearch && matchesZone && matchesReason;

@@ -35,11 +35,15 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
   const uniqueWorkersCount = new Set(records.map(r => r.workerName).filter(Boolean)).size;
   const uniqueWardsCount = new Set(records.map(r => r.ward).filter(Boolean)).size;
 
+  // street/ward are optional on CollectionRecord, so a record without them
+  // used to throw a TypeError here and blank the whole page.
+  const q = searchTerm.trim().toLowerCase();
   const filtered = collectedRecords.filter((r) => {
-    const matchesSearch =
-      r.street.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.ward.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.workerName.toLowerCase().includes(searchTerm.toLowerCase());
+    const haystack = [r.street, r.streetName, r.ward, r.workerName, r.vehicleNo]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+    const matchesSearch = !q || haystack.includes(q);
     const matchesZone = selectedZone === 'All' || r.zone === selectedZone;
     return matchesSearch && matchesZone;
   });

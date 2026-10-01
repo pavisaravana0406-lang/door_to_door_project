@@ -23,6 +23,13 @@ import {
 import { INITIAL_MUNICIPAL_ALERTS } from '../data/alertsData';
 import { INITIAL_FREQUENTLY_NOT_COLLECTED } from '../data/frequentlyNotCollectedData';
 import { REAL_QR_VEHICLE_REPORTS } from '../utils/vehicleAssignmentStorage';
+import { buildAdminAnalytics, reasonOf } from '../utils/adminAnalytics';
+import { buildHouseStreaks, houseKeyOf } from '../utils/missedStreaks';
+import { GarbageKpiGrid, PerformanceList, AdminSection } from './AdminKpi';
+import {
+  PartiallyNotCollectedView, FrequentlyNotCollectedVehicleView,
+} from './VehicleMissView';
+import { Truck, Layers, DoorOpen, MapPin, ArrowLeft } from 'lucide-react';
 import { CollectionRecord, NavigationTab, SWMSHouseholdRecord, SWMSDashboardStats, FrequentlyNotCollectedItem } from '../types';
 import { CheckCircle2, QrCode } from 'lucide-react';
 
@@ -214,6 +221,31 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
     });
   }, [sbmRecords]);
 
+  /**
+   * One analytics pass feeding every admin page, so the overview, the collected
+   * and not-collected pages and the two missed pages can never disagree. The
+   * streak lookup reuses the same helper the worker dashboard uses, so the
+   * "frequently missed" tier means the same thing on both sides.
+   */
+  const houseStreaks = React.useMemo(() => buildHouseStreaks(sbmRecords || []), [sbmRecords]);
+
+  const adminAnalytics = React.useMemo(
+    () => buildAdminAnalytics(sbmRecords || [], r => houseStreaks.get(houseKeyOf(r as any)) ?? 1),
+    [sbmRecords, houseStreaks]
+  );
+
+  // CollectionRecord carries reasonIfNotCollected, which the Not Collected page
+  // filters on. It was never populated, so the reason breakdown was dead.
+  const analyticsRecords = React.useMemo(() => {
+    if (!sbmRecords?.length) return [];
+    return collectionRecords.map(c => ({ ...c, reasonIfNotCollected: reasonOf(c as any) }));
+  }, [collectionRecords, sbmRecords]);
+
+  const analyticsForViews = React.useMemo(
+    () => buildAdminAnalytics(analyticsRecords, () => 1),
+    [analyticsRecords]
+  );
+
   const handleInspectRecord = (record: CollectionRecord) => {
     setSelectedRecord(record);
   };
@@ -280,37 +312,93 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
                 <span className="dash-badge dash-badge-green w-fit">Live • ICCC connected</span>
               </div>
 
-              {/* KPI cards grid with individual view redirection */}
-              <KPICards 
-                metrics={metrics} 
+              {/* Six headline garbage KPIs, doubling as navigation */}
+              <GarbageKpiGrid
+                totals={adminAnalytics.totals}
                 lang={lang}
-                onNavigateToCollected={() => {
-                  setActiveTab('collected');
-                  showToast(lang === 'ta' ? 'மொத்த சேகரிக்கப்பட்ட குப்பை விவரங்களுக்குத் நகர்ந்தது' : 'Navigated to: Total Collected Waste Details');
-                }}
-                onNavigateToCovered={() => {
-                  setActiveTab('collected');
-                  showToast(lang === 'ta' ? 'மொத்த வீட்டுச் சேகரிப்பு விவரங்களுக்குத் நகர்ந்தது' : 'Navigated to: Total Household Covered Details');
-                }}
-                onNavigateToNotCovered={() => {
-                  setActiveTab('not-collected');
-                  showToast(lang === 'ta' ? 'விடுபட்ட வீடுகள் அறிக்கைகளுக்குத் நகர்ந்தது' : 'Navigated to: Total Household Not Covered Reports');
-                }}
-                onNavigateToFrequentlyNotCovered={() => {
-                  setActiveTab('frequently-not-covered-area');
-                  showToast(lang === 'ta' ? 'அடிக்கடி சேகரிக்கப்படாத வீடுகள் பகுதிக்குத் நகர்ந்தது' : 'Navigated to: Frequently Not Covered Area Intelligence View');
+                onSelect={(key) => {
+                  if (key === 'collected') setActiveTab('collected');
+                  else if (key === 'notCollected') setActiveTab('not-collected');
+                  else if (key === 'frequent') setActiveTab('frequently-not-covered-area');
+                  else if (key === 'partial') setActiveTab('partially-not-collected');
                 }}
               />
 
-              {/* Zone summaries */}
-              <div className="animate-dash-enter w-full" style={{ animationDelay: '120ms' }}>
-                <ZoneSummaryTable
-                  summaries={zoneSummaries}
+              {/* Zone-wise summary with performance % */}
+              <div className="animate-dash-enter w-full" style={{ animationDelay: '100ms' }}>
+                <AdminSection
+                  title="Zone-wise Performance"
+                  titleTa="மண்டல வாரியான செயல்திறன்"
+                  icon={MapPin}
                   lang={lang}
-                  onSelectZone={(zone) => {
-                    showToast(lang === 'ta' ? `${zone} மண்டலத்தின் மூலம் வடிகட்டப்படுகிறது` : `Filtering metrics by: ${zone}`);
-                  }}
-                />
+                  right={<span className="text-[10px] font-bold text-slate-400">5 zones</span>}
+                >
+                  <PerformanceList
+                    lang={lang}
+                    rows={adminAnalytics.byZone.map(z => ({
+                      key: z.key,
+                      label: z.label,
+                      sublabel: `${z.vehicles} vehicles`,
+                      total: z.total,
+                      collected: z.collected,
+                      partial: z.partial,
+                      notCollected: z.notCollected,
+                      performance: z.performance,
+                    }))}
+                  />
+                </AdminSection>
+              </div>
+
+              {/* Vehicle-wise KPIs */}
+              <div className="animate-dash-enter w-full" style={{ animationDelay: '160ms' }}>
+                <AdminSection
+                  title="Vehicle-wise Performance"
+                  titleTa="வாகன வாரியான செயல்திறன்"
+                  icon={Truck}
+                  lang={lang}
+                >
+                  <PerformanceList
+                    lang={lang}
+                    rows={adminAnalytics.byVehicleType.map(v => ({
+                      key: v.key,
+                      label: v.label,
+                      sublabel: `${v.vehicles} vehicles`,
+                      total: v.total,
+                      collected: v.collected,
+                      partial: v.partial,
+                      notCollected: v.notCollected,
+                      performance: v.performance,
+                    }))}
+                    emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
+                  />
+
+                  {adminAnalytics.byVehicle.length > 0 && (
+                    <details className="mt-2 group">
+                      <summary className="cursor-pointer list-none text-[11px] font-black text-emerald-700 hover:underline">
+                        {lang === 'ta' ? 'வாகன் வாரியாக விரிவாக' : 'Show per-vehicle breakdown'}
+                      </summary>
+                      <div className="mt-2 space-y-2">
+                        <PerformanceList
+                          lang={lang}
+                          showChips={false}
+                          rows={adminAnalytics.byVehicle.slice(0, 40).map(v => ({
+                            key: v.key,
+                            label: v.vehicleNo,
+                            sublabel: `${v.vehicleType} • ${v.workerName}`,
+                            total: v.total,
+                            collected: v.collected,
+                            performance: v.performance,
+                            extra: (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-rose-50 border border-rose-200 text-[9px] font-bold text-rose-700">
+                                {v.notCollected} missed
+                              </span>
+                            ),
+                          }))}
+                        />
+                      </div>
+                    </details>
+                  )}
+                </AdminSection>
               </div>
 
               {/* Recent Collections (Placed on the next line as a full report table) */}
@@ -325,6 +413,16 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             </div>
           )}
 
+          {/* TAB: PARTIALLY NOT COLLECTED — vehicle-wise */}
+          {activeTab === 'partially-not-collected' && (
+            <PartiallyNotCollectedView
+              records={analyticsRecords}
+              analytics={analyticsForViews}
+              lang={lang}
+              onBackToOverview={() => setActiveTab('overview')}
+            />
+          )}
+
           {/* TAB 4: REPORTS */}
           {activeTab === 'reports' && (
             <ReportsView
@@ -337,46 +435,105 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             />
           )}
 
-          {/* TAB 5: COLLECTED (TOTAL HOUSEHOLD COVERED DETAILS) */}
+          {/* TAB 5: COLLECTED — performance by zone and vehicle */}
           {activeTab === 'collected' && (
-            <CollectedView
-              records={collectionRecords}
-              onInspectRecord={handleInspectRecord}
-              onBackToOverview={() => setActiveTab('overview')}
-              onNavigateToNotCovered={() => {
-                setActiveTab('not-collected');
-                showToast(lang === 'ta' ? 'விடுபட்ட வீடுகள் அறிக்கைகளுக்குத் நகர்ந்தது' : 'Navigated to: Total Household Not Covered Reports');
-              }}
-              lang={lang}
-            />
+            <div className="space-y-4">
+              <AdminSection title="Performance by Zone" titleTa="மண்டல வாரியான செயல்திறன்" icon={MapPin} lang={lang}>
+                <PerformanceList
+                  lang={lang}
+                  rows={analyticsForViews.byZone.map(z => ({
+                    key: z.key, label: z.label, sublabel: `${z.collected} of ${z.total}`,
+                    total: z.total, collected: z.collected, partial: z.partial,
+                    notCollected: z.notCollected, performance: z.performance,
+                  }))}
+                />
+              </AdminSection>
+
+              <AdminSection title="Performance by Vehicle" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
+                <PerformanceList
+                  lang={lang}
+                  rows={analyticsForViews.byVehicleType.map(v => ({
+                    key: v.key, label: v.label, sublabel: `${v.vehicles} vehicles`,
+                    total: v.total, collected: v.collected, partial: v.partial,
+                    notCollected: v.notCollected, performance: v.performance,
+                  }))}
+                  emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
+                />
+              </AdminSection>
+
+              <CollectedView
+                records={collectionRecords}
+                onInspectRecord={handleInspectRecord}
+                onBackToOverview={() => setActiveTab('overview')}
+                onNavigateToNotCovered={() => setActiveTab('not-collected')}
+                lang={lang}
+              />
+            </div>
           )}
 
-          {/* TAB 6: NOT COLLECTED (TOTAL HOUSEHOLD NOT COVERED REPORTS) */}
+          {/* TAB 6: NOT COLLECTED — performance by zone and vehicle */}
           {activeTab === 'not-collected' && (
-            <NotCollectedView
-              records={collectionRecords}
-              onInspectRecord={handleInspectRecord}
-              onBackToOverview={() => setActiveTab('overview')}
-              onNavigateToCovered={() => {
-                setActiveTab('collected');
-                showToast(lang === 'ta' ? 'மொத்த வீட்டுச் சேகரிப்பு விவரங்களுக்குத் நகர்ந்தது' : 'Navigated to: Total Household Covered Details');
-              }}
-              lang={lang}
-            />
+            <div className="space-y-4">
+              <AdminSection title="Performance by Zone" titleTa="மண்டல வாரியான செயல்திறன்" icon={MapPin} lang={lang}>
+                <PerformanceList
+                  lang={lang}
+                  rows={analyticsForViews.byZone.map(z => ({
+                    key: z.key, label: z.label, sublabel: `${z.notCollected} missed`,
+                    total: z.total, collected: z.collected, partial: z.partial,
+                    notCollected: z.notCollected, performance: z.performance,
+                  }))}
+                />
+              </AdminSection>
+
+              <AdminSection title="Performance by Vehicle" titleTa="வாகன வாரியான செயல்திறன்" icon={Truck} lang={lang}>
+                <PerformanceList
+                  lang={lang}
+                  rows={analyticsForViews.byVehicleType.map(v => ({
+                    key: v.key, label: v.label, sublabel: `${v.vehicles} vehicles`,
+                    total: v.total, collected: v.collected, partial: v.partial,
+                    notCollected: v.notCollected, performance: v.performance,
+                  }))}
+                  emptyText={lang === 'ta' ? 'வாகன தரவு இல்லை' : 'No vehicle records yet'}
+                />
+              </AdminSection>
+
+              <NotCollectedView
+                records={analyticsRecords}
+                onInspectRecord={handleInspectRecord}
+                onBackToOverview={() => setActiveTab('overview')}
+                onNavigateToCovered={() => setActiveTab('collected')}
+                lang={lang}
+              />
+            </div>
           )}
 
-          {/* TAB 7: FREQUENTLY NOT COVERED AREA (அடிக்கடி சேகரிக்கப்படாத பகுதிகள்) */}
+
+          {/* TAB 7: FREQUENTLY NOT COLLECTED — vehicle-wise structured view */}
           {activeTab === 'frequently-not-covered-area' && (
-            <FrequentlyNotCoveredAreaView
-              records={sbmRecords}
-              lang={lang}
-              onNavigateToLiveTracking={(_zone, info) => {
-                if (info) {
-                  showToast(`GPS Tracking: ${info}`);
-                }
-              }}
-              onShowToast={showToast}
-            />
+            <div className="space-y-4">
+              <FrequentlyNotCollectedVehicleView
+                records={analyticsRecords}
+                analytics={analyticsForViews}
+                lang={lang}
+                onBackToOverview={() => setActiveTab('overview')}
+              />
+              {/* The older area/heat view is kept for its dispatch actions. */}
+              <details className="group">
+                <summary className="cursor-pointer list-none text-[11px] font-black text-emerald-700 hover:underline">
+                  {lang === 'ta' ? 'பகுதி அடிப்படையிலான பார்வை' : 'Show area-level view'}
+                </summary>
+                <div className="mt-3">
+                  <FrequentlyNotCoveredAreaView
+                    records={sbmRecords}
+                    lang={lang}
+                    onNavigateToLiveTracking={(_zone, info) => {
+                      if (info) showToast(`GPS Tracking: ${info}`);
+                    }}
+                    onShowToast={showToast}
+                  />
+                </div>
+              </details>
+            </div>
           )}
 
           {/* TAB: AI PREDICTION & PREDICTIVE ANALYTICS */}

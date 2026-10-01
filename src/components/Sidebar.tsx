@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, LogOut, X, MapPin, QrCode } from 'lucide-react';
+import { LayoutDashboard, LogOut, X, MapPin, QrCode, AlertTriangle } from 'lucide-react';
 import { NavigationTab } from '../types';
 import { 
   householdCoveredIcon, 
@@ -79,6 +79,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       shortLabel: lang === 'ta' ? 'விடுபட்டவை' : 'Missed',
       type: 'image',
       image: householdNotCoveredIcon,
+    },
+    {
+      id: 'partially-not-collected' as NavigationTab,
+      label: lang === 'ta' ? 'பகுதி சேகரிக்கப்படவில்லை' : 'Partially Not Collected',
+      shortLabel: lang === 'ta' ? 'பகுதி விடுபட்டவை' : 'Partial',
+      type: 'icon',
+      icon: AlertTriangle,
     },
     {
       id: 'frequently-not-covered-area' as NavigationTab,
@@ -216,7 +223,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </button>
 
-          {/* 5. Frequently Missed Houses Tab */}
+          {/* 5. Partially Not Collected Tab */}
+          <button
+            onClick={() => handleTabClick('partially-not-collected')}
+            data-active={activeTab === 'partially-not-collected'}
+            title={lang === 'ta' ? 'பகுதி சேகரிக்கப்படவில்லை' : 'Partially Not Collected'}
+            className={`dash-sidebar-item group w-full flex items-center justify-between px-4 py-4 rounded-2xl font-extrabold text-[17px] text-left cursor-pointer border ${
+              activeTab === 'partially-not-collected'
+                ? 'bg-white text-amber-900 shadow-sm border-amber-400'
+                : 'text-slate-700 border-transparent hover:bg-[#fef6e7] hover:text-amber-900 hover:border-amber-300'
+            }`}
+          >
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="dash-sidebar-icon w-12 h-12 rounded-2xl border-2 border-amber-400 bg-amber-50 flex-shrink-0 flex items-center justify-center shadow-xs">
+                <AlertTriangle className="w-6 h-6 text-amber-600" />
+              </div>
+              <span className="text-[17px] font-extrabold text-slate-900 truncate">{lang === 'ta' ? 'பகுதி சேகரிக்கப்படவில்லை' : 'Partially Not Collected'}</span>
+            </div>
+          </button>
+
+          {/* 6. Frequently Missed Houses Tab */}
           <button
             onClick={() => handleTabClick('frequently-not-covered-area')}
             data-active={activeTab === 'frequently-not-covered-area'}

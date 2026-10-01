@@ -211,11 +211,12 @@ export interface DailySummaryStats {
   }>;
 }
 
-export type NavigationTab = 
-  | 'overview' 
-  | 'reports' 
-  | 'collected' 
+export type NavigationTab =
+  | 'overview'
+  | 'reports'
+  | 'collected'
   | 'not-collected'
+  | 'partially-not-collected'
   | 'frequently-not-covered-area'
   | 'ai-prediction'
   | 'sbm-admin'
