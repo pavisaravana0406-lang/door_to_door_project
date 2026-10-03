@@ -57,7 +57,7 @@ export const vehicleClassOf = (vehicleType?: string | null, vehicleNo?: string |
   return 'OTHER';
 };
 
-export const VEHICLE_CLASSES: VehicleClass[] = ['TATA ACE', 'BOV', 'PUSH CART', 'COMPACTOR', 'OBL'];
+export const VEHICLE_CLASSES: VehicleClass[] = ['TATA ACE', 'BOV', 'PUSH CART', 'OBL'];
 
 /** The reason a door was missed, read from whichever field carries it. */
 export const reasonOf = (r: {
