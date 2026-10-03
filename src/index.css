@@ -1084,6 +1084,21 @@ button, .btn-interactive {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   RECENT COLLECTION TABLE — one uniform size (13px) for the head,
+   body, pills, zone filter, footer note and button. The card title
+   keeps its section-heading size.
+   ════════════════════════════════════════════════════════════════════ */
+.dash-page .recent-table :is(th, td),
+.dash-page .recent-table :is(th, td) :is(span, button, div, select),
+.dash-page .recent-table-foot,
+.dash-page .recent-table-foot :is(span, button, div),
+.dash-page .recent-table-filter,
+.dash-page .recent-table-filter :is(span, select) {
+  font-size: 0.8125rem !important;
+  line-height: 1.45 !important;
+}
+
+/* ════════════════════════════════════════════════════════════════════
    AI ANALYTICS — hover-only Ward / Zone detail popup.
    The label shows a dotted underline affordance; the detail card
    appears only on hover (desktop), tap (:active, touch) or keyboard

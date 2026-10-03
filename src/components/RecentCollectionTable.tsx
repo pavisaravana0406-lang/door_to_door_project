@@ -77,7 +77,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
   }, [records, selectedZone, showAllRecords]);
 
   return (
-    <div className="dash-card overflow-hidden">
+    <div className="dash-card overflow-hidden recent-table">
       {/* Table Title & Zone Filter Ribbon */}
       <div className="px-5 sm:px-6 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
         <h2 className="dash-section-title text-base font-bold text-slate-900 tracking-tight">
@@ -85,7 +85,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
         </h2>
 
         {/* Zone Filter Dropdown */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 recent-table-filter">
           <Filter className="w-4 h-4 text-emerald-700" />
           <span className="text-[10px] font-bold text-gray-700">
             {lang === 'ta' ? 'மண்டலம்:' : 'Zone:'}
@@ -346,7 +346,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
       </div>
 
       {/* Footer View All Records Button */}
-      <div className="p-4 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div className="p-4 bg-white border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 recent-table-foot">
         <div className="text-[10px] font-bold text-gray-500">
           {lang === 'ta'
             ? `காண்பிக்கப்படும் பதிவுகள்: ${displayRecords.length} / ${records.length}`
