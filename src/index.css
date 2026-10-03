@@ -1160,6 +1160,15 @@ button, .btn-interactive {
 .ai-geo-pop-v-slate { color: #0f172a; }
 .ai-geo-pop-v-emerald { color: #15803d; }
 .ai-geo-pop-v-rose { color: #b91c1c; }
+/* Bar-column popup variant: driven by React state (not :hover), so it is
+   always visible while set and positioned by cursor coordinates. */
+.ai-bar-pop {
+  bottom: auto;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
 /* Pill-chip variant for the chart chip rows */
 .ai-geo-chip .ai-geo-label {
   border: 1px solid #e2e8f0;

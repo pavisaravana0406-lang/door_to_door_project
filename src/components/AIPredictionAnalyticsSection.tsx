@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   BarChart,
   Bar,
@@ -57,6 +57,20 @@ interface AIPredictionAnalyticsSectionProps {
   onShowToast?: (msg: string) => void;
   onDispatchAction?: (actionType: string) => void;
 }
+
+/**
+ * Normalise a ward key for display — records already carry "Ward 24"
+ * in some places and bare "24" in others, so naive `Ward ${w}`
+ * templating printed "Ward Ward 24" on the chart axis + tooltips.
+ */
+const wardLabel = (w: string | number): string => {
+  const s = String(w ?? '').trim();
+  return /^\s*ward\b/i.test(s) ? s : `Ward ${s}`;
+};
+
+/** Bare ward number for Tamil labels ("Ward 24" → "24"). */
+const wardNum = (w: string | number): string =>
+  String(w ?? '').replace(/ward\s*/gi, '').trim() || String(w ?? '').trim();
 
 /**
  * Hover-only detail popup for a Ward / Zone label.
@@ -235,8 +249,8 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
     return Array.from(grouped.values())
       .map((w) => ({
         ward: w.ward,
-        name: `Ward\n${w.ward}`,
-        displayName: `Ward ${w.ward}`,
+        name: /ward/i.test(w.ward) ? w.ward : `Ward\n${w.ward}`,
+        displayName: wardLabel(w.ward),
         count: w.missedCount,
         totalDoors: w.totalDoors,
         rate: w.totalDoors > 0 ? `${((w.missedCount / w.totalDoors) * 100).toFixed(1)}%` : '0%',
@@ -324,7 +338,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
       if (!fallbackDoors) return { title: '', lines: [] as Array<{ k: string; v: string; tone?: 'rose' | 'emerald' | 'slate' }> };
       const fallback = { streets: 0, doors: fallbackDoors, missed: 0 };
       return {
-        title: lang === 'ta' ? `வார்டு ${ward} விவரம்` : `Ward ${ward} details`,
+        title: lang === 'ta' ? `வார்டு ${wardNum(ward)} விவரம்` : `${wardLabel(ward)} details`,
         lines: [
           { k: lang === 'ta' ? 'மொத்த கதவுகள்' : 'Total doors', v: `${fallback.doors}` },
         ],
@@ -332,7 +346,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
     }
     const rate = s.doors > 0 ? `${((s.missed / s.doors) * 100).toFixed(1)}%` : '0%';
     return {
-      title: lang === 'ta' ? `வார்டு ${ward} விவரம்` : `Ward ${ward} details`,
+      title: lang === 'ta' ? `வார்டு ${wardNum(ward)} விவரம்` : `${wardLabel(ward)} details`,
       lines: [
         { k: lang === 'ta' ? 'தெருக்கள்' : 'Streets', v: `${s.streets}` },
         { k: lang === 'ta' ? 'மொத்த கதவுகள்' : 'Total doors', v: `${s.doors}` },
@@ -353,6 +367,37 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
       ],
     };
   };
+
+  // ── Column-only bar hover ──────────────────────────────────────────
+  // recharts <Tooltip> fires for the whole category band (empty grey area
+  // included). These popups fire only on the bar column itself via the
+  // Bar's own mouse handlers, positioned next to the cursor.
+  const wardChartRef = useRef<HTMLDivElement>(null);
+  const zoneChartRef = useRef<HTMLDivElement>(null);
+  const [wardBarHover, setWardBarHover] = useState<{ entry: any; left: number; top: number } | null>(null);
+  const [zoneBarHover, setZoneBarHover] = useState<{ entry: any; series: string; left: number; top: number } | null>(null);
+
+  const placeBarPopup = (ref: React.RefObject<HTMLDivElement | null>, e: any) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return { left: 8, top: 8 };
+    const left = Math.min(Math.max((e?.clientX ?? 0) - rect.left + 14, 8), Math.max(rect.width - 228, 8));
+    const top = Math.min(Math.max((e?.clientY ?? 0) - rect.top + 16, 8), Math.max(rect.height - 150, 8));
+    return { left, top };
+  };
+
+  const wardBarEnter = (data: any, _i: number, e: any) =>
+    setWardBarHover({ entry: data, ...placeBarPopup(wardChartRef, e) });
+  const wardBarToggle = (data: any, _i: number, e: any) =>
+    setWardBarHover((prev) => (prev && prev.entry === data ? null : { entry: data, ...placeBarPopup(wardChartRef, e) }));
+
+  const zoneBarEnter = (series: string) => (data: any, _i: number, e: any) =>
+    setZoneBarHover({ entry: data, series, ...placeBarPopup(zoneChartRef, e) });
+  const zoneBarToggle = (series: string) => (data: any, _i: number, e: any) =>
+    setZoneBarHover((prev) =>
+      prev && prev.entry === data && prev.series === series
+        ? null
+        : { entry: data, series, ...placeBarPopup(zoneChartRef, e) }
+    );
 
 
   // 2. Donut Chart Data (Grounded on historical coverage segments)
@@ -449,45 +494,6 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
         </text>
       </g>
     );
-  };
-
-  // Custom tooltip for bar chart (Ward-wise Not Collected)
-  const CustomBarTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-200 text-xs font-sans">
-          <div className="font-black text-slate-900 mb-1">{data.displayName}</div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: data.fill }} />
-            <span className="font-bold text-slate-700">{data.count} Not Collected</span>
-            <span className="text-slate-400 font-semibold">({data.rate} of {data.totalDoors} doors)</span>
-          </div>
-          <div className="text-[10px] text-slate-500 mt-1 border-t border-slate-100 pt-1">
-            Computed from 30-day historical door logs
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Custom tooltip for Zone-wise Collected vs Not Collected chart
-  const CustomZoneBarTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white p-3 rounded-xl shadow-lg border border-slate-200 text-xs font-sans">
-          <div className="font-black text-slate-900 mb-1">{label}</div>
-          {payload.map((entry: any, idx: number) => (
-            <div key={idx} className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
-              <span className="font-bold text-slate-700">{entry.name}: {entry.value}</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
   };
 
   // Custom tooltip for Top 5 Streets comparison chart
@@ -870,7 +876,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             </div>
           </div>
 
-          <div className="w-full h-64 my-2">
+          <div ref={wardChartRef} className="relative w-full h-64 my-2">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={wardMissData} margin={{ top: 20, right: 10, left: -20, bottom: 35 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
@@ -889,19 +895,49 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                   tickLine={false}
                   allowDecimals={false}
                 />
-                <Tooltip content={<CustomBarTooltip />} />
-                <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={36}>
+                <Bar
+                  dataKey="count"
+                  radius={[4, 4, 0, 0]}
+                  barSize={36}
+                  onMouseEnter={wardBarEnter}
+                  onMouseLeave={() => setWardBarHover(null)}
+                  onClick={wardBarToggle}
+                >
                   {wardMissData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.fill} />
                   ))}
                   <LabelList
                     dataKey="count"
                     position="top"
-                    style={{ fill: '#0F172A', fontWeight: 800, fontSize: 11 }}
+                    style={{ fill: '#0F172A', fontWeight: 800, fontSize: 11, pointerEvents: 'none' }}
                   />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            {wardBarHover && (
+              <span
+                className="ai-geo-pop ai-bar-pop"
+                style={{ left: wardBarHover.left, top: wardBarHover.top }}
+                role="tooltip"
+              >
+                <span className="ai-geo-pop-title">{wardLabel(wardBarHover.entry.ward)}</span>
+                <span className="ai-geo-pop-row">
+                  <span className="ai-geo-pop-k">{lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}</span>
+                  <span className="ai-geo-pop-v ai-geo-pop-v-rose">
+                    {wardBarHover.entry.count} ({wardBarHover.entry.rate} of {wardBarHover.entry.totalDoors})
+                  </span>
+                </span>
+                <span className="ai-geo-pop-row">
+                  <span className="ai-geo-pop-k">{lang === 'ta' ? 'தெருக்கள்' : 'Streets'}</span>
+                  <span className="ai-geo-pop-v ai-geo-pop-v-slate">
+                    {wardHoverStats.get(wardBarHover.entry.ward)?.streets ?? '—'}
+                  </span>
+                </span>
+                <span className="ai-geo-pop-k" style={{ fontSize: '0.6875rem' }}>
+                  {lang === 'ta' ? '30 நாள் வரலாற்று பதிவுகள்' : 'Computed from 30-day historical door logs'}
+                </span>
+              </span>
+            )}
           </div>
 
           <div className="flex items-center justify-center gap-2 pt-2 border-t border-slate-100 text-xs font-bold text-slate-600">
@@ -919,7 +955,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                 <GeoHoverDetail
                   key={entry.ward}
                   chip
-                  label={lang === 'ta' ? `வார்டு ${entry.ward}` : entry.displayName}
+                  label={lang === 'ta' ? `வார்டு ${wardNum(entry.ward)}` : entry.displayName}
                   {...wardPopup(entry.ward, entry.totalDoors)}
                 />
               ))}
@@ -942,7 +978,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
         </div>
 
-        <div className="w-full h-72 my-3">
+        <div ref={zoneChartRef} className="relative w-full h-72 my-3">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={zoneCollectionData} margin={{ top: 20, right: 10, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
@@ -954,15 +990,55 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                 fontWeight={700}
               />
               <YAxis stroke="#94A3B8" fontSize={10} fontWeight={700} tickLine={false} allowDecimals={false} />
-              <Tooltip content={<CustomZoneBarTooltip />} />
-              <Bar dataKey="collected" name="Collected" fill="#1E7A38" radius={[4, 4, 0, 0]} barSize={28}>
-                <LabelList dataKey="collected" position="top" style={{ fill: '#0F172A', fontWeight: 800, fontSize: 11 }} />
+              <Bar
+                dataKey="collected"
+                name="Collected"
+                fill="#1E7A38"
+                radius={[4, 4, 0, 0]}
+                barSize={28}
+                onMouseEnter={zoneBarEnter('Collected')}
+                onMouseLeave={() => setZoneBarHover(null)}
+                onClick={zoneBarToggle('Collected')}
+              >
+                <LabelList dataKey="collected" position="top" style={{ fill: '#0F172A', fontWeight: 800, fontSize: 11, pointerEvents: 'none' }} />
               </Bar>
-              <Bar dataKey="notCollected" name="Not Collected" fill="#DC2626" radius={[4, 4, 0, 0]} barSize={28}>
-                <LabelList dataKey="notCollected" position="top" style={{ fill: '#0F172A', fontWeight: 800, fontSize: 11 }} />
+              <Bar
+                dataKey="notCollected"
+                name="Not Collected"
+                fill="#DC2626"
+                radius={[4, 4, 0, 0]}
+                barSize={28}
+                onMouseEnter={zoneBarEnter('Not Collected')}
+                onMouseLeave={() => setZoneBarHover(null)}
+                onClick={zoneBarToggle('Not Collected')}
+              >
+                <LabelList dataKey="notCollected" position="top" style={{ fill: '#0F172A', fontWeight: 800, fontSize: 11, pointerEvents: 'none' }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          {zoneBarHover && (
+            <span
+              className="ai-geo-pop ai-bar-pop"
+              style={{ left: zoneBarHover.left, top: zoneBarHover.top }}
+              role="tooltip"
+            >
+              <span className="ai-geo-pop-title">{zoneBarHover.entry.displayName}</span>
+              <span className="ai-geo-pop-row">
+                <span className="ai-geo-pop-k">{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}</span>
+                <span className="ai-geo-pop-v ai-geo-pop-v-emerald">{zoneBarHover.entry.collected}</span>
+              </span>
+              <span className="ai-geo-pop-row">
+                <span className="ai-geo-pop-k">{lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}</span>
+                <span className="ai-geo-pop-v ai-geo-pop-v-rose">{zoneBarHover.entry.notCollected}</span>
+              </span>
+              <span className="ai-geo-pop-row">
+                <span className="ai-geo-pop-k">{lang === 'ta' ? 'தெருக்கள்' : 'Streets'}</span>
+                <span className="ai-geo-pop-v ai-geo-pop-v-slate">
+                  {zoneHoverStats.get(zoneBarHover.entry.name)?.streets ?? '—'}
+                </span>
+              </span>
+            </span>
+          )}
         </div>
 
         <div className="flex items-center justify-center gap-5 pt-2 border-t border-slate-100 text-xs font-bold text-slate-600">
@@ -1451,7 +1527,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                       <td className="py-3 px-3 font-black text-slate-900">{row.streetName}</td>
                       <td className="py-3 px-2 text-center text-slate-600">
                         <GeoHoverDetail
-                          label={lang === 'ta' ? `வார்டு ${row.ward}` : `Ward ${row.ward}`}
+                          label={lang === 'ta' ? `வார்டு ${wardNum(row.ward)}` : wardLabel(row.ward)}
                           {...wardPopup(row.ward, row.totalDoors)}
                         />{' '}
                         <GeoHoverDetail label={`(${row.zone})`} {...zonePopup(row.zone)} />
@@ -1595,7 +1671,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                       </td>
                       <td className="py-3 px-3 font-bold text-slate-900">
                         {row.residentName}
-                        <div className="text-[10px] text-slate-500 font-normal">{row.address} (<GeoHoverDetail label={`W-${row.ward}`} {...wardPopup(row.ward)} />)</div>
+                        <div className="text-[10px] text-slate-500 font-normal">{row.address} (<GeoHoverDetail label={wardLabel(row.ward)} {...wardPopup(row.ward)} />)</div>
                       </td>
                       <td className="py-3 px-2 text-center">
                         <div className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 font-black text-[10.5px] px-2 py-0.5 rounded">
