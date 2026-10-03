@@ -313,7 +313,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               >
                 <QrCode className="w-5 h-5" />
               </div>
-              <span className="text-sm font-bold">{lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management'}</span>
+              <span className="text-sm font-bold leading-snug" style={{ whiteSpace: 'nowrap' }}>{lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management'}</span>
             </div>
             <span className="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
               QR
