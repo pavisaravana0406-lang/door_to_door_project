@@ -60,7 +60,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       id: 'ai-prediction' as NavigationTab,
-      label: lang === 'ta' ? 'AI ANALYTICS AND PREDICTION' : 'AI ANALYTICS AND PREDICTION',
+      label: lang === 'ta' ? 'AI Analytics and Prediction' : 'AI Analytics and Prediction',
       shortLabel: lang === 'ta' ? 'AI ANALYTICS' : 'AI ANALYTICS',
       type: 'image',
       image: AI_PREDICTION_ICON_URL,
@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
-              <span className="text-sm font-bold">{lang === 'ta' ? 'AI ANALYTICS AND PREDICTION' : 'AI ANALYTICS AND PREDICTION'}</span>
+              <span className="text-sm font-bold leading-snug">{lang === 'ta' ? 'AI Analytics and Prediction' : 'AI Analytics and Prediction'}</span>
             </div>
             <span className="text-[10px] bg-emerald-100 text-emerald-800 font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
               AI

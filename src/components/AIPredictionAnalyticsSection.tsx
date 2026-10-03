@@ -648,7 +648,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <span>{lang === 'ta' ? 'AI ANALYTICS AND PREDICTION' : 'AI ANALYTICS AND PREDICTION'}</span>
+              <span>{lang === 'ta' ? 'AI Analytics and Prediction' : 'AI Analytics and Prediction'}</span>
             </h1>
           </div>
         </div>
