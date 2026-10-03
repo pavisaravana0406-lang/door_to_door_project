@@ -399,6 +399,38 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
         : { entry: data, series, ...placeBarPopup(zoneChartRef, e) }
     );
 
+  // ── Point-only line hover ──────────────────────────────────────────
+  // Same rule for the Top 5 streets line chart: details appear only on
+  // the data dot itself, never on empty chart area. Custom dot renderers
+  // carry the mouse handlers (with a wide invisible halo for touch).
+  const lineChartRef = useRef<HTMLDivElement>(null);
+  const [lineDotHover, setLineDotHover] = useState<{ entry: any; left: number; top: number } | null>(null);
+
+  const lineDotEnter = (e: any, payload: any) =>
+    setLineDotHover({ entry: payload, ...placeBarPopup(lineChartRef, e) });
+  const lineDotToggle = (e: any, payload: any) => {
+    e.stopPropagation();
+    setLineDotHover((prev) =>
+      prev && prev.entry === payload ? null : { entry: payload, ...placeBarPopup(lineChartRef, e) }
+    );
+  };
+
+  const renderLineDot = (color: string) => (props: any) => {
+    const { cx, cy, payload } = props;
+    if (cx == null || cy == null || !payload) return <g />;
+    return (
+      <g
+        style={{ cursor: 'pointer' }}
+        onMouseEnter={(e) => lineDotEnter(e, payload)}
+        onMouseLeave={() => setLineDotHover(null)}
+        onClick={(e) => lineDotToggle(e, payload)}
+      >
+        <circle cx={cx} cy={cy} r={13} fill="transparent" />
+        <circle cx={cx} cy={cy} r={4.5} fill={color} stroke="#fff" strokeWidth={1.5} style={{ pointerEvents: 'none' }} />
+      </g>
+    );
+  };
+
 
   // 2. Donut Chart Data (Grounded on historical coverage segments)
   const donutData = [
@@ -494,48 +526,6 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
         </text>
       </g>
     );
-  };
-
-  // Custom tooltip for Top 5 Streets comparison chart
-  const CustomStreetTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      const data = payload[0].payload;
-      return (
-        <div className="bg-white p-3.5 rounded-xl shadow-2xl border border-slate-200/90 text-xs font-sans w-60 z-50 pointer-events-none ring-1 ring-black/5">
-          <div className="font-black text-slate-900 mb-0.5">{data.name}</div>
-          <div className="text-[10px] text-slate-400 font-medium mb-2">{data.obstacle} • W-{data.ward}</div>
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-slate-500 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-xs bg-rose-600 inline-block" /> Recent 7D
-              </span>
-              <span className="font-black text-rose-700">{data.recent}%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-slate-500 font-semibold">
-                <span className="w-2.5 h-2.5 rounded-xs bg-slate-300 inline-block" /> 30D Baseline
-              </span>
-              <span className="font-black text-slate-600">{data.baseline}%</span>
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-            <span className={`inline-flex items-center gap-0.5 text-[10px] font-black px-2 py-0.5 rounded-full ${
-              data.trend === 'Deteriorating'
-                ? 'bg-rose-100 text-rose-700'
-                : data.trend === 'Chronic'
-                ? 'bg-amber-100 text-amber-700'
-                : 'bg-emerald-100 text-emerald-700'
-            }`}>
-              {data.trend}
-            </span>
-            <span className="font-mono text-[10px] font-black text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
-              {data.streakDoors} Doors
-            </span>
-          </div>
-        </div>
-      );
-    }
-    return null;
   };
 
   // Custom tooltip for Week Wise Collection chart
@@ -1085,6 +1075,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
               </span>
             </div>
 
+            <div ref={lineChartRef} className="relative">
             <ResponsiveContainer width="100%" height={260}>
               <LineChart
                 data={top5Streets.map((row) => ({
@@ -1098,6 +1089,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                 }))}
                 margin={{ top: 10, right: 16, left: -16, bottom: 5 }}
                 onClick={() => setActiveModal('full_report')}
+                onMouseLeave={() => setLineDotHover(null)}
                 className="cursor-pointer"
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
@@ -1114,17 +1106,16 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                   axisLine={{ stroke: '#E2E8F0' }}
                   width={38}
                 />
-                <Tooltip content={<CustomStreetTooltip />} cursor={{ stroke: '#E2E8F0', strokeWidth: 1 }} />
                 <Line
                   type="monotone"
                   dataKey="recent"
                   name="Recent 7D Miss"
                   stroke="#E11D48"
                   strokeWidth={2.5}
-                  dot={{ r: 4, fill: '#E11D48', strokeWidth: 0 }}
-                  activeDot={{ r: 6 }}
+                  dot={renderLineDot('#E11D48')}
+                  activeDot={false}
                 >
-                  <LabelList dataKey="recent" position="top" formatter={(v: number) => `${v}%`} style={{ fontSize: 10, fontWeight: 800, fill: '#BE123C' }} />
+                  <LabelList dataKey="recent" position="top" formatter={(v: number) => `${v}%`} style={{ fontSize: 10, fontWeight: 800, fill: '#BE123C', pointerEvents: 'none' }} />
                 </Line>
                 <Line
                   type="monotone"
@@ -1133,13 +1124,40 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                   stroke="#94A3B8"
                   strokeWidth={2}
                   strokeDasharray="5 3"
-                  dot={{ r: 3.5, fill: '#94A3B8', strokeWidth: 0 }}
-                  activeDot={{ r: 5 }}
+                  dot={renderLineDot('#94A3B8')}
+                  activeDot={false}
                 >
-                  <LabelList dataKey="baseline" position="bottom" formatter={(v: number) => `${v}%`} style={{ fontSize: 9.5, fontWeight: 700, fill: '#64748B' }} />
+                  <LabelList dataKey="baseline" position="bottom" formatter={(v: number) => `${v}%`} style={{ fontSize: 9.5, fontWeight: 700, fill: '#64748B', pointerEvents: 'none' }} />
                 </Line>
               </LineChart>
             </ResponsiveContainer>
+            {lineDotHover && (
+              <span
+                className="ai-geo-pop ai-bar-pop"
+                style={{ left: lineDotHover.left, top: lineDotHover.top }}
+                role="tooltip"
+              >
+                <span className="ai-geo-pop-title">{lineDotHover.entry.name}</span>
+                <span className="ai-geo-pop-k" style={{ fontSize: '0.6875rem' }}>
+                  {lineDotHover.entry.obstacle} • {wardLabel(lineDotHover.entry.ward)}
+                </span>
+                <span className="ai-geo-pop-row">
+                  <span className="ai-geo-pop-k">Recent 7D</span>
+                  <span className="ai-geo-pop-v ai-geo-pop-v-rose">{lineDotHover.entry.recent}%</span>
+                </span>
+                <span className="ai-geo-pop-row">
+                  <span className="ai-geo-pop-k">30D Baseline</span>
+                  <span className="ai-geo-pop-v ai-geo-pop-v-slate">{lineDotHover.entry.baseline}%</span>
+                </span>
+                <span className="ai-geo-pop-row">
+                  <span className={`ai-geo-pop-v ai-geo-pop-v-${lineDotHover.entry.trend === 'Improving' ? 'emerald' : lineDotHover.entry.trend === 'Chronic' ? 'slate' : 'rose'}`}>
+                    {lineDotHover.entry.trend}
+                  </span>
+                  <span className="ai-geo-pop-v ai-geo-pop-v-slate">{lineDotHover.entry.streakDoors} Doors</span>
+                </span>
+              </span>
+            )}
+            </div>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-slate-100 text-[10px] font-bold text-slate-600">
               <span className="flex items-center gap-1.5">
