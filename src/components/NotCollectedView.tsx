@@ -73,10 +73,11 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
         navLabel={
           onNavigateToCovered
             ? (lang === 'ta'
-              ? `???????????????? (${collectedCount.toLocaleString()})`
+              ? `சேகரிக்கப்பட்டது (${collectedCount.toLocaleString()})`
               : `View Collected (${collectedCount.toLocaleString()})`)
             : undefined
         }
+        navTone="green"
         onNav={onNavigateToCovered}
       />
 

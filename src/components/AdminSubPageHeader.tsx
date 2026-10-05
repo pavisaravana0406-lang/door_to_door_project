@@ -23,8 +23,14 @@ export interface AdminSubPageHeaderProps {
   onNav?: () => void;
 }
 
-const TONE = {
-  green: {
+/** Cross-navigation button tones — e.g. "View Not Collected" in red. */
+const NAV_TONE: Record<'green' | 'rose' | 'amber', string> = {
+  green: 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100',
+  rose: 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100',
+  amber: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100',
+};
+
+const TONE = {  green: {
     border: 'border-emerald-200/90',
     imgBorder: 'border-emerald-500/60',
     statBg: 'bg-emerald-50 border-emerald-200',
@@ -149,7 +155,7 @@ export const AdminSubPageHeader: React.FC<AdminSubPageHeaderProps> = ({
             <button
               type="button"
               onClick={onNav}
-              className={`${t.chipBg} text-[11px] sm:text-xs font-bold px-3.5 py-2.5 rounded-2xl transition flex items-center gap-1.5 cursor-pointer border whitespace-nowrap`}
+              className={`${NAV_TONE[navTone || (tone === 'green' ? 'rose' : 'green')]} text-[11px] sm:text-xs font-bold px-3.5 py-2.5 rounded-2xl transition flex items-center gap-1.5 cursor-pointer border whitespace-nowrap`}
             >
               {navLabel}
             </button>

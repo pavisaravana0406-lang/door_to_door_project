@@ -75,6 +75,7 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
               : `View Not Collected (${notCollectedCount.toLocaleString()})`)
             : undefined
         }
+        navTone="rose"
         onNav={onNavigateToNotCovered}
       />
 
