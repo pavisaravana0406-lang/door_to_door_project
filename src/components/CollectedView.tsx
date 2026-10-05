@@ -56,6 +56,7 @@ export const CollectedView: React.FC<CollectedViewProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <AdminSubPageHeader
+        gicon="local_shipping"
         icon={householdCoveredIcon}
         iconAlt="Total Household Collected"
         iconFallback={householdCoveredFallbackIcon}

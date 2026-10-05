@@ -3,6 +3,7 @@ import {
   Truck, Package, PackageCheck, PackageX, PackageMinus, Repeat, Layers, MapPin,
   CheckCircle2, AlertTriangle, XCircle,
 } from 'lucide-react';
+import { GIcon } from './icons/GIcon';
 import { GroupBreakdown, VehicleBreakdownRow, AdminTotals } from '../utils/adminAnalytics';
 
 export type KpiTone = 'slate' | 'blue' | 'green' | 'amber' | 'rose' | 'violet';
@@ -21,6 +22,8 @@ export interface AdminKpiSquareProps {
   value: number;
   icon: React.ComponentType<{ className?: string }>;
   tone: KpiTone;
+  /** Google Material icon name — renders a crisp GIcon instead of `icon`. */
+  gicon?: string;
   /** Shown under the label, e.g. the share of the total. */
   hint?: string;
   active?: boolean;
@@ -33,7 +36,7 @@ export interface AdminKpiSquareProps {
  * Each tone gets its own pastel fill so cards are instantly separable.
  */
 export const AdminKpiSquare: React.FC<AdminKpiSquareProps> = ({
-  label, value, icon: Icon, tone, hint, active, onClick,
+  label, value, icon: Icon, tone, gicon, hint, active, onClick,
 }) => {
   const t = TONES[tone];
   const Tag: any = onClick ? 'button' : 'div';
@@ -49,7 +52,9 @@ export const AdminKpiSquare: React.FC<AdminKpiSquareProps> = ({
       <span className="swms-kpi-top">
         <span className="swms-kpi-label-row">
           <span className="swms-kpi-icon">
-            <Icon className={`h-6 w-6 ${t.iconColor}`} />
+            {gicon
+              ? <GIcon name={gicon} size={26} filled className={t.iconColor} />
+              : <Icon className={`h-6 w-6 ${t.iconColor}`} />}
           </span>
           <span className="swms-kpi-label">{label}</span>
         </span>
@@ -65,19 +70,20 @@ export const AdminKpiSquare: React.FC<AdminKpiSquareProps> = ({
   );
 };
 
-/** The headline garbage KPIs. */
+/** The headline garbage KPIs — Google Material icons throughout. */
 export const GARBAGE_KPIS: Array<{
   key: 'total' | 'collected' | 'notCollected' | 'partial' | 'frequent';
   label: string;
   labelTa: string;
   icon: React.ComponentType<{ className?: string }>;
+  gicon: string;
   tone: KpiTone;
 }> = [
-  { key: 'total', label: 'Total Households', labelTa: 'மொத்த வீடுகள்', icon: Package, tone: 'blue' },
-  { key: 'collected', label: 'Collected', labelTa: 'சேகரிக்கப்பட்டது', icon: PackageCheck, tone: 'green' },
-  { key: 'notCollected', label: 'Not Collected', labelTa: 'சேகரிக்கப்படவில்லை', icon: PackageX, tone: 'rose' },
-  { key: 'partial', label: 'Partially Not Collected', labelTa: 'பகுதி சேகரிக்கப்படவில்லை', icon: PackageMinus, tone: 'amber' },
-  { key: 'frequent', label: 'Frequently Not Collected', labelTa: 'அடிக்கடி சேகரிக்கப்படவில்லை', icon: Repeat, tone: 'violet' },
+  { key: 'total', label: 'Total Households', labelTa: 'மொத்த வீடுகள்', icon: Package, gicon: 'other_houses', tone: 'blue' },
+  { key: 'collected', label: 'Collected', labelTa: 'சேகரிக்கப்பட்டது', icon: PackageCheck, gicon: 'check_circle', tone: 'green' },
+  { key: 'notCollected', label: 'Not Collected', labelTa: 'சேகரிக்கப்படவில்லை', icon: PackageX, gicon: 'cancel', tone: 'rose' },
+  { key: 'partial', label: 'Partially Not Collected', labelTa: 'பகுதி சேகரிக்கப்படவில்லை', icon: PackageMinus, gicon: 'warning', tone: 'amber' },
+  { key: 'frequent', label: 'Frequently Not Collected', labelTa: 'அடிக்கடி சேகரிக்கப்படவில்லை', icon: Repeat, gicon: 'repeat', tone: 'violet' },
 ];
 
 export const GarbageKpiGrid: React.FC<{
@@ -108,6 +114,7 @@ export const GarbageKpiGrid: React.FC<{
           label={lang === 'ta' ? k.labelTa : k.label}
           value={valueOf(k.key)}
           icon={k.icon}
+          gicon={k.gicon}
           tone={k.tone}
           hint={hintOf(k.key)}
           active={activeKey === k.key}

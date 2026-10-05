@@ -1,7 +1,10 @@
 import React from 'react';
 import { ArrowLeft, ChevronRight } from 'lucide-react';
+import { GIcon } from './icons/GIcon';
 
 export interface AdminSubPageHeaderProps {
+  /** Google Material icon name — crisp vector replacing the old image icon. */
+  gicon?: string;
   icon: string;
   iconAlt: string;
   iconFallback?: string;
@@ -72,11 +75,15 @@ const StatIcon: React.FC<{ tone: 'green' | 'rose' | 'amber' }> = ({ tone }) => {
  * This stacks the breadcrumb, then the identity, then the stat row.
  */
 export const AdminSubPageHeader: React.FC<AdminSubPageHeaderProps> = ({
-  icon, iconAlt, iconFallback, title, titleTa, lang = 'en',
+  gicon, icon, iconAlt, iconFallback, title, titleTa, lang = 'en',
   statLabel, statValue, statSuffix, tone, onBack,
   navLabel, onNav,
 }) => {
   const t = TONE[tone];
+  const toneIconColor =
+    tone === 'rose' ? 'text-rose-600' : tone === 'amber' ? 'text-amber-600' : 'text-[#1E7A38]';
+  const toneIconBg =
+    tone === 'rose' ? 'bg-rose-50' : tone === 'amber' ? 'bg-amber-50' : 'bg-emerald-50';
 
   return (
     <div className={`bg-white rounded-2xl border ${t.border} shadow-sm overflow-hidden`}>
@@ -101,18 +108,22 @@ export const AdminSubPageHeader: React.FC<AdminSubPageHeaderProps> = ({
       <div className="px-4 sm:px-5 pb-4 pt-3 space-y-3.5">
         {/* Identity row */}
         <div className="flex items-center gap-3.5 min-w-0">
-          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl overflow-hidden border-2 ${t.imgBorder} bg-white p-0.5 flex-shrink-0 shadow-sm flex items-center justify-center`}>
-            <img
-              src={icon}
-              alt={iconAlt}
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                if (iconFallback && e.currentTarget.src !== iconFallback) {
-                  e.currentTarget.src = iconFallback;
-                }
-              }}
-              className="w-full h-full object-cover rounded-xl"
-            />
+          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl ${toneIconBg} ${toneIconColor} flex-shrink-0 flex items-center justify-center`}>
+            {gicon ? (
+              <GIcon name={gicon} size={32} filled />
+            ) : (
+              <img
+                src={icon}
+                alt={iconAlt}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  if (iconFallback && e.currentTarget.src !== iconFallback) {
+                    e.currentTarget.src = iconFallback;
+                  }
+                }}
+                className="w-full h-full object-cover rounded-xl"
+              />
+            )}
           </div>
           <h1 className="text-lg sm:text-2xl font-black text-gray-900 min-w-0 break-words">
             {lang === 'ta' && titleTa ? titleTa : title}

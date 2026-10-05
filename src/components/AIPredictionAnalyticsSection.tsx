@@ -43,7 +43,7 @@ import {
   Calendar
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { aiPredictionIcon } from '../constants/branding';
+import { GIcon } from './icons/GIcon';
 import { SWMSHouseholdRecord } from '../types';
 import {
   runHistoricalPatternPredictionEngine,
@@ -689,13 +689,8 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
         
         {/* Left Title & Icon */}
         <div className="flex items-start gap-3.5">
-          <div className="w-13 h-13 rounded-2xl overflow-hidden border-2 border-emerald-500/50 bg-emerald-50/50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs mt-0.5">
-            <img
-              src={aiPredictionIcon}
-              alt="AI Prediction"
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover rounded-xl"
-            />
+          <div className="w-13 h-13 rounded-2xl bg-violet-50 text-violet-700 flex-shrink-0 flex items-center justify-center mt-0.5">
+            <GIcon name="psychology" size={30} filled />
           </div>
           <div>
             <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">

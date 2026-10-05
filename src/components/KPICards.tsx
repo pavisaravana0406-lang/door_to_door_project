@@ -1,15 +1,6 @@
 import React from 'react';
-import { ArrowRight, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
 import { KPIMetrics } from '../types';
-import { 
-  TotalHouseholdsLogo,
-  CollectedTruckLogo,
-  NotCollectedDustbinLogo
-} from './icons/KpiLogos';
-import { 
-  frequentlyNotCollectedIcon, 
-  frequentlyNotCollectedFallbackIcon 
-} from '../constants/branding';
+import { GIcon } from './icons/GIcon';
 import { AnimatedCounter } from './AnimatedCounter';
 
 interface KPICardsProps {
@@ -47,8 +38,8 @@ export const KPICards: React.FC<KPICardsProps> = ({
         className="dash-card dash-card-accent-blue animate-dash-enter p-5 h-full cursor-pointer group relative overflow-hidden select-none bg-[#f5f9ff]"
       >
         <div className="flex items-center gap-3.5">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-blue-300 bg-white p-1.5 flex-shrink-0 flex items-center justify-center transition-colors duration-250 group-hover:border-blue-500 group-hover:bg-blue-100">
-            <TotalHouseholdsLogo className="w-full h-full object-contain" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-blue-100 text-blue-700 flex-shrink-0 flex items-center justify-center">
+            <GIcon name="other_houses" size={34} filled />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] sm:text-sm font-extrabold text-blue-950 flex items-center justify-between gap-2">
@@ -62,7 +53,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="text-[10px] text-blue-800 font-bold flex items-center gap-0.5 flex-shrink-0">
-                {lang === 'ta' ? 'விவரங்கள்' : 'View details'} <ArrowRight className="w-3 h-3" />
+                {lang === 'ta' ? 'விவரங்கள்' : 'View details'} <GIcon name="arrow_forward" size={14} />
               </span>
             </div>
           </div>
@@ -77,14 +68,14 @@ export const KPICards: React.FC<KPICardsProps> = ({
         style={{ animationDelay: '60ms' }}
       >
         <div className="flex items-center gap-3.5">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-emerald-200 bg-[#e9f5ed] p-1.5 flex-shrink-0 flex items-center justify-center transition-colors duration-250 group-hover:border-emerald-500 group-hover:bg-emerald-100">
-            <CollectedTruckLogo className="w-full h-full object-contain" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-100 text-emerald-700 flex-shrink-0 flex items-center justify-center">
+            <GIcon name="check_circle" size={34} filled />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
               <span>{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}</span>
               <span className="dash-badge dash-badge-green flex-shrink-0">
-                <CheckCircle2 className="w-3 h-3" /> {typeof coveredPercent === 'string' && coveredPercent.includes('%') ? coveredPercent : `${coveredPercent}%`}
+                <GIcon name="check_circle" size={14} /> {typeof coveredPercent === 'string' && coveredPercent.includes('%') ? coveredPercent : `${coveredPercent}%`}
               </span>
             </div>
             <div className="text-[30px] sm:text-[34px] font-bold text-slate-900 tracking-tight my-2 font-num leading-none">
@@ -92,7 +83,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="text-[10px] text-emerald-800 font-bold flex items-center gap-0.5 flex-shrink-0">
-                {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'View collected'} <ArrowRight className="w-3 h-3" />
+                {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'View collected'} <GIcon name="arrow_forward" size={14} />
               </span>
             </div>
           </div>
@@ -107,14 +98,14 @@ export const KPICards: React.FC<KPICardsProps> = ({
         style={{ animationDelay: '120ms' }}
       >
         <div className="flex items-center gap-3.5">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-amber-200 bg-[#fef3e2] p-1.5 flex-shrink-0 flex items-center justify-center transition-colors duration-250 group-hover:border-amber-500 group-hover:bg-amber-100">
-            <NotCollectedDustbinLogo className="w-full h-full object-contain" />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-amber-100 text-amber-600 flex-shrink-0 flex items-center justify-center">
+            <GIcon name="cancel" size={34} filled />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
               <span>{lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}</span>
               <span className="dash-badge dash-badge-amber flex-shrink-0">
-                <AlertTriangle className="w-3 h-3" /> {typeof notCoveredPercent === 'string' && notCoveredPercent.includes('%') ? notCoveredPercent : `${notCoveredPercent}%`}
+                <GIcon name="warning" size={14} /> {typeof notCoveredPercent === 'string' && notCoveredPercent.includes('%') ? notCoveredPercent : `${notCoveredPercent}%`}
               </span>
             </div>
             <div className="text-[30px] sm:text-[34px] font-bold text-slate-900 tracking-tight my-2 font-num leading-none">
@@ -122,7 +113,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="text-[10px] text-amber-800 font-bold flex items-center gap-0.5 flex-shrink-0">
-                {lang === 'ta' ? 'அறிக்கைகள்' : 'View reports'} <ArrowRight className="w-3 h-3" />
+                {lang === 'ta' ? 'அறிக்கைகள்' : 'View reports'} <GIcon name="arrow_forward" size={14} />
               </span>
             </div>
           </div>
@@ -137,24 +128,14 @@ export const KPICards: React.FC<KPICardsProps> = ({
         style={{ animationDelay: '180ms' }}
       >
         <div className="flex items-center gap-3.5">
-          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden border border-red-200 bg-[#fdecea] p-1.5 flex-shrink-0 flex items-center justify-center transition-colors duration-250 group-hover:border-red-400 group-hover:bg-red-100">
-            <img
-              src={frequentlyNotCollectedIcon}
-              alt="Frequently Not Collected Household"
-              referrerPolicy="no-referrer"
-              onError={(e) => {
-                if (e.currentTarget.src !== frequentlyNotCollectedFallbackIcon) {
-                  e.currentTarget.src = frequentlyNotCollectedFallbackIcon;
-                }
-              }}
-              className="w-full h-full object-contain"
-            />
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-rose-100 text-rose-500 flex-shrink-0 flex items-center justify-center">
+            <GIcon name="repeat" size={34} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-[13px] sm:text-sm font-extrabold text-slate-900 flex items-center justify-between gap-2">
               <span>{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed'}</span>
               <span className="dash-badge dash-badge-red flex-shrink-0">
-                <AlertOctagon className="w-3 h-3" /> {typeof frequentlyPercent === 'string' && frequentlyPercent.includes('%') ? frequentlyPercent : `${frequentlyPercent}%`}
+                <GIcon name="error" size={14} /> {typeof frequentlyPercent === 'string' && frequentlyPercent.includes('%') ? frequentlyPercent : `${frequentlyPercent}%`}
               </span>
             </div>
             <div className="text-[30px] sm:text-[34px] font-bold text-slate-900 tracking-tight my-2 font-num leading-none flex items-baseline gap-1.5">
@@ -162,7 +143,7 @@ export const KPICards: React.FC<KPICardsProps> = ({
             </div>
             <div className="flex flex-col gap-0.5 min-w-0">
               <span className="text-[10px] text-red-800 font-bold flex items-center gap-0.5 flex-shrink-0">
-                {lang === 'ta' ? 'வீட்டு வாரியான பார்வை' : 'Household view'} <ArrowRight className="w-3 h-3" />
+                {lang === 'ta' ? 'வீட்டு வாரியான பார்வை' : 'Household view'} <GIcon name="arrow_forward" size={14} />
               </span>
             </div>
           </div>

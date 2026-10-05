@@ -57,6 +57,7 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
     <div className="space-y-6">
       {/* Header */}
       <AdminSubPageHeader
+        gicon="cancel"
         icon={householdNotCoveredIcon}
         iconAlt="Total Household Not Collected"
         iconFallback={householdNotCoveredFallbackIcon}

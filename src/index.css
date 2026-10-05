@@ -1081,6 +1081,59 @@ button, .btn-interactive {
 }
 
 /* ════════════════════════════════════════════════════════════════════
+   GOOGLE MATERIAL SYMBOLS (Rounded) — project-wide icon system.
+   Crisp vector glyphs replacing the old raster JPG/PNG icons.
+   `.gicon` sizes via inline font-size from the GIcon component;
+   colour via Tailwind text-* classes.
+   ════════════════════════════════════════════════════════════════════ */
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded', sans-serif;
+  font-weight: normal;
+  font-style: normal;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+  user-select: none;
+  flex-shrink: 0;
+}
+.gicon { transition: transform 200ms ease; }
+.gicon-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Small professional hover micro-animation for icons project-wide:
+   lift + slight grow + tiny tilt, once per hover. */
+@keyframes gicon-nudge {
+  0% { transform: translateY(0) scale(1) rotate(0deg); }
+  40% { transform: translateY(-2px) scale(1.12) rotate(-5deg); }
+  70% { transform: translateY(0) scale(1.05) rotate(2deg); }
+  100% { transform: translateY(0) scale(1) rotate(0deg); }
+}
+button:hover > .gicon,
+a:hover > .gicon,
+.dash-sidebar-item:hover .gicon,
+.swms-kpi:hover .gicon,
+.swms-panel-head:hover .gicon {
+  animation: gicon-nudge 450ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gicon { transition: none; }
+  button:hover > .gicon,
+  a:hover > .gicon,
+  .dash-sidebar-item:hover .gicon,
+  .swms-kpi:hover .gicon,
+  .swms-panel-head:hover .gicon { animation: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
    RECENT COLLECTION TABLE — one uniform size (13px) for the head,
    body, pills, zone filter, footer note and button. The card title
    keeps its section-heading size.

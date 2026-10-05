@@ -57,17 +57,12 @@ import {
 import { getWardsForZone } from '../constants/wards';
 
 import { 
-  reportsIcon,
-  vehicleAssignmentIcon,
-  vehicleAssignmentFallbackIcon,
   ccmcLogo,
   ccmcFallbackLogo,
   smartCityLogo,
   smartCityFallbackLogo
 } from '../constants/branding';
-
-const REPORTS_ICON_URL = reportsIcon;
-const VEHICLE_ASSIGNMENT_ICON_URL = vehicleAssignmentIcon;
+import { GIcon } from './icons/GIcon';
 
 interface ReportsViewProps {
   records: CollectionRecord[];
@@ -1381,15 +1376,10 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
     <div className="space-y-6">
       {/* Top Header Banner */}
       <div className="bg-white rounded-2xl p-5 border border-gray-200 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-emerald-600/50 bg-white p-0.5 flex-shrink-0 shadow-sm flex items-center justify-center">
-            <img
-              src={REPORTS_ICON_URL}
-              alt="Reports"
-              referrerPolicy="no-referrer"
-              className="w-full h-full object-cover rounded-xl"
-            />
-          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-700 flex-shrink-0 flex items-center justify-center">
+              <GIcon name="description" size={32} filled />
+            </div>
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 tracking-tight">
@@ -1455,18 +1445,8 @@ export const ReportsView: React.FC<ReportsViewProps> = ({
           }`}
         >
           <div className="flex items-center justify-between mb-1.5">
-            <div className="w-7 h-7 rounded-lg overflow-hidden bg-white border border-emerald-300/60 p-0.5 flex items-center justify-center shadow-2xs">
-              <img
-                src={VEHICLE_ASSIGNMENT_ICON_URL}
-                alt="Vehicle Assignment"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  if (e.currentTarget.src !== vehicleAssignmentFallbackIcon) {
-                    e.currentTarget.src = vehicleAssignmentFallbackIcon;
-                  }
-                }}
-                className="w-full h-full object-cover rounded-md"
-              />
+            <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+              <GIcon name="local_shipping" size={20} />
             </div>
             <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${
               activeReportType === 'vehicle-assignment' ? 'bg-white text-[#1E7A38]' : 'bg-emerald-100 text-emerald-900 border border-emerald-300'

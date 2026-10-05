@@ -1,22 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, LogOut, X, MapPin, QrCode, AlertTriangle } from 'lucide-react';
 import { NavigationTab } from '../types';
-import { 
-  householdCoveredIcon, 
-  householdCoveredFallbackIcon, 
-  householdNotCoveredIcon, 
-  householdNotCoveredFallbackIcon,
-  frequentlyNotCollectedIcon,
-  reportsIcon,
-  aiPredictionIcon,
+import { GIcon } from './icons/GIcon';
+import {
   ccmcLogo,
   ccmcFallbackLogo,
-  smartCityLogo,
-  smartCityFallbackLogo
 } from '../constants/branding';
-
-const REPORTS_ICON_URL = reportsIcon;
-const AI_PREDICTION_ICON_URL = aiPredictionIcon;
 
 interface SidebarProps {
   activeTab: NavigationTab;
@@ -55,58 +43,50 @@ export const Sidebar: React.FC<SidebarProps> = ({
       id: 'overview' as NavigationTab,
       label: lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview',
       shortLabel: lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview',
-      type: 'icon',
-      icon: LayoutDashboard,
+      gicon: 'dashboard',
     },
     {
       id: 'ai-prediction' as NavigationTab,
       label: lang === 'ta' ? 'AI Analytics and Prediction' : 'AI Analytics and Prediction',
       shortLabel: lang === 'ta' ? 'AI ANALYTICS' : 'AI ANALYTICS',
-      type: 'image',
-      image: AI_PREDICTION_ICON_URL,
+      gicon: 'psychology',
       badge: 'AI',
     },
     {
       id: 'collected' as NavigationTab,
       label: lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected',
       shortLabel: lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected',
-      type: 'image',
-      image: householdCoveredIcon,
+      gicon: 'local_shipping',
     },
     {
       id: 'not-collected' as NavigationTab,
       label: lang === 'ta' ? 'சேகரிக்கப்படாதவை' : 'Not Collected',
       shortLabel: lang === 'ta' ? 'விடுபட்டவை' : 'Missed',
-      type: 'image',
-      image: householdNotCoveredIcon,
+      gicon: 'cancel',
     },
     {
       id: 'partially-not-collected' as NavigationTab,
       label: lang === 'ta' ? 'பகுதி சேகரிக்கப்படவில்லை' : 'Partially Not Collected',
       shortLabel: lang === 'ta' ? 'பகுதி விடுபட்டவை' : 'Partial',
-      type: 'icon',
-      icon: AlertTriangle,
+      gicon: 'warning',
     },
     {
       id: 'frequently-not-covered-area' as NavigationTab,
       label: lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed Houses',
       shortLabel: lang === 'ta' ? 'விடுபட்ட வீடுகள்' : 'Uncollected Houses',
-      type: 'image',
-      image: frequentlyNotCollectedIcon,
+      gicon: 'repeat',
     },
     {
       id: 'reports' as NavigationTab,
       label: lang === 'ta' ? 'அறிக்கைகள்' : 'Reports',
       shortLabel: lang === 'ta' ? 'அறிக்கைகள்' : 'Reports',
-      type: 'image',
-      image: REPORTS_ICON_URL,
+      gicon: 'description',
     },
     {
       id: 'qr-management' as NavigationTab,
       label: lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management',
       shortLabel: lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management',
-      type: 'icon',
-      icon: QrCode,
+      gicon: 'qr_code_2',
       badge: 'QR',
     },
   ];
@@ -137,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     : 'dash-sidebar-icon bg-slate-100 text-slate-600'
                 }`}
               >
-                <LayoutDashboard className="w-5 h-5" />
+                <GIcon name="dashboard" size={22} filled={activeTab === 'overview'} />
               </div>
               <span className="text-sm font-bold text-slate-800">{lang === 'ta' ? 'கண்ணோட்டம்' : 'Overview'}</span>
             </div>
@@ -154,13 +134,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-xl overflow-hidden border-2 border-emerald-500/50 bg-emerald-50/50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
-                <img
-                  src={AI_PREDICTION_ICON_URL}
-                  alt="AI Prediction"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover rounded-xl"
-                />
+              <div className="w-9 h-9 rounded-xl bg-violet-100 text-violet-700 flex-shrink-0 flex items-center justify-center">
+                <GIcon name="psychology" size={22} />
               </div>
               <span className="text-sm font-bold leading-snug">{lang === 'ta' ? 'AI Analytics and Prediction' : 'AI Analytics and Prediction'}</span>
             </div>
@@ -179,18 +154,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-xl overflow-hidden border-2 border-emerald-500/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
-                <img
-                  src={householdCoveredIcon}
-                  alt="Collected"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== householdCoveredFallbackIcon) {
-                      e.currentTarget.src = householdCoveredFallbackIcon;
-                    }
-                  }}
-                  className="w-full h-full object-cover rounded-xl"
-                />
+              <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex-shrink-0 flex items-center justify-center">
+                <GIcon name="local_shipping" size={22} />
               </div>
               <span className="text-sm font-bold">{lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}</span>
             </div>
@@ -206,18 +171,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-xl overflow-hidden border-2 border-rose-600/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
-                <img
-                  src={householdNotCoveredIcon}
-                  alt="Not Collected"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== householdNotCoveredFallbackIcon) {
-                      e.currentTarget.src = householdNotCoveredFallbackIcon;
-                    }
-                  }}
-                  className="w-full h-full object-cover rounded-xl"
-                />
+              <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex-shrink-0 flex items-center justify-center">
+                <GIcon name="cancel" size={22} />
               </div>
               <span className="text-sm font-bold">{lang === 'ta' ? 'சேகரிக்கப்படாதவை' : 'Not Collected'}</span>
             </div>
@@ -235,8 +190,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="dash-sidebar-icon w-9 h-9 rounded-xl border-2 border-amber-400 bg-amber-50 flex-shrink-0 flex items-center justify-center shadow-xs">
-                <AlertTriangle className="w-5 h-5 text-amber-600" />
+              <div className="dash-sidebar-icon w-9 h-9 rounded-xl bg-amber-100 text-amber-600 flex-shrink-0 flex items-center justify-center">
+                <GIcon name="warning" size={22} />
               </div>
               <span className="text-[13px] font-bold text-slate-800 leading-snug break-words flex-1">{lang === 'ta' ? 'பகுதி சேகரிக்கப்படவில்லை' : 'Partially Not Collected'}</span>
             </div>
@@ -254,18 +209,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="dash-sidebar-icon w-9 h-9 rounded-xl overflow-hidden border-2 border-rose-400 bg-rose-50 p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
-                <img
-                  src={frequentlyNotCollectedIcon}
-                  alt="Frequently Missed Houses"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    if (e.currentTarget.src !== householdNotCoveredFallbackIcon) {
-                      e.currentTarget.src = householdNotCoveredFallbackIcon;
-                    }
-                  }}
-                  className="w-full h-full object-cover rounded-xl"
-                />
+              <div className="dash-sidebar-icon w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex-shrink-0 flex items-center justify-center">
+                <GIcon name="repeat" size={22} />
               </div>
               <span className="text-[13px] font-bold text-slate-800 leading-snug break-words flex-1">{lang === 'ta' ? 'அடிக்கடி விடுபட்ட வீடுகள்' : 'Frequently Missed'}</span>
             </div>
@@ -282,13 +227,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <div className="w-9 h-9 rounded-xl overflow-hidden border-2 border-emerald-500/50 bg-white p-0.5 flex-shrink-0 flex items-center justify-center shadow-xs">
-                <img
-                  src={REPORTS_ICON_URL}
-                  alt="Reports"
-                  referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover rounded-xl"
-                />
+              <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex-shrink-0 flex items-center justify-center">
+                <GIcon name="description" size={22} />
               </div>
               <span className="text-sm font-bold">{lang === 'ta' ? 'அறிக்கைகள்' : 'Reports'}</span>
             </div>
@@ -305,13 +245,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <div
-                className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors shadow-xs ${
+                className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
                   activeTab === 'qr-management'
                     ? 'bg-[#1E7A38] text-white'
-                    : 'bg-white text-[#1E7A38] border border-emerald-300'
+                    : 'bg-emerald-50 text-[#1E7A38]'
                 }`}
               >
-                <QrCode className="w-5 h-5" />
+                <GIcon name="qr_code_2" size={22} />
               </div>
               <span className="text-sm font-bold leading-snug" style={{ whiteSpace: 'nowrap' }}>{lang === 'ta' ? 'QR மேலாண்மை' : 'QR Management'}</span>
             </div>
@@ -330,8 +270,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             className="w-full flex items-center gap-3.5 px-3.5 py-3 rounded-2xl font-bold text-sm text-[#1E7A38] hover:bg-gray-200/60 transition-all text-left cursor-pointer"
           >
-            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#1E7A38] flex items-center justify-center flex-shrink-0 border border-emerald-200/80 shadow-xs">
-              <LogOut className="w-6 h-6 text-[#1E7A38]" />
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#1E7A38] flex items-center justify-center flex-shrink-0">
+              <GIcon name="logout" size={22} />
             </div>
             <span className="text-sm font-bold">{lang === 'ta' ? 'வெளியேறு' : 'Logout'}</span>
           </button>
@@ -374,7 +314,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="p-1.5 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors cursor-pointer"
                   aria-label="Close Drawer"
                 >
-                  <X className="w-5 h-5" />
+                  <GIcon name="close" size={20} />
                 </button>
               </div>
 
@@ -393,23 +333,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-white border border-gray-200 p-0.5 flex-shrink-0 flex items-center justify-center shadow-2xs">
-                          {item.type === 'icon' && item.icon && (
-                            <item.icon className={`w-5 h-5 ${isActive ? 'text-[#1E7A38]' : 'text-gray-700'}`} />
-                          )}
-                          {item.type === 'image' && item.image && (
-                            <img
-                              src={item.image}
-                              alt={item.label}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover rounded-lg"
-                            />
-                          )}
-                          {(item as any).isLive && (
-                            <span className="flex h-2.5 w-2.5 absolute top-0.5 right-0.5">
-                              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500 border border-white"></span>
-                            </span>
-                          )}
+                        <div className="relative w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex-shrink-0 flex items-center justify-center">
+                          <GIcon name={item.gicon} size={22} filled={isActive} />
                         </div>
                         <span className="text-sm font-bold">{item.label}</span>
                       </div>
@@ -440,7 +365,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="pt-4 border-t border-gray-200 space-y-3">
               <div className="bg-emerald-50/80 p-2.5 rounded-xl border border-emerald-200/70 text-xs">
                 <div className="font-bold text-[#1E7A38] flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5" />
+                  <GIcon name="location_on" size={16} />
                   <span>Coimbatore City Corporation</span>
                 </div>
                 <div className="text-[11px] text-gray-600 mt-0.5">
@@ -459,7 +384,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }}
                 className="w-full flex items-center justify-center gap-2 p-2.5 rounded-xl font-bold text-xs text-[#1E7A38] bg-emerald-100/80 hover:bg-emerald-200 transition-all text-center border border-emerald-200 shadow-2xs cursor-pointer"
               >
-                <LogOut className="w-4 h-4 text-[#1E7A38]" />
+                <GIcon name="logout" size={18} />
                 <span>Logout Session</span>
               </button>
             </div>
