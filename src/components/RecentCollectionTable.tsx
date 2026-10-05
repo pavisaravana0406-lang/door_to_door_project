@@ -115,7 +115,7 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
               <th className="px-4 py-3.5 w-[13%] font-bold whitespace-nowrap">{lang === 'ta' ? 'மண்டலம்' : 'Zone'}</th>
               <th className="px-4 py-3.5 w-[9%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வார்டு' : 'Ward'}</th>
               <th className="px-4 py-3.5 w-[17%] font-bold whitespace-nowrap">{lang === 'ta' ? 'தெரு' : 'Street'}</th>
-              <th className="px-4 py-3.5 w-[19%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வாகன எண் & 5-ஸ்கேன்' : 'Vehicle No. & 5-Scans'}</th>
+              <th className="px-4 py-3.5 w-[19%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வாகன எண்' : 'Vehicle No.'}</th>
               <th className="px-4 py-3.5 w-[12%] font-bold whitespace-nowrap">{lang === 'ta' ? 'பணியாளர்' : 'Worker'}</th>
               <th className="px-3 py-3.5 text-center w-[12%] font-bold whitespace-nowrap">{lang === 'ta' ? 'நிலை' : 'Status'}</th>
               <th className="px-3 py-3.5 text-center w-[6%] font-bold whitespace-nowrap">{lang === 'ta' ? 'செயல்' : 'Action'}</th>
@@ -230,61 +230,16 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                     {item.ward}
                   </td>
 
-                  <td className="px-4 py-3.5 font-bold text-gray-900">
-                    {item.street}
+                  <td className="px-4 py-3.5">
+                    <div className="font-bold text-gray-900">{item.street}</div>
+                    <div className="text-slate-500 font-semibold">{item.vehicleType || '—'}</div>
                   </td>
 
-                  {/* Vehicle No & 5-Scan Status Cell */}
+                  {/* Vehicle No Cell — vehicle number only; scan progress lives in Status */}
                   <td className="px-4 py-3.5">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-mono font-bold text-[10px] bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md w-max border border-slate-200">
-                        {(item.vehicleNo && !item.vehicleNo.includes('38 PV 9001')) ? item.vehicleNo : ((item.street?.toLowerCase().includes('mageshwari') || item.streetName?.toLowerCase().includes('mageshwari')) ? 'TN66AD6465' : (item.vehicleNo || 'TN66AD6465'))}
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
-                          !isShiftPending && scannedCount >= minScansForCollected
-                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                            : !isShiftPending && scannedCount > 0
-                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                            : 'bg-rose-100 text-rose-800 border border-rose-300'
-                        }`}>
-                          {scannedCount}/{totalScans} Scanned
-                        </span>
-                        {(() => {
-                          const proof = resolveProof(item);
-                          const hasAny = proof.before || proof.after;
-                          if (!hasAny) return null;
-                          const count = (proof.before ? 1 : 0) + (proof.after ? 1 : 0);
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => setPreviewPhotoRecord(item)}
-                              className="inline-flex items-center gap-1 bg-[#00875A] hover:bg-[#00704A] text-white text-[10px] font-black px-2 py-1 rounded-md shadow-2xs transition active:scale-95 cursor-pointer border border-emerald-500/40"
-                              title={lang === 'ta'
-                                ? 'சான்று படங்களைப் பார்க்க கிளிக் செய்யவும்'
-                                : `Click to view ${count} proof photo${count > 1 ? 's' : ''}`}
-                            >
-                              <Camera className="w-3.5 h-3.5 text-emerald-100" />
-                              <span>Photo</span>
-                              <span className="font-mono text-[9px] bg-emerald-900/60 rounded px-1">
-                                {count}/2
-                              </span>
-                            </button>
-                          );
-                        })()}
-                        <div className="flex gap-0.5">
-                          {dotStatusList.map((isScanned, i) => (
-                            <div
-                              key={i}
-                              className={`w-2 h-2 rounded-full ${
-                                isScanned ? 'bg-emerald-500' : 'bg-rose-500'
-                              }`}
-                              title={`Checkpoint ${i + 1}: ${isScanned ? 'Scanned ✓' : 'Pending X'}`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                    <span className="font-mono font-bold text-[10px] bg-slate-100 text-slate-800 px-2 py-0.5 rounded-md w-max border border-slate-200">
+                      {(item.vehicleNo && !item.vehicleNo.includes('38 PV 9001')) ? item.vehicleNo : ((item.street?.toLowerCase().includes('mageshwari') || item.streetName?.toLowerCase().includes('mageshwari')) ? 'TN66AD6465' : (item.vehicleNo || 'TN66AD6465'))}
+                    </span>
                   </td>
 
                   <td className="px-4 py-3.5 font-semibold text-gray-800 text-[10px]">
@@ -292,23 +247,47 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                   </td>
 
                   <td className="px-3 py-3.5 text-center whitespace-nowrap">
-                    {isShiftPending ? (
-                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-[#FCE8E6] text-[#C5221F] border border-rose-200/80">
-                        {lang === 'ta' ? 'இன்று உள்நுழையவில்லை' : 'Not Logged In Today'}
+                    <div className="flex flex-col items-center gap-1.5">
+                      {isShiftPending ? (
+                        <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-[#FCE8E6] text-[#C5221F] border border-rose-200/80">
+                          {lang === 'ta' ? 'இன்று உள்நுழையவில்லை' : 'Not Logged In Today'}
+                        </span>
+                      ) : (scannedCount >= minScansForCollected || item.status === 'Collected') ? (
+                        <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-[#E6F4EA] text-[#1E7A38] border border-emerald-200/80">
+                          {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
+                        </span>
+                      ) : scannedCount > 0 ? (
+                        <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
+                          {lang === 'ta' ? 'பகுதி சேகரிப்பு' : 'Partial Scan'}
+                        </span>
+                      ) : (
+                        <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-300">
+                          {lang === 'ta' ? 'உள்நுழைந்தது' : 'Logged In'}
+                        </span>
+                      )}
+                      {/* Scan fraction */}
+                      <span className="font-black text-slate-900">
+                        {scannedCount}/{totalScans} {lang === 'ta' ? 'ஸ்கேன்' : 'Scanned'}
                       </span>
-                    ) : (scannedCount >= minScansForCollected || item.status === 'Collected') ? (
-                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-[#E6F4EA] text-[#1E7A38] border border-emerald-200/80">
-                        {lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
-                      </span>
-                    ) : scannedCount > 0 ? (
-                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-300">
-                        {lang === 'ta' ? 'பகுதி சேகரிப்பு' : 'Partial Scan'}
-                      </span>
-                    ) : (
-                      <span className="inline-block px-3 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-300">
-                        {lang === 'ta' ? 'உள்நுழைந்தது' : 'Logged In'}
-                      </span>
-                    )}
+                      {/* Checkpoint dots — big and clearly visible */}
+                      <div className="flex items-center gap-1">
+                        {dotStatusList.map((isScanned, i) => (
+                          <div
+                            key={i}
+                            className={`w-3 h-3 rounded-full border ${
+                              isScanned ? 'bg-emerald-500 border-emerald-600' : 'bg-rose-500 border-rose-600'
+                            }`}
+                            title={`Checkpoint ${i + 1}: ${isScanned ? 'Scanned ✓' : 'Pending X'}`}
+                          />
+                        ))}
+                      </div>
+                      {/* Scanned vs pending counts in green / red */}
+                      <div className="flex items-center gap-2 font-black">
+                        <span className="text-emerald-700">✓ {scannedCount}</span>
+                        <span className="text-slate-300">|</span>
+                        <span className="text-rose-600">✗ {totalScans - scannedCount}</span>
+                      </div>
+                    </div>
                   </td>
 
                   <td className="px-3 py-3.5">
