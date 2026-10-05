@@ -49,7 +49,7 @@ export const AdminKpiSquare: React.FC<AdminKpiSquareProps> = ({
       <span className="swms-kpi-top">
         <span className="swms-kpi-label-row">
           <span className="swms-kpi-icon">
-            <Icon className={`h-4 w-4 ${t.iconColor}`} />
+            <Icon className={`h-6 w-6 ${t.iconColor}`} />
           </span>
           <span className="swms-kpi-label">{label}</span>
         </span>
@@ -73,7 +73,7 @@ export const GARBAGE_KPIS: Array<{
   icon: React.ComponentType<{ className?: string }>;
   tone: KpiTone;
 }> = [
-  { key: 'total', label: 'Total Garbage', labelTa: 'மொத்த கழிவு', icon: Package, tone: 'blue' },
+  { key: 'total', label: 'Total Households', labelTa: 'மொத்த வீடுகள்', icon: Package, tone: 'blue' },
   { key: 'collected', label: 'Collected', labelTa: 'சேகரிக்கப்பட்டது', icon: PackageCheck, tone: 'green' },
   { key: 'notCollected', label: 'Not Collected', labelTa: 'சேகரிக்கப்படவில்லை', icon: PackageX, tone: 'rose' },
   { key: 'partial', label: 'Partially Not Collected', labelTa: 'பகுதி சேகரிக்கப்படவில்லை', icon: PackageMinus, tone: 'amber' },

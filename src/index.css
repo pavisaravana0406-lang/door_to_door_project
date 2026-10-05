@@ -963,12 +963,11 @@ button, .btn-interactive {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  border-radius: 0.55rem;
   flex-shrink: 0;
-  background: rgba(255,255,255,0.85);
-  border: 1px solid rgba(15,42,67,0.08);
+  /* No box, no border — the glyph itself carries the tone colour. */
+  background: transparent;
+  border: none;
+  padding: 0;
 }
 
 .swms-kpi-pct {
@@ -1055,29 +1054,27 @@ button, .btn-interactive {
 
 /* ════════════════════════════════════════════════════════════════════
    HOVER-ONLY ROW DETAILS (all analytics tables)
-   Zone / ward / vehicle extra details stay hidden until the row is
-   hovered (desktop), tapped (touch via :active) or focused (keyboard).
+   Zone / ward / vehicle extra details stay visually hidden until the
+   row is hovered (desktop), tapped (touch via :active) or focused
+   (keyboard). The detail line ALWAYS keeps its space, so revealing it
+   never changes row height — no page shake. Only opacity/colour fade.
    Numbers stay visible — only the detail line under the label hides.
    ════════════════════════════════════════════════════════════════════ */
 .swms-table tr.swms-hover-row { cursor: default; }
 .swms-table tr.swms-hover-row:focus { outline: none; }
 .swms-table tr.swms-hover-row:focus-visible { outline: 2px solid #1e7a38; outline-offset: -2px; }
 .swms-hover-detail {
-  max-height: 0;
   opacity: 0;
-  overflow: hidden;
-  transform: translateY(-3px);
-  transition: max-height 200ms ease, opacity 200ms ease, transform 200ms ease;
-  margin: 0 !important;
+  visibility: hidden;
+  transition: opacity 220ms ease, visibility 220ms ease;
+  margin-top: 0.15rem !important;
 }
 .swms-table tr.swms-hover-row:hover .swms-hover-detail,
 .swms-table tr.swms-hover-row:focus-within .swms-hover-detail,
 .swms-table tr.swms-hover-row:focus .swms-hover-detail,
 .swms-table tr.swms-hover-row:active .swms-hover-detail {
-  max-height: 3rem;
   opacity: 1;
-  transform: none;
-  margin-top: 0.15rem !important;
+  visibility: visible;
 }
 @media (prefers-reduced-motion: reduce) {
   .swms-hover-detail { transition: none; }
