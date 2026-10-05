@@ -200,9 +200,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="text-[11px] sm:text-xs font-black text-white leading-tight">
                   {lang === 'ta' ? 'நிர்வாகி' : 'Admin'}
                 </div>
-                <div className="text-[9px] sm:text-[10px] font-semibold text-emerald-200 leading-none mt-0.5" style={{ whiteSpace: 'nowrap' }}>
-                  {userName}
-                </div>
               </div>
             </div>
           )}
