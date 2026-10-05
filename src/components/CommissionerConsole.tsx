@@ -411,7 +411,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
             />
           )}
 
-          {/* TAB 5: COLLECTED — zone and vehicle performance sit after the KPI boxes */}
+          {/* TAB 5: COLLECTED */}
           {activeTab === 'collected' && (
             <CollectedView
               records={collectionRecords}
@@ -419,21 +419,10 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
               onBackToOverview={() => setActiveTab('overview')}
               onNavigateToNotCovered={() => setActiveTab('not-collected')}
               lang={lang}
-              afterKpis={
-                <div className="space-y-4">
-                  <AdminSection title="Zone-wise Performance" titleTa="????? ??????? ??????????" icon={MapPin} lang={lang}>
-                    <ZonePerformanceTable lang={lang} rows={analyticsForViews.byZone} />
-                  </AdminSection>
-
-                  <AdminSection title="Vehicle-wise Performance" titleTa="???? ??????? ??????????" icon={Truck} lang={lang}>
-                    <VehiclePerformanceTable lang={lang} rows={analyticsForViews.byVehicleType} />
-                  </AdminSection>
-                </div>
-              }
             />
           )}
 
-          {/* TAB 6: NOT COLLECTED — zone and vehicle performance sit after the KPI boxes */}
+          {/* TAB 6: NOT COLLECTED */}
           {activeTab === 'not-collected' && (
             <NotCollectedView
               records={analyticsRecords}
@@ -441,17 +430,6 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
               onBackToOverview={() => setActiveTab('overview')}
               onNavigateToCovered={() => setActiveTab('collected')}
               lang={lang}
-              afterKpis={
-                <div className="space-y-4">
-                  <AdminSection title="Zone-wise Performance" titleTa="????? ??????? ??????????" icon={MapPin} lang={lang}>
-                    <ZonePerformanceTable lang={lang} rows={analyticsForViews.byZone} />
-                  </AdminSection>
-
-                  <AdminSection title="Vehicle-wise Performance" titleTa="???? ??????? ??????????" icon={Truck} lang={lang}>
-                    <VehiclePerformanceTable lang={lang} rows={analyticsForViews.byVehicleType} />
-                  </AdminSection>
-                </div>
-              }
             />
           )}
 
