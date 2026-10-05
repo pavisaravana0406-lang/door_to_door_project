@@ -83,7 +83,7 @@ const StatIcon: React.FC<{ tone: 'green' | 'rose' | 'amber' }> = ({ tone }) => {
 export const AdminSubPageHeader: React.FC<AdminSubPageHeaderProps> = ({
   gicon, icon, iconAlt, iconFallback, title, titleTa, lang = 'en',
   statLabel, statValue, statSuffix, tone, onBack,
-  navLabel, onNav,
+  navLabel, navTone, onNav,
 }) => {
   const t = TONE[tone];
   const toneIconColor =
