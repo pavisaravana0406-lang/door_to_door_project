@@ -226,6 +226,9 @@ export const buildAdminAnalytics = (
   }
 
   const byVehicle: VehicleBreakdownRow[] = [...vehMap.values()]
+    // Dashboards track only the 3 door-to-door fleet classes — OBL / OTHER
+    // records still count in the headline totals, never as table rows.
+    .filter(v => (VEHICLE_CLASSES as string[]).includes(v.key.split('|')[0]))
     .map(v => finish(v) as VehicleBreakdownRow)
     .sort((a, b) => b.total - a.total);
   const sortBy = (m: Map<string, GroupBreakdown>): GroupBreakdown[] =>
@@ -245,11 +248,10 @@ export const buildAdminAnalytics = (
     },
     byZone: ALL_ZONES.map(z => finish(zoneMap.get(z)!)),
     /**
-     * Every vehicle class the fleet has is listed, including ones with no
-     * activity yet. Filtering to classes with rows is what made PUSH CART and
-     * BOV vanish from the overview whenever only TATA ACE had been used.
+     * Only the 3 door-to-door fleet classes are listed — OBL / OTHER never
+     * get rows (they still count in the headline totals above).
      */
-    byVehicleType: [...VEHICLE_CLASSES, 'OTHER' as VehicleClass]
+    byVehicleType: [...VEHICLE_CLASSES]
       .map(t => typeMap.get(t)!)
       .map(finish),
     byVehicle,

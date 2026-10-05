@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Eye, Filter, Camera, X, CheckCircle2 } from 'lucide-react';
 import { CollectionRecord } from '../types';
+import { vehicleClassOf } from '../utils/adminAnalytics';
 
 interface RecentCollectionTableProps {
   records: CollectionRecord[];
@@ -200,6 +201,10 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
               });
               
               const minScansForCollected = isPushCart ? 1 : 3;
+              // Only TATA ACE runs the 5-QR route — BOV / PUSH CART carry a
+              // single QR, so their Status shows placed/scanned/pending counts.
+              const vClass = vehicleClassOf(item.vehicleType, item.vehicleNo);
+              const isTataAce = vClass === 'TATA ACE';
               
               return (
                 <tr key={item.id} className="dash-table-row">
@@ -271,27 +276,44 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                         </span>
                       )}
                       {/* Scan fraction */}
-                      <span className="font-black text-slate-900">
-                        {scannedCount}/{totalScans} {lang === 'ta' ? 'ஸ்கேன்' : 'Scanned'}
-                      </span>
-                      {/* Checkpoint dots — big and clearly visible */}
-                      <div className="flex items-center gap-1">
-                        {dotStatusList.map((isScanned, i) => (
-                          <div
-                            key={i}
-                            className={`w-3 h-3 rounded-full border ${
-                              isScanned ? 'bg-emerald-500 border-emerald-600' : 'bg-rose-500 border-rose-600'
-                            }`}
-                            title={`Checkpoint ${i + 1}: ${isScanned ? 'Scanned ✓' : 'Pending X'}`}
-                          />
-                        ))}
-                      </div>
-                      {/* Scanned vs pending counts in green / red */}
-                      <div className="flex items-center gap-2 font-black">
-                        <span className="text-emerald-700">✓ {scannedCount}</span>
-                        <span className="text-slate-300">|</span>
-                        <span className="text-rose-600">✗ {totalScans - scannedCount}</span>
-                      </div>
+                      {isTataAce ? (
+                        <>
+                          <span className="font-black text-slate-900">
+                            {scannedCount}/{totalScans} {lang === 'ta' ? 'ஸ்கேன்' : 'Scanned'}
+                          </span>
+                          {/* Checkpoint dots — big and clearly visible */}
+                          <div className="flex items-center gap-1">
+                            {dotStatusList.map((isScanned, i) => (
+                              <div
+                                key={i}
+                                className={`w-3 h-3 rounded-full border ${
+                                  isScanned ? 'bg-emerald-500 border-emerald-600' : 'bg-rose-500 border-rose-600'
+                                }`}
+                                title={`Checkpoint ${i + 1}: ${isScanned ? 'Scanned ✓' : 'Pending X'}`}
+                              />
+                            ))}
+                          </div>
+                          {/* Scanned vs pending counts in green / red */}
+                          <div className="flex items-center gap-2 font-black">
+                            <span className="text-emerald-700">✓ {scannedCount}</span>
+                            <span className="text-slate-300">|</span>
+                            <span className="text-rose-600">✗ {totalScans - scannedCount}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span className="font-semibold text-slate-600">
+                            {lang === 'ta' ? 'QR வைக்கப்பட்டது' : 'QR placed'}:{' '}
+                            <span className="font-black text-slate-900">{totalScans}</span>
+                          </span>
+                          {/* Placed / scanned / pending counts in green / red */}
+                          <div className="flex items-center gap-2 font-black">
+                            <span className="text-emerald-700">✓ {scannedCount} {lang === 'ta' ? 'ஸ்கேன்' : 'scanned'}</span>
+                            <span className="text-slate-300">|</span>
+                            <span className="text-rose-600">✗ {totalScans - scannedCount} {lang === 'ta' ? 'நிலுவை' : 'pending'}</span>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </td>
 
