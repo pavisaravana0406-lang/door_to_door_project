@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import {
-  Truck, AlertTriangle, Search, MapPin, DoorOpen, PackageMinus, Layers, CheckCircle2, XCircle,
+  Truck, AlertTriangle, Search, MapPin, DoorOpen, PackageMinus, CheckCircle2, XCircle,
 } from 'lucide-react';
-import { PerformanceTable, VehiclePerformanceTable, AdminSection, AdminKpiSquare } from './AdminKpi';
-import { AdminAnalytics, VehicleBreakdownRow } from '../utils/adminAnalytics';
+import { AdminSection, AdminKpiSquare } from './AdminKpi';
+import { AdminAnalytics } from '../utils/adminAnalytics';
 import { CollectionRecord, SWMSHouseholdRecord } from '../types';
 
 interface VehicleMissViewProps {
@@ -52,15 +52,6 @@ export const VehicleMissView: React.FC<VehicleMissViewProps> = ({
 
   const vehicleRows = useMemo(
     () => (tier === 'partial' ? analytics.partialByVehicle : analytics.frequentByVehicle),
-    [analytics, tier]
-  );
-
-  const zoneRows = useMemo(
-    () => (tier === 'partial' ? analytics.partialByZone : analytics.frequentByZone).map(z => ({
-      key: z.key, label: z.label, sublabel: `${z.total} in tier`, total: z.total,
-      collected: z.collected, partial: z.partial, notCollected: z.notCollected,
-      performance: z.performance,
-    })),
     [analytics, tier]
   );
 
@@ -159,36 +150,6 @@ export const VehicleMissView: React.FC<VehicleMissViewProps> = ({
           />
         </div>
       </div>
-
-      {/* Vehicle-wise — the primary ask */}
-      <AdminSection
-        title="Vehicle-wise"
-        titleTa="வாகன வாரியாக"
-        icon={Truck}
-        lang={lang}
-      >
-        <VehiclePerformanceTable
-          rows={vehicleRows}
-          lang={lang}
-          tierField={tier}
-          emptyText={lang === 'ta' ? 'இந்த வகையில் வாகனங்கள் இல்லை' : 'No vehicles in this tier'}
-        />
-      </AdminSection>
-
-      {/* Zone-wise */}
-      <AdminSection
-        title="Zone-wise"
-        titleTa="மண்டல வாரியாக"
-        icon={Layers}
-        lang={lang}
-      >
-        <PerformanceTable
-          labelHeader={lang === 'ta' ? 'மண்டலம்' : 'Zone'}
-          rows={zoneRows}
-          lang={lang}
-          emptyText={lang === 'ta' ? 'மண்டல தரவு இல்லை' : 'No zone data'}
-        />
-      </AdminSection>
 
       {/* Door detail */}
       <AdminSection
