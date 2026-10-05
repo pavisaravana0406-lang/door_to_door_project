@@ -186,6 +186,27 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Right Side: User Profile + Language + Logout */}
         <div className="flex items-center gap-1 sm:gap-2 lg:gap-3 flex-shrink-0">
 
+          {/* Logged-in identity pill — Admin shows "Admin", so it is always
+              clear who is signed in on every admin screen. */}
+          {userRole === 'admin' && (
+            <div
+              className="flex items-center gap-1.5 bg-[#166534] border border-emerald-400/40 rounded-full px-1.5 sm:px-2.5 py-0.5 sm:py-1 shadow-sm flex-shrink-0"
+              title={lang === 'ta' ? `நிர்வாகியாக உள்நுழைந்துள்ளது: ${userName}` : `Signed in as Admin: ${userName}`}
+            >
+              <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-white shadow-xs flex items-center justify-center border border-emerald-200 flex-shrink-0 overflow-hidden">
+                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1E7A38]" />
+              </div>
+              <div className="text-left pr-1">
+                <div className="text-[11px] sm:text-xs font-black text-white leading-tight">
+                  {lang === 'ta' ? 'நிர்வாகி' : 'Admin'}
+                </div>
+                <div className="text-[9px] sm:text-[10px] font-semibold text-emerald-200 leading-none mt-0.5" style={{ whiteSpace: 'nowrap' }}>
+                  {userName}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* User Profile Console / "S" Logo Pill with Dropdown (Worker view only if applicable) */}
           {userRole !== 'admin' && (
             <div className="relative">

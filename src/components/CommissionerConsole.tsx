@@ -42,6 +42,8 @@ interface CommissionerConsoleProps {
   lang: 'en' | 'ta';
   onSetLang: (lang: 'en' | 'ta') => void;
   token?: string | null;
+  /** Signed-in display name, shown in the header identity pill. */
+  userName?: string;
 }
 
 export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
@@ -53,6 +55,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
   lang,
   onSetLang,
   token,
+  userName,
 }) => {
   // Session / tab states
   const [activeTab, setActiveTab] = useState<NavigationTab>('overview');
@@ -283,6 +286,7 @@ export const CommissionerConsole: React.FC<CommissionerConsoleProps> = ({
         onSwitchRole={onSwitchRole}
         lang={lang}
         onSetLang={onSetLang}
+        userName={userName || 'admin'}
       />
 
       {/* Main Layout Container (Mobile: Column, Desktop: Row) */}

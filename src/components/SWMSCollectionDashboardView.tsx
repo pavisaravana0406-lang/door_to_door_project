@@ -339,6 +339,12 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
 
             {/* Vehicle / Worker pill (like admin profile pill) — icon-only on mobile, full on larger */}
             <div
+              className="sm:hidden flex items-center gap-1 bg-[#166534] border border-emerald-400/40 rounded-full px-2 py-1 shadow-sm flex-shrink-0"
+              title={`${vehicleNumber || vehicleNo} • ${vehicleType}`}
+            >
+              <span className="text-[10px] font-black text-white font-mono" style={{ whiteSpace: 'nowrap' }}>{vehicleNumber || vehicleNo}</span>
+            </div>
+            <div
               className="hidden sm:flex items-center gap-1.5 sm:gap-2 bg-[#166534] hover:bg-[#113B22] border border-emerald-400/40 rounded-full px-1.5 sm:px-2.5 py-1 shadow-sm flex-shrink-0"
               title={`${vehicleNo}`}
             >

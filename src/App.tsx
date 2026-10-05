@@ -400,6 +400,7 @@ export default function App() {
           lang={lang}
           onSetLang={handleSetLang}
           token={token}
+          userName={user.name}
         />
       </ErrorBoundary>
     );
