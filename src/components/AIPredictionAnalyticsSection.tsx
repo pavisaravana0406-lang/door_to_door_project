@@ -220,6 +220,33 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
     setDateError(null);
     if (onShowToast) onShowToast('Date filter cleared');
   };
+
+  // Active filter period in days (null = all-time). Every text that names
+  // the filter period reads from here, so "30-day" etc. is never hardcoded —
+  // select 30 days → 30, 7 days → 7, today → today, custom → N days.
+  const activeSpanDays = useMemo(() => {
+    if (!dateFrom && !dateTo) return null;
+    const from = dateFrom || dateTo;
+    const to = dateTo || dateFrom;
+    const days = Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000) + 1;
+    return Number.isFinite(days) && days > 0 ? days : null;
+  }, [dateFrom, dateTo]);
+
+  const periodShort =
+    activeSpanDays == null
+      ? (lang === 'ta' ? 'அனைத்து காலம்' : 'all-time')
+      : activeSpanDays === 1
+        ? (lang === 'ta' ? 'இன்று' : 'today')
+        : (lang === 'ta' ? `${activeSpanDays} நாள்` : `${activeSpanDays}-day`);
+
+  const vsBaselineChip =
+    activeSpanDays == null
+      ? (lang === 'ta' ? 'சமீபத்திய 7D vs 30D அடிப்படை' : 'Recent 7D vs 30D Baseline')
+      : activeSpanDays === 1
+        ? (lang === 'ta' ? 'இன்று vs 30D அடிப்படை' : 'Today vs 30D Baseline')
+        : (lang === 'ta'
+          ? `கடந்த ${activeSpanDays} நாட்கள் vs 30D அடிப்படை`
+          : `Last ${activeSpanDays} days vs 30D Baseline`);
   
   // Interactive Modals State
   const [activeModal, setActiveModal] = useState<'alerts' | 'full_report' | 'high_risk' | null>(null);
@@ -896,7 +923,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
               {lang === 'ta' ? 'அதிகம் சேகரிக்கப்படாத வார்டுகள்' : 'Highly Not Collected Wards'}
             </h3>
             <div className="text-[11px] font-semibold text-slate-400 mt-1">
-              Top Wards by Missed Collection Count (30-day)
+              {lang === 'ta' ? `தவறவிட்ட சேகரிப்பு எண்ணிக்கையில் முதல் வார்டுகள் (${periodShort})` : `Top Wards by Missed Collection Count (${periodShort})`}
             </div>
           </div>
 
@@ -958,7 +985,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                   </span>
                 </span>
                 <span className="ai-geo-pop-k" style={{ fontSize: '0.6875rem' }}>
-                  {lang === 'ta' ? '30 நாள் வரலாற்று பதிவுகள்' : 'Computed from 30-day historical door logs'}
+                  {lang === 'ta' ? `${periodShort} வரலாற்று பதிவுகள்` : `Computed from ${periodShort} historical door logs`}
                 </span>
               </span>
             )}
@@ -1105,7 +1132,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                 </h3>
               </div>
               <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                Recent 7D vs 30D Baseline
+                {vsBaselineChip}
               </span>
             </div>
 
