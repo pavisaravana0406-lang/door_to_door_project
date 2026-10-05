@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { AlertTriangle, XCircle, Search, Filter, Eye, RefreshCw, MapPin, Truck, ArrowLeft, CheckCircle2, Phone, AlertCircle, FileSpreadsheet, Lock, Ban, HelpCircle } from 'lucide-react';
+import { AlertTriangle, XCircle, Search, Filter, Eye, RefreshCw, MapPin, Truck, ArrowLeft, CheckCircle2, Phone, AlertCircle, FileSpreadsheet } from 'lucide-react';
+import { GIcon } from './icons/GIcon';
 import { CollectionRecord } from '../types';
 import { householdNotCoveredIcon, householdNotCoveredFallbackIcon } from '../constants/branding';
 import { AdminSubPageHeader } from './AdminSubPageHeader';
@@ -79,11 +80,11 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
         onNav={onNavigateToCovered}
       />
 
-      {/* Missed Reason Breakdown Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Missed Reason Breakdown Cards — same 3-up layout as the Collected page */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
           <div className="p-3 bg-rose-50 text-rose-700 rounded-xl">
-            <Lock className="w-6 h-6" />
+            <GIcon name="lock" size={24} />
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold">
@@ -97,7 +98,7 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
 
         <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
           <div className="p-3 bg-amber-50 text-amber-700 rounded-xl">
-            <Ban className="w-6 h-6" />
+            <GIcon name="block" size={24} />
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold">
@@ -111,7 +112,7 @@ export const NotCollectedView: React.FC<NotCollectedViewProps> = ({
 
         <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3.5">
           <div className="p-3 bg-blue-50 text-blue-700 rounded-xl">
-            <HelpCircle className="w-6 h-6" />
+            <GIcon name="help" size={24} />
           </div>
           <div>
             <div className="text-xs text-gray-500 font-semibold">
