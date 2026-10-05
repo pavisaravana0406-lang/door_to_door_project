@@ -107,17 +107,18 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
 
       {/* Table Content */}
       <div className="dash-table-wrap">
-        <table className="w-full text-left border-collapse min-w-[820px]">
+        <table className="w-full text-left border-collapse min-w-[880px]">
           <thead>
             <tr className="bg-[#e9f5ed] text-emerald-900 text-[10px] sm:text-[13px] font-extrabold border-b border-slate-200">
-              <th className="px-4 py-3.5 text-center w-[7%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வரிசை' : 'S. No.'}</th>
-              <th className="px-4 py-3.5 w-[11%] font-bold whitespace-nowrap">{lang === 'ta' ? 'தேதி' : 'Date'}</th>
-              <th className="px-4 py-3.5 w-[13%] font-bold whitespace-nowrap">{lang === 'ta' ? 'மண்டலம்' : 'Zone'}</th>
-              <th className="px-4 py-3.5 w-[9%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வார்டு' : 'Ward'}</th>
-              <th className="px-4 py-3.5 w-[17%] font-bold whitespace-nowrap">{lang === 'ta' ? 'தெரு' : 'Street'}</th>
-              <th className="px-4 py-3.5 w-[19%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வாகன எண்' : 'Vehicle No.'}</th>
-              <th className="px-4 py-3.5 w-[12%] font-bold whitespace-nowrap">{lang === 'ta' ? 'பணியாளர்' : 'Worker'}</th>
-              <th className="px-3 py-3.5 text-center w-[12%] font-bold whitespace-nowrap">{lang === 'ta' ? 'நிலை' : 'Status'}</th>
+              <th className="px-4 py-3.5 text-center w-[5%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வரிசை' : 'S. No.'}</th>
+              <th className="px-4 py-3.5 w-[10%] font-bold whitespace-nowrap">{lang === 'ta' ? 'தேதி' : 'Date'}</th>
+              <th className="px-4 py-3.5 w-[11%] font-bold whitespace-nowrap">{lang === 'ta' ? 'மண்டலம்' : 'Zone'}</th>
+              <th className="px-4 py-3.5 w-[8%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வார்டு' : 'Ward'}</th>
+              <th className="px-4 py-3.5 w-[14%] font-bold whitespace-nowrap">{lang === 'ta' ? 'தெரு' : 'Street'}</th>
+              <th className="px-4 py-3.5 w-[10%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வாகன வகை' : 'Vehicle Type'}</th>
+              <th className="px-4 py-3.5 w-[12%] font-bold whitespace-nowrap">{lang === 'ta' ? 'வாகன எண்' : 'Vehicle No.'}</th>
+              <th className="px-4 py-3.5 w-[10%] font-bold whitespace-nowrap">{lang === 'ta' ? 'பணியாளர்' : 'Worker'}</th>
+              <th className="px-3 py-3.5 text-center w-[14%] font-bold whitespace-nowrap">{lang === 'ta' ? 'நிலை' : 'Status'}</th>
               <th className="px-3 py-3.5 text-center w-[6%] font-bold whitespace-nowrap">{lang === 'ta' ? 'செயல்' : 'Action'}</th>
             </tr>
           </thead>
@@ -230,9 +231,13 @@ export const RecentCollectionTable: React.FC<RecentCollectionTableProps> = ({
                     {item.ward}
                   </td>
 
-                  <td className="px-4 py-3.5">
-                    <div className="font-bold text-gray-900">{item.street}</div>
-                    <div className="text-slate-500 font-semibold">{item.vehicleType || '—'}</div>
+                  <td className="px-4 py-3.5 font-bold text-gray-900">
+                    {item.street}
+                  </td>
+
+                  {/* Vehicle Type column */}
+                  <td className="px-4 py-3.5 font-semibold text-gray-700 whitespace-nowrap">
+                    {item.vehicleType || '—'}
                   </td>
 
                   {/* Vehicle No Cell — vehicle number only; scan progress lives in Status */}
