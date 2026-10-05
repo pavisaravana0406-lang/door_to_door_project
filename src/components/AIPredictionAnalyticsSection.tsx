@@ -47,6 +47,7 @@ import { aiPredictionIcon } from '../constants/branding';
 import { SWMSHouseholdRecord } from '../types';
 import {
   runHistoricalPatternPredictionEngine,
+  recordMatchesGeoFilter,
   HouseholdHistoricalAnalysis,
   StreetHistoricalAnalysis
 } from '../utils/historicalPredictionEngine';
@@ -71,6 +72,18 @@ const wardLabel = (w: string | number): string => {
 /** Bare ward number for Tamil labels ("Ward 24" → "24"). */
 const wardNum = (w: string | number): string =>
   String(w ?? '').replace(/ward\s*/gi, '').trim() || String(w ?? '').trim();
+
+/** Fixed zone filter list — canonical values the engine matches on. */
+const ZONE_FILTERS: Array<{ value: string; label: string }> = [
+  { value: 'North Zone', label: 'NORTH' },
+  { value: 'East Zone', label: 'EAST' },
+  { value: 'West Zone', label: 'WEST' },
+  { value: 'South Zone', label: 'SOUTH' },
+  { value: 'Central Zone', label: 'CENTRAL' },
+];
+
+/** Fixed ward filter list — Ward 1 to Ward 100. */
+const WARD_FILTERS: string[] = Array.from({ length: 100 }, (_, i) => `Ward ${i + 1}`);
 
 /**
  * Hover-only detail popup for a Ward / Zone label.
@@ -223,6 +236,43 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
     return runHistoricalPatternPredictionEngine(filteredRecords, selectedZone, selectedWard, selectedStreet);
   }, [filteredRecords, selectedZone, selectedWard, selectedStreet]);
 
+  // ── Cascading filter options (street narrows with zone+ward, using the
+  //    exact same matcher the engine filters on) ──
+  const streetOptions = useMemo(
+    () =>
+      [...new Set(
+        filteredRecords
+          .filter((r) => recordMatchesGeoFilter(r, selectedZone, selectedWard, 'All Streets'))
+          .map((r) => r.streetName)
+          .filter(Boolean)
+      )].sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
+    [filteredRecords, selectedZone, selectedWard]
+  );
+
+  // Changing a parent filter resets its children — otherwise a ward from
+  // another zone stays selected and the whole page silently empties.
+  const handleZoneChange = (v: string) => {
+    setSelectedZone(v);
+    setSelectedWard('All Wards');
+    setSelectedStreet('All Streets');
+    if (onShowToast) onShowToast(`Filtered by ${v}`);
+  };
+  const handleWardChange = (v: string) => {
+    setSelectedWard(v);
+    setSelectedStreet('All Streets');
+    if (onShowToast) onShowToast(`Filtered by ${v}`);
+  };
+
+  // Weekly trend must honour the SAME geo filters as the engine, otherwise
+  // picking a zone/ward/street leaves that chart unchanged.
+  const geoFilteredRecords = useMemo(
+    () =>
+      (filteredRecords || []).filter((r: any) =>
+        recordMatchesGeoFilter(r, selectedZone, selectedWard, selectedStreet)
+      ),
+    [filteredRecords, selectedZone, selectedWard, selectedStreet]
+  );
+
   const {
     totalHouseholds,
     regularlyCollectedCount,
@@ -260,10 +310,11 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
       .slice(0, 6);
   }, [streetAnalyses]);
 
-  // Weekly trend is bucketed from the real records, never hardcoded.
+  // Weekly trend is bucketed from the geo+date filtered records, so every
+  // filter on this page moves this chart too.
   const weeklyCollectionData = useMemo(() => {
     const buckets = new Map<number, { visits: number; missed: number }>();
-    for (const r of filteredRecords) {
+    for (const r of geoFilteredRecords) {
       const when = r.submittedAt ? new Date(r.submittedAt) : null;
       if (!when || Number.isNaN(when.getTime())) continue;
       const daysAgo = Math.floor((Date.now() - when.getTime()) / 86_400_000);
@@ -282,7 +333,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           ? +(((b.visits - b.missed) / b.visits) * 100).toFixed(1)
           : 0,
       }));
-  }, [filteredRecords]);
+  }, [geoFilteredRecords]);
 
   const zoneCollectionData = useMemo(() => {
     // Zone names come from the records themselves, so no display mapping is
@@ -659,18 +710,13 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           <div className="relative w-full sm:w-auto sm:min-w-[130px]">
             <select
               value={selectedZone}
-              onChange={(e) => {
-                setSelectedZone(e.target.value);
-                if (onShowToast) onShowToast(`Filtered by ${e.target.value}`);
-              }}
+              onChange={(e) => handleZoneChange(e.target.value)}
               className="w-full appearance-none bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-bold py-2 pl-3 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="All Zones">All Zones</option>
-              {[...new Set(filteredRecords.map((r) => r.zone).filter(Boolean))]
-                .sort()
-                .map((z) => (
-                  <option key={z} value={z}>{z}</option>
-                ))}
+              {ZONE_FILTERS.map((z) => (
+                <option key={z.value} value={z.value}>{z.label}</option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -679,18 +725,13 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           <div className="relative w-full sm:w-auto sm:min-w-[130px]">
             <select
               value={selectedWard}
-              onChange={(e) => {
-                setSelectedWard(e.target.value);
-                if (onShowToast) onShowToast(`Filtered by ${e.target.value}`);
-              }}
+              onChange={(e) => handleWardChange(e.target.value)}
               className="w-full appearance-none bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-bold py-2 pl-3 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="All Wards">All Wards</option>
-              <option value="Ward 10">Ward 10</option>
-              <option value="Ward 11">Ward 11</option>
-              <option value="Ward 12">Ward 12</option>
-              <option value="Ward 45">Ward 45</option>
-              <option value="Ward 68">Ward 68</option>
+              {WARD_FILTERS.map((w) => (
+                <option key={w} value={w}>{lang === 'ta' ? `வார்டு ${wardNum(w)}` : wardLabel(w)}</option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
@@ -706,11 +747,9 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
               className="w-full appearance-none bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-bold py-2 pl-3 pr-8 rounded-xl cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="All Streets">All Streets</option>
-              {[...new Set(filteredRecords.map((r) => r.streetName).filter(Boolean))]
-                .sort()
-                .map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+              {streetOptions.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>

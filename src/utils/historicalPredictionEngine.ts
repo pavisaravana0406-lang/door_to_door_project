@@ -105,18 +105,40 @@ const blankRate = () => '0.00%';
  * computed from the records actually passed in, and the result is empty (not
  * fabricated) when there is no data.
  */
+/**
+ * Shared geo-filter predicate so the engine and every UI filter list use
+ * exactly the same matching. Tolerant on purpose: zones match on their
+ * first word ("NORTH" = "North Zone" = "north"), wards match on digits
+ * ("Ward 24" = "24"), so fixed dropdown values always hit real records.
+ */
+export function recordMatchesGeoFilter(
+  r: { zone?: string | null; ward?: string | number | null; streetName?: string | null },
+  selectedZone: string = 'All Zones',
+  selectedWard: string = 'All Wards',
+  selectedStreet: string = 'All Streets'
+): boolean {
+  if (selectedZone !== 'All Zones') {
+    const a = String(r.zone ?? '').trim().toLowerCase().split(/\s+/)[0];
+    const b = String(selectedZone).trim().toLowerCase().split(/\s+/)[0];
+    if (!a || a !== b) return false;
+  }
+  if (selectedWard !== 'All Wards') {
+    const a = String(r.ward ?? '').replace(/\D/g, '');
+    const b = String(selectedWard).replace(/\D/g, '');
+    if (!a || a !== b) return false;
+  }
+  if (selectedStreet !== 'All Streets' && r.streetName !== selectedStreet) return false;
+  return true;
+}
+
 export function runHistoricalPatternPredictionEngine(
   records: SWMSHouseholdRecord[] = [],
   selectedZone: string = 'All Zones',
   selectedWard: string = 'All Wards',
   selectedStreet: string = 'All Streets'
 ): PredictiveHistoricalEngineResult {
-  const matchesFilter = (r: SWMSHouseholdRecord) => {
-    if (selectedZone !== 'All Zones' && r.zone !== selectedZone) return false;
-    if (selectedWard !== 'All Wards' && r.ward !== selectedWard) return false;
-    if (selectedStreet !== 'All Streets' && r.streetName !== selectedStreet) return false;
-    return true;
-  };
+  const matchesFilter = (r: SWMSHouseholdRecord) =>
+    recordMatchesGeoFilter(r, selectedZone, selectedWard, selectedStreet);
 
   const filtered = (records || []).filter(matchesFilter);
 
