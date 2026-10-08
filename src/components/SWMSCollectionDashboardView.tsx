@@ -317,7 +317,7 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
                   CCMC
                 </div>
                 <div className="text-[9px] font-bold tracking-wider text-emerald-300 uppercase leading-tight mt-0.5" style={{ whiteSpace: 'nowrap' }}>
-                  SWMS {lang === 'ta' ? 'வீடு வழி கண்காணிப்பு' : 'Door-to-Door Monitoring'}
+                  {lang === 'ta' ? 'SWMS கண்காணிப்பு' : 'SWMS Monitoring'}
                 </div>
               </div>
               <div className="hidden sm:flex sm:flex-col sm:justify-center leading-tight">
