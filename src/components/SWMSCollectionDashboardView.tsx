@@ -312,17 +312,11 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
 
             {/* Municipal Titles — compact 2-line stack on mobile, full text from sm up */}
             <div className="min-w-0 flex flex-col justify-center">
-              <div className="sm:hidden flex flex-col leading-none">
-                <div className="text-[12.5px] font-black tracking-tight text-white leading-[1.15] drop-shadow">
-                  Coimbatore City Municipal
+              <div className="sm:hidden flex flex-col justify-center leading-tight min-w-0">
+                <div className="text-[16px] font-black tracking-tight text-white leading-tight" style={{ whiteSpace: 'nowrap' }}>
+                  CCMC
                 </div>
-                <div className="text-[12.5px] font-black tracking-tight text-white leading-[1.15] drop-shadow">
-                  Corporation
-                </div>
-                <div className="text-[9px] font-black tracking-wide text-amber-300 uppercase leading-none mt-1 drop-shadow">
-                  Integrated Command &amp; Control Center (ICCC)
-                </div>
-                <div className="text-[9px] font-black tracking-wide text-emerald-300 uppercase leading-none mt-0.5 drop-shadow">
+                <div className="text-[9px] font-bold tracking-wider text-emerald-300 uppercase leading-tight mt-0.5" style={{ whiteSpace: 'nowrap' }}>
                   SWMS {lang === 'ta' ? 'வீடு வழி கண்காணிப்பு' : 'Door-to-Door Monitoring'}
                 </div>
               </div>
