@@ -110,6 +110,7 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
           label={lang === 'ta' ? 'மொத்த வீடுகள்' : 'Total Households'}
           value={summary.totalHouseholds}
           icon={Home}
+          gicon="home"
           tone="blue"
           lang={lang}
           onClick={filter === 'all' ? undefined : () => setFilter('all')}
@@ -119,6 +120,7 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
           label={lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
           value={summary.collectedHouseholds}
           icon={CheckCircle2}
+          gicon="check_circle"
           tone="green"
           hint={`${summary.collectedPercent}%`}
           lang={lang}
@@ -129,6 +131,7 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
           label={lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}
           value={summary.notCollectedHouseholds}
           icon={XCircle}
+          gicon="cancel"
           tone="rose"
           lang={lang}
           onClick={() => setFilter(filter === 'not_collected' ? 'all' : 'not_collected')}

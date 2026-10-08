@@ -119,6 +119,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
             : (lang === 'ta' ? 'தெருக்கள்' : 'Total Streets')}
           value={houses}
           icon={isCart ? Building2 : MapPinned}
+          gicon={isCart ? 'home' : 'location_on'}
           tone="blue"
           lang={lang}
           onClick={filter === 'all' ? undefined : () => setFilter('all')}
@@ -129,6 +130,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
           label={lang === 'ta' ? 'சேகரிக்கப்பட்டது' : 'Collected'}
           value={isCart ? allRows.filter(r => r.status === 'covered').length : summary.collectedStreets}
           icon={CheckCircle2}
+          gicon="check_circle"
           tone="green"
           hint={`${totalCheckpoints}/${totalCheckpoints}`}
           lang={lang}
@@ -140,6 +142,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
           label={lang === 'ta' ? 'பகுதி சேகரிப்பு' : 'Partially'}
           value={summary.partialStreets}
           icon={AlertTriangle}
+          gicon="warning"
           tone="amber"
           hint={totalCheckpoints > 1 ? '3-4/5' : ''}
           lang={lang}
@@ -151,6 +154,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
           label={lang === 'ta' ? 'சேகரிக்கப்படவில்லை' : 'Not Collected'}
           value={summary.notCollectedStreets}
           icon={XCircle}
+          gicon="cancel"
           tone="rose"
           hint={totalCheckpoints > 1 ? '0-2/5' : ''}
           lang={lang}
