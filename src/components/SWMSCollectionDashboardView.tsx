@@ -279,8 +279,8 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
     <div className="dash-page w-full min-h-screen bg-white pb-28 font-sans max-w-full overflow-x-hidden text-slate-900">
       {/* ── GREEN CCMC HEADER (admin-style, dark enterprise green) ── */}
       <header className="w-full select-none text-white shadow-md sticky top-0 z-30 bg-[#14532d]">
-        {/* Top Main Green Bar */}
-        <div className="bg-[#14532d] px-2.5 sm:px-4 lg:px-5 pt-2 pb-2 border-b border-[#0f3d22] flex items-center justify-between gap-1 sm:gap-4">
+      {/* Top Main Green Bar — desktop / tablet only (>= sm) */}
+      <div className="bg-[#14532d] px-2.5 sm:px-4 lg:px-5 pt-2 pb-2 border-b border-[#0f3d22] hidden sm:flex items-center justify-between gap-1 sm:gap-4">
           {/* Left: CCMC Emblem + Smart City Logo + Municipal Titles */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 min-w-0 flex-1 overflow-hidden">
             <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
@@ -410,24 +410,80 @@ export const SWMSCollectionDashboardView: React.FC<SWMSCollectionDashboardViewPr
           </div>
         </div>
 
-        {/* Line 2 (Mobile only): Full-width vehicle/worker pill */}
-        <div className="sm:hidden flex items-center justify-between gap-2 px-2.5 pb-1.5 pt-1 border-t border-[#166534] bg-[#166534]/50">
-          <div
-            className="flex items-center gap-1.5 bg-[#166534] border border-emerald-400/40 rounded-full pl-1 pr-2 py-1 shadow-sm flex-shrink-0 min-w-0 max-w-[58%]"
-            title={`${vehicleNo}`}
-          >
-            <div className="w-5 h-5 rounded-md bg-white shadow-xs flex items-center justify-center border border-emerald-200 flex-shrink-0 overflow-hidden" title="Assigned Vehicle">
-              {isCartVehicle ? <UserCheck className="w-3 h-3 text-[#1E7A38]" /> : <Truck className="w-3 h-3 text-[#1E7A38]" />}
+        {/* Mobile 2-column header (< sm): [logos + headings] | [vehicle + zone/ward + controls] */}
+        <div className="sm:hidden bg-[#14532d] px-2.5 pt-2 pb-2 border-b border-[#0f3d22]">
+          <div className="grid grid-cols-2 gap-2 items-start">
+            {/* Col 1: logos + main headings */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <div
+                  className="w-7 h-7 rounded-full overflow-hidden border-2 border-amber-400 bg-white p-0.5 shadow-sm flex-shrink-0 flex items-center justify-center"
+                  title="Coimbatore City Municipal Corporation Emblem"
+                >
+                  <img
+                    src={ccmcLogo}
+                    alt="Coimbatore City Municipal Corporation Logo"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => { if (e.currentTarget.src !== ccmcFallbackLogo) e.currentTarget.src = ccmcFallbackLogo; }}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <div
+                  className="w-7 h-7 rounded-full overflow-hidden border-2 border-amber-400 bg-white p-0.5 shadow-sm flex-shrink-0 flex items-center justify-center"
+                  title="Smart City Mission"
+                >
+                  <img
+                    src={smartCityLogo}
+                    alt="Smart City Mission Logo"
+                    referrerPolicy="no-referrer"
+                    onError={(e) => { if (e.currentTarget.src !== smartCityFallbackLogo) e.currentTarget.src = smartCityFallbackLogo; }}
+                    className="w-full h-full object-contain p-0.5"
+                  />
+                </div>
+              </div>
+              <div className="mt-1 text-[17px] font-black tracking-tight text-white leading-tight">CCMC</div>
+              <div className="text-[9px] font-bold tracking-wider text-emerald-300 uppercase leading-tight mt-0.5" style={{ whiteSpace: 'nowrap' }}>
+                {lang === 'ta' ? 'SWMS கண்காணிப்பு' : 'SWMS Monitoring'}
+              </div>
             </div>
-            <div className="text-left leading-none min-w-0">
-              <div className="text-[10px] font-black text-white font-mono truncate">{vehicleNumber || vehicleNo}</div>
-              <div className="text-[8.5px] font-semibold text-emerald-200 tracking-wider truncate mt-0.5">{vehicleType}</div>
+            {/* Col 2: vehicle + zone/ward + language/logout */}
+            <div className="flex flex-col items-end gap-1.5 min-w-0">
+              <div
+                className="flex items-center gap-1.5 bg-[#166534] border border-emerald-400/40 rounded-2xl px-2 py-1 shadow-sm max-w-full"
+                title={`${vehicleNumber || vehicleNo} • ${vehicleType}`}
+              >
+                <div className="w-6 h-6 rounded-md bg-white shadow-xs flex items-center justify-center border border-emerald-200 flex-shrink-0 overflow-hidden" title="Assigned Vehicle">
+                  {isCartVehicle ? <UserCheck className="w-3.5 h-3.5 text-[#1E7A38]" /> : <Truck className="w-3.5 h-3.5 text-[#1E7A38]" />}
+                </div>
+                <div className="text-right leading-none min-w-0">
+                  <div className="text-[11px] font-black text-white font-mono" style={{ whiteSpace: 'nowrap' }}>{vehicleNumber || vehicleNo}</div>
+                  <div className="text-[8.5px] font-semibold text-emerald-200 tracking-wider mt-0.5" style={{ whiteSpace: 'nowrap' }}>{vehicleType}</div>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="text-[10px] font-bold text-emerald-100" style={{ whiteSpace: 'nowrap' }}>{assignment?.zone || '—'}</span>
+                <span className="w-1 h-1 rounded-full bg-amber-300 flex-shrink-0"></span>
+                <span className="text-[10px] font-bold text-amber-300" style={{ whiteSpace: 'nowrap' }}>{assignment?.ward || '—'}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={onToggleLang}
+                  className="px-2 py-1 rounded-full text-[10px] font-black bg-[#113B22] border border-emerald-400/40 text-amber-300 hover:text-white flex items-center gap-1 shadow-xs flex-shrink-0 cursor-pointer active:scale-95"
+                  title={lang === 'en' ? 'Switch to Tamil' : 'Switch to English'}
+                >
+                  <Globe className="w-3 h-3 text-emerald-300" />
+                  <span>{lang === 'en' ? 'தமிழ்' : 'EN'}</span>
+                </button>
+                <button
+                  onClick={onLogout}
+                  className="p-1.5 rounded-full bg-[#E11D48] hover:bg-[#BE123C] active:bg-[#9F1239] text-white shadow-md border border-rose-400/50 cursor-pointer active:scale-95 flex-shrink-0 flex items-center justify-center"
+                  title="Logout Portal / வெளியேறு"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-1.5 min-w-0 flex-shrink-0">
-            <span className="text-[9.5px] font-bold text-emerald-100 whitespace-nowrap">{assignment?.zone || '—'}</span>
-            <span className="w-1 h-1 rounded-full bg-amber-300 flex-shrink-0"></span>
-            <span className="text-[9.5px] font-bold text-amber-300 whitespace-nowrap">{assignment?.ward || '—'}</span>
           </div>
         </div>
       </header>
