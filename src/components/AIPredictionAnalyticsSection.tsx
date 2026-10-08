@@ -726,8 +726,8 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
         </div>
 
-        {/* Right Filters Strip (Zone, Ward, Street, Date) — 2-col on phones */}
-        <div className="grid grid-cols-2 sm:flex sm:items-center gap-2.5 w-full xl:w-auto">
+        {/* Right Filters Strip (Zone, Ward, Street, Date) — stacked on phones */}
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:flex sm:items-center gap-2.5 w-full xl:w-auto">
           {/* Zone Dropdown */}
           <div className="relative w-full sm:w-auto sm:min-w-[130px]">
             <select
@@ -777,7 +777,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
 
           {/* Date Range: preset + custom calendar */}
-          <div className="relative col-span-2 sm:col-span-1 w-full sm:w-auto sm:min-w-[150px]">
+          <div className="relative xs:col-span-2 sm:col-span-1 w-full sm:w-auto sm:min-w-[150px]">
             <select
               value={datePreset}
               onChange={(e) => applyPreset(e.target.value)}
@@ -901,7 +901,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
           </div>
           <div className="my-2">
             <div className="text-3xl font-black text-slate-900 leading-tight">
-              {occasionallyMissedCount}
+              {Math.max(totalHouseholds - regularlyCollectedCount, 0)}
             </div>
           </div>
           <div className="text-[11px] font-bold text-slate-600">
@@ -935,7 +935,7 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                   dataKey="name"
                   stroke="#94A3B8"
                   tickLine={false}
-                  interval={0}
+                  interval={wardMissData.length > 5 ? 1 : 0}
                   tick={<CustomBarTick />}
                   height={48}
                 />
@@ -1156,13 +1156,15 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                 <XAxis
                   dataKey="name"
-                  tick={{ fontSize: 9.5, fontWeight: 800, fill: '#0F172A' }}
+                  tick={{ fontSize: 9, fontWeight: 700, fill: '#0F172A', angle: -25, textAnchor: 'end' }}
                   axisLine={{ stroke: '#E2E8F0' }}
                   interval={0}
+                  height={64}
                 />
                 <YAxis
                   tickFormatter={(v) => `${v}%`}
-                  domain={[0, 'dataMax + 8']}
+                  domain={[0, 100]}
+                  ticks={[0, 25, 50, 75, 100]}
                   tick={{ fontSize: 10, fontWeight: 700, fill: '#64748B' }}
                   axisLine={{ stroke: '#E2E8F0' }}
                   width={38}
@@ -1585,8 +1587,8 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             </div>
 
             {/* Table */}
-            <div className="p-4 overflow-y-auto flex-1">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="p-4 overflow-auto flex-1">
+              <table className="w-full min-w-[760px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 text-[11px] font-black text-slate-600 bg-slate-50/50">
                     <th className="py-2.5 px-3">Street Name</th>
@@ -1728,8 +1730,8 @@ export const AIPredictionAnalyticsSection: React.FC<AIPredictionAnalyticsSection
             </div>
 
             {/* High Risk Table */}
-            <div className="p-4 overflow-y-auto flex-1">
-              <table className="w-full text-left text-xs border-collapse">
+            <div className="p-4 overflow-auto flex-1">
+              <table className="w-full min-w-[720px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 text-[11px] font-black text-slate-600 bg-slate-50/50">
                     <th className="py-2.5 px-3">House No.</th>
