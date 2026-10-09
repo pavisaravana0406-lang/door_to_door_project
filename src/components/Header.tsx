@@ -87,8 +87,6 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="w-full select-none text-white shadow-md sticky top-0 z-50">
       {/* Top Main Green Bar - dark enterprise green */}
       <div className="bg-[#14532d] px-3 sm:px-5 lg:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-4 border-b border-[#0f3d22] min-h-[56px] sm:min-h-[64px]">
-      {/* Top Main Green Bar - dark enterprise green */}
-      <div className="bg-[#14532d] px-3 sm:px-5 lg:px-6 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-4 border-b border-[#0f3d22] min-h-[56px] sm:min-h-[64px]">
         {/* Mobile stacked header (< sm): row 1 = menu + logos + CCMC, row 2 = Admin + language */}
         <div className="sm:hidden w-full">
           <div className="flex items-center justify-between gap-2">
