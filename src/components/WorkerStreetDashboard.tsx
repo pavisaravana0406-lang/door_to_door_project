@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion } from 'motion/react';
 import {
   Layers, CheckCircle2, AlertTriangle, XCircle, Search, QrCode, Truck, UserCheck,
@@ -89,6 +89,14 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
 
   const houses = isCart ? (records?.length ?? 0) : summary.totalStreets;
 
+  /** Tapping a KPI filters the list below AND auto-scrolls to its details. */
+  const historyRef = useRef<HTMLDivElement>(null);
+  const scrollToDetails = () => {
+    window.setTimeout(() => {
+      historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* ── FLOATING SCAN QR — fixed to the bottom of the viewport ── */}
@@ -122,7 +130,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
           gicon={isCart ? 'home' : 'location_on'}
           tone="blue"
           lang={lang}
-          onClick={filter === 'all' ? undefined : () => setFilter('all')}
+          onClick={() => { setFilter('all'); scrollToDetails(); }}
           active={filter === 'all'}
         />
 
@@ -134,7 +142,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
           tone="green"
           hint={`${totalCheckpoints}/${totalCheckpoints}`}
           lang={lang}
-          onClick={() => setFilter(filter === 'covered' ? 'all' : 'covered')}
+          onClick={() => { setFilter(filter === 'covered' ? 'all' : 'covered'); scrollToDetails(); }}
           active={filter === 'covered'}
         />
 
@@ -146,7 +154,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
           tone="amber"
           hint={totalCheckpoints > 1 ? '3-4/5' : ''}
           lang={lang}
-          onClick={() => setFilter(filter === 'partial' ? 'all' : 'partial')}
+          onClick={() => { setFilter(filter === 'partial' ? 'all' : 'partial'); scrollToDetails(); }}
           active={filter === 'partial'}
         />
 
@@ -158,7 +166,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
           tone="rose"
           hint={totalCheckpoints > 1 ? '0-2/5' : ''}
           lang={lang}
-          onClick={() => setFilter(filter === 'not_collected' ? 'all' : 'not_collected')}
+          onClick={() => { setFilter(filter === 'not_collected' ? 'all' : 'not_collected'); scrollToDetails(); }}
           active={filter === 'not_collected'}
         />
       </div>
@@ -281,7 +289,7 @@ export const WorkerStreetDashboard: React.FC<WorkerStreetDashboardProps> = ({
       </div>
 
       {/* ── HISTORY (recent scans) ───────────────────────────────── */}
-      <div className="space-y-2.5">
+      <div ref={historyRef} className="space-y-2.5 scroll-mt-24">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
             <QrCode className="w-4 h-4 text-emerald-700" />

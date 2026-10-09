@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Home, CheckCircle2, XCircle, Search, RefreshCw, ChevronDown, MapPin,
@@ -84,6 +84,14 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
   const vehicleLabel = assignment?.vehicleType
     || (assignment?.isPushcart ? 'PUSH CART' : 'BOV');
 
+  /** Tapping a KPI filters the list below AND auto-scrolls to its details. */
+  const historyRef = useRef<HTMLDivElement>(null);
+  const scrollToDetails = () => {
+    window.setTimeout(() => {
+      historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-5">
       {/* ── FLOATING SCAN QR ── */}
@@ -113,7 +121,7 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
           gicon="home"
           tone="blue"
           lang={lang}
-          onClick={filter === 'all' ? undefined : () => setFilter('all')}
+          onClick={() => { setFilter('all'); scrollToDetails(); }}
           active={filter === 'all'}
         />
         <KpiSquare
@@ -124,7 +132,7 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
           tone="green"
           hint={`${summary.collectedPercent}%`}
           lang={lang}
-          onClick={() => setFilter(filter === 'collected' ? 'all' : 'collected')}
+          onClick={() => { setFilter(filter === 'collected' ? 'all' : 'collected'); scrollToDetails(); }}
           active={filter === 'collected'}
         />
         <KpiSquare
@@ -134,7 +142,7 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
           gicon="cancel"
           tone="rose"
           lang={lang}
-          onClick={() => setFilter(filter === 'not_collected' ? 'all' : 'not_collected')}
+          onClick={() => { setFilter(filter === 'not_collected' ? 'all' : 'not_collected'); scrollToDetails(); }}
           active={filter === 'not_collected'}
         />
       </div>
@@ -231,7 +239,7 @@ export const WorkerHouseholdDashboard: React.FC<WorkerHouseholdDashboardProps> =
       </div>
 
       {/* ── HISTORY ── */}
-      <div className="space-y-2.5">
+      <div ref={historyRef} className="space-y-2.5 scroll-mt-24">
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
             <User className="w-4 h-4 text-emerald-700" />
